@@ -80,17 +80,26 @@ CREATE TABLE IF NOT EXISTS `spce_categories` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 7. Tabela de Despesas Gerais da Campanha
+-- 7. Tabela de Tipos de Despesas (Categoria Informada pelo Colaborador)
+CREATE TABLE IF NOT EXISTS `expense_types` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(100) NOT NULL UNIQUE,
+    `description` VARCHAR(255) NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 8. Tabela de Despesas Gerais da Campanha
 CREATE TABLE IF NOT EXISTS `despesas` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `description` VARCHAR(255) NOT NULL,
     `supplier_id` INT NOT NULL,
-    `bank_account_id` INT NOT NULL,
+    `bank_account_id` INT NULL,
     `value` DECIMAL(15,2) NOT NULL,
     `date_incurred` DATE NOT NULL,
-    `payment_method` VARCHAR(50) NOT NULL,
+    `payment_method` VARCHAR(50) NULL,
     `status` ENUM('PENDENTE', 'APROVADO', 'REJEITADO', 'PAGO') DEFAULT 'PENDENTE',
-    `spce_category_id` INT NOT NULL,
+    `spce_category_id` INT NULL,
+    `expense_type_id` INT NULL,
     `user_id` INT NOT NULL,
     `approved_by` INT NULL,
     `approved_at` DATETIME NULL,
@@ -99,11 +108,12 @@ CREATE TABLE IF NOT EXISTS `despesas` (
     FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`id`) ON DELETE RESTRICT,
     FOREIGN KEY (`bank_account_id`) REFERENCES `bank_accounts` (`id`) ON DELETE RESTRICT,
     FOREIGN KEY (`spce_category_id`) REFERENCES `spce_categories` (`id`) ON DELETE RESTRICT,
+    FOREIGN KEY (`expense_type_id`) REFERENCES `expense_types` (`id`) ON DELETE SET NULL,
     FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON DELETE RESTRICT,
     FOREIGN KEY (`approved_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Tabela de Metadados de Comprovantes Criptografados (Despesas Gerais)
+-- 9. Tabela de Metadados de Comprovantes Criptografados (Despesas Gerais)
 CREATE TABLE IF NOT EXISTS `comprovantes_cripto` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `expense_id` INT NOT NULL,
@@ -115,7 +125,7 @@ CREATE TABLE IF NOT EXISTS `comprovantes_cripto` (
     FOREIGN KEY (`expense_id`) REFERENCES `despesas` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 9. Tabela de Relatórios de Viagem de Colaboradores
+-- 10. Tabela de Relatórios de Viagem de Colaboradores
 CREATE TABLE IF NOT EXISTS `travel_reports` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT NOT NULL,
@@ -131,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `travel_reports` (
     FOREIGN KEY (`approved_by`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. Tabela de Recibos de Despesas de Viagem Criptografados
+-- 11. Tabela de Recibos de Despesas de Viagem Criptografados
 CREATE TABLE IF NOT EXISTS `travel_receipts` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `travel_report_id` INT NOT NULL,
@@ -148,7 +158,7 @@ CREATE TABLE IF NOT EXISTS `travel_receipts` (
     FOREIGN KEY (`spce_category_id`) REFERENCES `spce_categories` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 11. Tabela de Comprovação de Atividades de Militância Georreferenciadas
+-- 12. Tabela de Comprovação de Atividades de Militância Georreferenciadas
 CREATE TABLE IF NOT EXISTS `militancy_activities` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT NOT NULL,
@@ -163,7 +173,7 @@ CREATE TABLE IF NOT EXISTS `militancy_activities` (
     FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 12. Tabela de Receitas/Doações da Campanha
+-- 13. Tabela de Receitas/Doações da Campanha
 CREATE TABLE IF NOT EXISTS `receitas` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `description` VARCHAR(255) NOT NULL,
