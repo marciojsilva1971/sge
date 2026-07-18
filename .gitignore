@@ -1,0 +1,16 @@
+# Configurações locais e credenciais sensíveis
+.env
+
+# Dependências do PHP
+vendor/
+
+# Armazenamento e Uploads (Comprovantes criptografados, fotos de perfil, logs de e-mail)
+storage/
+public/uploads/
+*.log
+
+# Arquivos temporários e IDEs
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Define a base do Rewrite se necessário
+    RewriteBase /projeto-eleicao/
+
+    # Se o arquivo ou diretório solicitado fisicamente existir, acesse diretamente
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Caso contrário, redirecione tudo para o index.php
+    RewriteRule ^(.*)$ index.php [L,QSA]
+</IfModule>
