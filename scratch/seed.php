@@ -255,5 +255,29 @@ foreach ($suppliers as $sup) {
     }
 }
 
+// 9. Insere tipos de despesas padrão para colaboradores de campo
+echo "Inserindo tipos de despesa padrão...\n";
+$expenseTypes = [
+    ['name' => 'Alimentação', 'description' => 'Despesas com refeição, lanches e água de militantes de campo'],
+    ['name' => 'Combustível', 'description' => 'Abastecimento de veículos oficiais de campanha ou de militância'],
+    ['name' => 'Hospedagem', 'description' => 'Hospedagem de equipe ou palestrantes/candidatos em trânsito'],
+    ['name' => 'Material de Escritório', 'description' => 'Insumos de comitê de campanha'],
+    ['name' => 'Militância', 'description' => 'Pagamentos ou ajudas de custo para militantes'],
+    ['name' => 'Outros', 'description' => 'Diversos tipos de gastos de campo não classificados']
+];
+
+$stmtType = $pdo->prepare("SELECT id FROM `expense_types` WHERE name = :name LIMIT 1");
+$stmtInsertType = $pdo->prepare("INSERT INTO `expense_types` (name, description) VALUES (:name, :description)");
+
+foreach ($expenseTypes as $type) {
+    $stmtType->execute(['name' => $type['name']]);
+    if ($stmtType->fetch()) {
+        echo "Tipo de despesa '{$type['name']}' já existe. Ignorado.\n";
+    } else {
+        $stmtInsertType->execute($type);
+        echo "Tipo de despesa '{$type['name']}' inserido.\n";
+    }
+}
+
 echo "Semeadura finalizada com sucesso!\n";
 
