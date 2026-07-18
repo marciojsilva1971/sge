@@ -24,7 +24,7 @@ foreach ($lines as $line) {
     }
 }
 
-// 2. Conecta ao banco (inicialmente sem selecionar base para garantir a criação)
+// 2. Conecta ao banco diretamente informando a base
 $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
 $port = $_ENV['DB_PORT'] ?? '3306';
 $user = $_ENV['DB_USER'] ?? 'root';
@@ -32,10 +32,10 @@ $pass = $_ENV['DB_PASS'] ?? '';
 $dbname = $_ENV['DB_NAME'] ?? 'sge';
 
 try {
-    $pdo = new PDO("mysql:host={$host};port={$port};charset=utf8mb4", $user, $pass, [
+    $pdo = new PDO("mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4", $user, $pass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
-    echo "Conexão com o servidor MySQL estabelecida com sucesso.\n";
+    echo "Conexão com o banco de dados '{$dbname}' estabelecida com sucesso.\n";
 } catch (PDOException $e) {
     die("Erro de conexão MySQL: " . $e->getMessage() . "\n");
 }
@@ -54,9 +54,6 @@ try {
 } catch (PDOException $e) {
     die("Erro ao executar schema.sql: " . $e->getMessage() . "\n");
 }
-
-// Seleciona o banco correto
-$pdo->exec("USE `{$dbname}`");
 
 // 4. Insere perfis iniciais (roles)
 echo "Inserindo cargos/perfis iniciais (roles)...\n";
