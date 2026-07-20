@@ -150,7 +150,13 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 30: Simplificação do Menu Lateral (Remoção dos Links Repetidos de Fila e Tipos de Despesas)
+* **Ação Realizada:** Removidos os links avulsos da barra lateral, mantendo a navegação limpa através das abas no topo da página.
+
+---
+
+## 📅 Sessão 31: Blindagem da Automação de Deploy (`.github/workflows/deploy.yml`)
 * **Ação Realizada:**
-  1. Removidos os links avulsos `Fila de Aprovações` e `Tipos de Despesas` da barra lateral (`app/Views/layouts/main.php`), deixando apenas o menu único **`💰 Financeiro`**.
-  2. Toda a navegação interna entre Visão Geral, Fila de Aprovações, Tipos de Despesas, Lançamento de Despesas e Fornecedores é realizada através da barra de abas horizontais no topo do painel.
-  3. Código publicado no GitHub sob a tag `commit 7f4ccf1`.
+  1. Identificado que o comando `git pull` na VPS abortava quando existiam arquivos locais alterados ou com permissões modificadas no servidor de produção.
+  2. Refatorado o script SSH do GitHub Actions (`.github/workflows/deploy.yml`) para executar `git fetch origin main && git reset --hard origin/main`.
+  3. Com essa melhoria, qualquer deploy automático sobrescreverá a VPS de forma limpa, confiável e sem erros de conflito.
+  4. Código publicado no GitHub sob a tag `commit bc83a04`.
