@@ -124,6 +124,10 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ---
 
-## 📅 Sessão 25: Resolução de Inicialização do Repositório Git Local (`git init`)
-* **Identificação:** Ao tentar executar os comandos `git add`, `git commit` e `git push`, a pasta `c:\xampp\htdocs\sge` retornava o aviso `fatal: not a git repository`.
-* **Ação Realizada:** Atualizado o guia de deploy orientando os passos de inicialização do Git local (`git init`), vinculação com o repositório remoto do GitHub (`git remote add origin ...`) e envio para a branch `main`.
+## 📅 Sessão 25: Publicação Oficial no GitHub (`git push`) e Disparo de Deploy CI/CD
+* **Solicitação:** Efetuar o `git push` para o repositório `https://github.com/marciojsilva1971/sge` com a mensagem `"primeira versao rh"`.
+* **Ação Realizada:** 
+  1. Configurado o repositório remoto oficial: `https://github.com/marciojsilva1971/sge.git`.
+  2. Resolvida a unificação de histórico remoto (`merge`) preservando as alterações locais atualizadas.
+  3. Realizado o commit e push com sucesso para o branch `main`: `[main 912f5b5] primeira versao rh`.
+  4. O pipeline do GitHub Actions foi disparado automaticamente para atualizar o servidor na DigitalOcean VPS (`/var/www/sge`).
