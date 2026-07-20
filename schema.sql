@@ -1,8 +1,8 @@
 -- Schema Inicial do Banco de Dados - Sistema de Gestão Eleitoral (SGE)
 -- Sprint 1: Módulo de Usuários, Perfis (RBAC) e Auditoria
 
-CREATE DATABASE IF NOT EXISTS `sge` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `sge`;
+-- CREATE DATABASE IF NOT EXISTS `sge` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE `sge`;
 
 -- 1. Tabela de Perfis de Acesso (RBAC)
 CREATE TABLE IF NOT EXISTS `roles` (
