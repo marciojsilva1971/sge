@@ -210,7 +210,11 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 42: Auto-Preenchimento Inteligente de Endereço via CEP (ViaCEP / Correios)
+* **Ação Realizada:** Implementada a busca automática de CEP (ViaCEP/Correios) com preenchimento em tempo real de Logradouro, Bairro, Cidade e UF.
+
+---
+
+## 📅 Sessão 43: Padronização Global do Fuso Horário para América/São Paulo (UTC-3)
 * **Ações Implementadas:**
-  1. **Autocompletar Automático (`colaborador/cadastro.php` & `admin/rh/create.php`):** Implementada a consulta em tempo real à base de dados dos Correios (ViaCEP API) ao digitar os 8 dígitos do CEP ou ao sair do campo (`onblur`/`onkeyup`).
-  2. **UX & Preenchimento de Campos:** Preenchimento instantâneo dos campos Logradouro/Rua, Bairro, Cidade e UF, posicionando o cursor diretamente no campo Número para digitação contínua.
-  3. **Feedback Visual de Busca:** Exibição de indicador visual durante a consulta (`🔍 Buscando endereço nos Correios...` -> `✔ Endereço preenchido automaticamente!`).
+  1. **PHP Timezone (`public/index.php`):** Configurado `date_default_timezone_set('America/Sao_Paulo');` no Front Controller para garantir que todas as funções PHP de data (`date()`, `DateTime()`, etc.) sigam o horário oficial de Brasília/São Paulo.
+  2. **PDO / MySQL Timezone (`app/Core/Database.php`):** Adicionado o comando `SET time_zone = '-03:00'` na inicialização da conexão PDO com o MySQL, garantindo que os timestamps automáticos (`created_at`, `updated_at`) e consultas gravadas no banco de dados reflitam com precisão a hora de São Paulo.

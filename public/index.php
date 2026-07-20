@@ -1,6 +1,9 @@
 <?php
 // Front Controller - Sistema de Gestão Eleitoral (SGE)
 
+// Define Fuso Horário Oficial de Brasília / São Paulo (UTC-3)
+date_default_timezone_set('America/Sao_Paulo');
+
 // 1. Carrega e analisa o arquivo .env
 $envFile = dirname(__DIR__) . '/.env';
 if (file_exists($envFile)) {
