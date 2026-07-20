@@ -356,29 +356,34 @@ class RhController extends Controller {
             $this->redirect('/admin/rh');
         }
 
-        $colaboradorModel = new Colaborador();
-        $colaborador = $colaboradorModel->find($colaboradorId);
+        try {
+            $colaboradorModel = new Colaborador();
+            $colaborador = $colaboradorModel->find($colaboradorId);
 
-        if (!$colaborador) {
-            Session::setFlash('error', 'Colaborador não encontrado.');
+            if (!$colaborador) {
+                Session::setFlash('error', 'Colaborador não encontrado.');
+                $this->redirect('/admin/rh');
+            }
+
+            $colaboradorModel->update($colaboradorId, [
+                'celular_whatsapp' => $novoTelefone
+            ]);
+
+            // Se o colaborador já possuir conta de usuário homologada no SGE, atualiza a coluna celular em usuarios
+            $userModel = new User();
+            $user = $userModel->findByEmail($colaborador['email']);
+            if ($user) {
+                $userModel->update($user['id'], [
+                    'celular' => $novoTelefone
+                ]);
+            }
+
+            Session::setFlash('success', 'Número de WhatsApp de ' . $colaborador['nome_completo'] . ' atualizado com sucesso para ' . $novoTelefone . '!');
+            $this->redirect('/admin/rh');
+        } catch (Exception $e) {
+            Session::setFlash('error', 'Erro ao atualizar número de WhatsApp: ' . $e->getMessage());
             $this->redirect('/admin/rh');
         }
-
-        $colaboradorModel->update($colaboradorId, [
-            'celular_whatsapp' => $novoTelefone
-        ]);
-
-        // Se o colaborador já possuir registro em users, sincroniza o telefone
-        $userModel = new User();
-        $user = $userModel->findByEmail($colaborador['email']);
-        if ($user) {
-            $userModel->update($user['id'], [
-                'phone' => $novoTelefone
-            ]);
-        }
-
-        Session::setFlash('success', 'Número de WhatsApp de ' . $colaborador['nome_completo'] . ' atualizado com sucesso para ' . $novoTelefone . '!');
-        $this->redirect('/admin/rh');
     }
 
     /**
