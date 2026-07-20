@@ -139,6 +139,10 @@ $router->post('/portal/militancia', 'PortalController@addMilitancy');
 $router->get('/portal/despesas', 'PortalController@expenses');
 $router->post('/portal/despesas', 'PortalController@addExpense');
 
+// API de Consulta Cadastral de CNPJ / OCR
+$router->get('/api/cnpj/consultar', 'PortalController@consultarCnpj');
+$router->post('/api/cnpj/consultar', 'PortalController@consultarCnpj');
+
 // 6. Despacha a rota solicitada
 try {
     $router->dispatch();

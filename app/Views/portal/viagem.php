@@ -33,6 +33,7 @@ foreach ($travelReports as $report) {
             <div class="form-group">
                 <label for="supplier_cnpj" style="font-size: 12px;">CNPJ do Posto de Combustível</label>
                 <input type="text" id="supplier_cnpj" name="supplier_cnpj" placeholder="00.000.000/0001-00" required>
+                <div id="cnpj_supplier_info" style="margin-top: 6px; font-size: 11px;"></div>
             </div>
 
             <div style="display: flex; gap: 10px;">
@@ -230,6 +231,59 @@ foreach ($travelReports as $report) {
         input.value = formatted;
     }
 
+<!-- Biblioteca Tesseract.js para leitura OCR de comprovantes no navegador -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+    // Consulta pública de CNPJ em tempo real
+    const cnpjInput = document.getElementById('supplier_cnpj');
+    const cnpjInfoDiv = document.getElementById('cnpj_supplier_info');
+
+    function consultarCnpjServico(cnpjVal) {
+        const clean = cnpjVal.replace(/\D/g, "");
+        if (clean.length !== 14) return;
+
+        if (cnpjInfoDiv) {
+            cnpjInfoDiv.innerHTML = '<span style="color: var(--accent-teal); font-weight: 500;">🔍 Consultando Receita Federal...</span>';
+        }
+
+        fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + clean)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    cnpjInput.value = data.cnpj;
+                    if (cnpjInfoDiv) {
+                        cnpjInfoDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ ${data.razao_social}</span> <span style="color: #94a3b8;">(${data.municipio}/${data.uf})</span>`;
+                    }
+                } else {
+                    if (cnpjInfoDiv) {
+                        cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ ${data.message || 'CNPJ não encontrado'}</span>`;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Erro na consulta do CNPJ:', err);
+                if (cnpjInfoDiv) {
+                    cnpjInfoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao conectar com base da Receita</span>';
+                }
+            });
+    }
+
+    if (cnpjInput) {
+        cnpjInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 14) value = value.slice(0, 14);
+
+            if (value.length > 12) {
+                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+            }
+            e.target.value = value;
+
+            if (value.replace(/\D/g, "").length === 14) {
+                consultarCnpjServico(value);
+            }
+        });
+    }
+
     const compInput = document.getElementById('comprovante');
     if (compInput) {
         compInput.addEventListener('change', function(e) {
@@ -255,6 +309,34 @@ foreach ($travelReports as $report) {
                     thumb.textContent = "";
                 };
                 reader.readAsDataURL(file);
+
+                // Executa OCR inteligente na foto do comprovante para detectar o CNPJ
+                if (window.Tesseract && cnpjInfoDiv) {
+                    cnpjInfoDiv.innerHTML = '<span style="color: var(--accent-teal); font-weight: 600;">🤖 Lendo imagem para detectar CNPJ (OCR)...</span>';
+                    
+                    Tesseract.recognize(file, 'por', {
+                        logger: m => console.log(m)
+                    }).then(({ data: { text } }) => {
+                        console.log("Texto extraído via OCR:", text);
+                        // Regex para identificar padrões de CNPJ
+                        const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
+                        if (match) {
+                            const detectedCnpj = match[0].replace(/\D/g, "");
+                            if (detectedCnpj.length === 14) {
+                                cnpjInput.value = detectedCnpj;
+                                consultarCnpjServico(detectedCnpj);
+                            } else {
+                                cnpjInfoDiv.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ detectado automaticamente na imagem. Digite se necessário.</span>';
+                            }
+                        } else {
+                            cnpjInfoDiv.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ lido na foto. Por favor, confirme o número.</span>';
+                        }
+                    }).catch(err => {
+                        console.error("Erro OCR Tesseract:", err);
+                        cnpjInfoDiv.innerHTML = '<span style="color: #94a3b8;">Não foi possível ler a imagem com OCR.</span>';
+                    });
+                }
+
             } else if (file.type === 'application/pdf') {
                 thumb.style.backgroundImage = 'none';
                 thumb.textContent = '📄';

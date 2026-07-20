@@ -5,6 +5,7 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Session;
 use App\Services\EncryptionService;
+use App\Services\CnpjService;
 use Exception;
 use PDO;
 
@@ -484,5 +485,22 @@ class PortalController extends Controller {
         }
 
         $this->redirect('/portal/despesas');
+    }
+
+    /**
+     * Endpoint API JSON para consulta pública de CNPJ.
+     */
+    public function consultarCnpj(): void {
+        header('Content-Type: application/json; charset=utf-8');
+        $cnpj = $_GET['cnpj'] ?? $_POST['cnpj'] ?? '';
+
+        if (empty($cnpj)) {
+            echo json_encode(['success' => false, 'message' => 'Informe o número do CNPJ.']);
+            exit;
+        }
+
+        $result = CnpjService::consultar($cnpj);
+        echo json_encode($result, JSON_UNESCAPED_UNICODE);
+        exit;
     }
 }

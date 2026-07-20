@@ -198,12 +198,16 @@
         input.value = formatted;
     }
 
+<!-- Tesseract.js OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
     document.getElementById('comprovante').addEventListener('change', function(e) {
         const file = e.target.files[0];
         const container = document.getElementById('comprovante-preview-container');
         const thumb = document.getElementById('comprovante-preview-thumb');
         const name = document.getElementById('comprovante-preview-name');
         const size = document.getElementById('comprovante-preview-size');
+        const supplierSelect = document.getElementById('supplier_id');
 
         if (!file) {
             container.style.display = 'none';
@@ -221,6 +225,57 @@
                 thumb.textContent = "";
             };
             reader.readAsDataURL(file);
+
+            // Leitura OCR para auto-seleção de fornecedor
+            if (window.Tesseract) {
+                const infoBadge = document.createElement('div');
+                infoBadge.id = 'ocr-expense-status';
+                infoBadge.style.fontSize = '11px';
+                infoBadge.style.marginTop = '6px';
+                infoBadge.style.color = 'var(--accent-teal)';
+                infoBadge.innerHTML = '🤖 Escaneando comprovante (OCR) para selecionar fornecedor...';
+                
+                const oldBadge = document.getElementById('ocr-expense-status');
+                if (oldBadge) oldBadge.remove();
+                container.after(infoBadge);
+
+                Tesseract.recognize(file, 'por', {
+                    logger: m => console.log(m)
+                }).then(({ data: { text } }) => {
+                    const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
+                    if (match) {
+                        const cleanCnpj = match[0].replace(/\D/g, "");
+                        fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cleanCnpj)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    infoBadge.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ CNPJ Lido no Comprovante: ${data.cnpj} - ${data.razao_social}</span>`;
+                                    
+                                    // Tenta encontrar o fornecedor na lista suspensa
+                                    let found = false;
+                                    for (let option of supplierSelect.options) {
+                                        if (option.text.replace(/\D/g, "").includes(cleanCnpj)) {
+                                            supplierSelect.value = option.value;
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found) {
+                                        infoBadge.innerHTML += ` <br><span style="color: #eab308;">💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#eab308; text-decoration:underline;">Clique para cadastrar</a>.</span>`;
+                                    }
+                                } else {
+                                    infoBadge.innerHTML = `<span style="color: #94a3b8;">CNPJ Lido: ${match[0]}</span>`;
+                                }
+                            });
+                    } else {
+                        infoBadge.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ detectado automaticamente no anexo.</span>';
+                    }
+                }).catch(err => {
+                    console.error("Erro OCR:", err);
+                    infoBadge.remove();
+                });
+            }
+
         } else if (file.type === 'application/pdf') {
             thumb.style.backgroundImage = 'none';
             thumb.textContent = '📄';

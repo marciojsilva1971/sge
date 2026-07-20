@@ -25,6 +25,7 @@
             <div class="form-group">
                 <label for="cnpj_cpf">CNPJ ou CPF (Apenas números ou formatado)</label>
                 <input type="text" id="cnpj_cpf" name="cnpj_cpf" placeholder="00.000.000/0001-00 ou 000.000.000-00" required>
+                <div id="cnpj_fornecedor_status" style="margin-top: 6px; font-size: 11px;"></div>
             </div>
 
             <div class="form-group">
@@ -112,22 +113,61 @@
 </div>
 
 <script>
-    // Máscara dinâmica CNPJ/CPF
-    document.getElementById('cnpj_cpf').addEventListener('input', function (e) {
-        var value = e.target.value.replace(/\D/g, "");
-        if (value.length > 14) value = value.slice(0, 14);
+    const cnpjCpfInput = document.getElementById('cnpj_cpf');
+    const statusDiv = document.getElementById('cnpj_fornecedor_status');
+    const corpNameInput = document.getElementById('corporate_name');
+    const tradeNameInput = document.getElementById('trade_name');
+    const addressInput = document.getElementById('address');
 
-        if (value.length > 11) {
-            // CNPJ Mask
-            value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-        } else if (value.length > 9) {
-            // CPF Mask
-            value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
-        } else if (value.length > 6) {
-            value = value.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3");
-        } else if (value.length > 3) {
-            value = value.replace(/^(\d{3})(\d{1,3})$/, "$1.$2");
-        }
-        e.target.value = value;
-    });
+    // Máscara dinâmica CNPJ/CPF e consulta de CNPJ
+    if (cnpjCpfInput) {
+        cnpjCpfInput.addEventListener('input', function (e) {
+            var value = e.target.value.replace(/\D/g, "");
+            if (value.length > 14) value = value.slice(0, 14);
+
+            if (value.length > 11) {
+                // CNPJ Mask
+                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+            } else if (value.length > 9) {
+                // CPF Mask
+                value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+            } else if (value.length > 6) {
+                value = value.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3");
+            } else if (value.length > 3) {
+                value = value.replace(/^(\d{3})(\d{1,3})$/, "$1.$2");
+            }
+            e.target.value = value;
+
+            const cleanDigits = value.replace(/\D/g, "");
+            if (cleanDigits.length === 14) {
+                if (statusDiv) {
+                    statusDiv.innerHTML = '<span style="color: var(--accent-teal); font-weight: 500;">🔍 Buscando Razão Social na Receita Federal...</span>';
+                }
+                
+                fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cleanDigits)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (corpNameInput && !corpNameInput.value) corpNameInput.value = data.razao_social;
+                            if (tradeNameInput && !tradeNameInput.value && data.nome_fantasia) tradeNameInput.value = data.nome_fantasia;
+                            if (addressInput && !addressInput.value && data.endereco_completo) addressInput.value = data.endereco_completo;
+                            
+                            if (statusDiv) {
+                                statusDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ Dados Carregados (${data.fonte}): ${data.razao_social}</span>`;
+                            }
+                        } else {
+                            if (statusDiv) {
+                                statusDiv.innerHTML = `<span style="color: #ef4444;">⚠️ ${data.message || 'CNPJ não encontrado'}</span>`;
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Erro na consulta do CNPJ:', err);
+                        if (statusDiv) statusDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao consultar Receita Federal</span>';
+                    });
+            } else {
+                if (statusDiv) statusDiv.innerHTML = '';
+            }
+        });
+    }
 </script>
