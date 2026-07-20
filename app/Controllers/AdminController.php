@@ -304,8 +304,8 @@ class AdminController extends Controller {
             if (!preg_match('/[A-Z]/', $password) || 
                 !preg_match('/[a-z]/', $password) || 
                 !preg_match('/[0-9]/', $password) || 
-                !preg_match('/[\W]/', $password)) {
-                Session::setFlash('error', 'A nova senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial.');
+                !preg_match('/[^a-zA-Z0-9]/', $password)) {
+                Session::setFlash('error', 'A nova senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (ex: @, #, $, _, !).');
                 $this->redirect('/admin/profile');
             }
             if ($password !== $confirmPassword) {
@@ -504,6 +504,69 @@ class AdminController extends Controller {
         } catch (\Exception $e) {
             error_log("Erro ao ativar diretamente o usuário ID {$targetId}: " . $e->getMessage());
             Session::setFlash('error', 'Erro técnico ao tentar ativar diretamente o usuário.');
+        }
+
+        $this->redirect('/admin/users');
+    }
+
+    /**
+     * Redefine/Altera a senha de qualquer usuário (Ação do Administrador).
+     */
+    public function resetUserPassword(): void {
+        $this->requirePermission('invite_user');
+        $this->validatePostCsrf();
+
+        $targetId = (int)($_POST['user_id'] ?? 0);
+        $newPassword = $_POST['new_password'] ?? '';
+
+        if ($targetId === 0 || $newPassword === '') {
+            Session::setFlash('error', 'Preencha a nova senha do usuário.');
+            $this->redirect('/admin/users');
+        }
+
+        if (strlen($newPassword) < 8) {
+            Session::setFlash('error', 'A nova senha deve possuir no mínimo 8 caracteres.');
+            $this->redirect('/admin/users');
+        }
+
+        if (!preg_match('/[A-Z]/', $newPassword) || 
+            !preg_match('/[a-z]/', $newPassword) || 
+            !preg_match('/[0-9]/', $newPassword) || 
+            !preg_match('/[^a-zA-Z0-9]/', $newPassword)) {
+            Session::setFlash('error', 'A nova senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (ex: @, #, $, _, !).');
+            $this->redirect('/admin/users');
+        }
+
+        $userModel = new User();
+        $targetUser = $userModel->find($targetId);
+
+        if (!$targetUser) {
+            Session::setFlash('error', 'Usuário não encontrado.');
+            $this->redirect('/admin/users');
+        }
+
+        try {
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $userModel->update($targetId, ['password_hash' => $passwordHash]);
+
+            AuditLogger::log(
+                'ADMIN_RESET_USER_PASSWORD',
+                'usuarios',
+                $targetId,
+                null,
+                ['changed_by' => $this->requireAuth()['id']]
+            );
+
+            // Notifica o usuário pelo WhatsApp via Z-API se possuir celular
+            if (!empty($targetUser['celular'])) {
+                $msg = "Olá, {$targetUser['name']}! Sua senha de acesso ao Sistema de Gestão Eleitoral (SGE) foi redefinida pelo administrador para: {$newPassword}";
+                WhatsAppService::send($targetUser['celular'], $msg);
+            }
+
+            Session::setFlash('success', "Senha do usuário <strong>" . htmlspecialchars($targetUser['name']) . "</strong> alterada com sucesso!");
+        } catch (\Exception $e) {
+            error_log("Erro ao redefinir senha do usuário ID {$targetId}: " . $e->getMessage());
+            Session::setFlash('error', 'Erro ao alterar a senha do usuário.');
         }
 
         $this->redirect('/admin/users');

@@ -124,7 +124,7 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ---
 
-## 📅 Sessão 25: Publicação Oficial no GitHub (`git push`) and Disparo de Deploy CI/CD
+## 📅 Sessão 25: Publicação Oficial no GitHub (`git push`) e Disparo de Deploy CI/CD
 * **Ação Realizada:** Código publicado com sucesso para `https://github.com/marciojsilva1971/sge.git` sob a tag de commit `primeira versao rh`.
 
 ---
@@ -160,7 +160,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 32: Recompilação Executiva do PDF via ReportLab (Novo Arquivo Sem Trava de Leitura)
-* **Ação Realizada:**
-  1. Esclarecido que o visualizador de PDF no computador do usuário mantinha o arquivo antigo bloqueado para sobrescrita.
-  2. Gerado o novo arquivo **`Manual_Cadastro_Colaborador_SGE_FINAL.pdf`** compilado com o ReportLab 5.0, garantindo a abertura da versão recente sem cortes laterais e com layout responsivo.
-  3. Código e PDF final publicados no GitHub (`commit b61b778`).
+* **Ação Realizada:** Gerado `Manual_Cadastro_Colaborador_SGE_FINAL.pdf` com ReportLab Engine 5.0 sem cortes laterais.
+
+---
+
+## 📅 Sessão 33: Correção e Aprimoramento da Alteração e Redefinição de Senha de Usuários
+* **Ações Implementadas:**
+  1. **Ajuste na Validação de Caracteres Especiais:** Substituída a expressão regular estrita `[\W]` por `[^a-zA-Z0-9]` nos controllers `AdminController.php` e `ActivationController.php`. Isso permite o uso seguro de qualquer caractere especial, incluindo underline (`_`), hífen (`-`), arroba (`@`), tralha (`#`), cifrão (`$`), exclamação (`!`), entre outros.
+  2. **Recurso de Redefinição de Senha Administrativa:** Criada a rota `POST /admin/users/reset-password` e a ação `resetUserPassword()` no `AdminController.php`.
+  3. **Interface Visual e Modal em Gerenciamento de Usuários (`/admin/users`):** Adicionado o botão `🔑 Senha` em cada linha da tabela de usuários e o modal interativo `resetPasswordModal` para redefinição rápida com envio automático da nova senha via WhatsApp (Z-API).

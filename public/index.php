@@ -80,6 +80,7 @@ $router->get('/admin/users', 'AdminController@users');
 $router->post('/admin/users/invite', 'AdminController@invite');
 $router->post('/admin/users/delete', 'AdminController@delete');
 $router->post('/admin/users/activate-direct', 'AdminController@activateDirect');
+$router->post('/admin/users/reset-password', 'AdminController@resetUserPassword');
 $router->get('/admin/rbac', 'AdminController@rbac');
 $router->post('/admin/rbac', 'AdminController@updateRbac');
 $router->get('/admin/profile', 'AdminController@profile');

@@ -93,6 +93,9 @@
                                 <td><?= date('d/m/Y H:i', strtotime($u['created_at'])) ?></td>
                                 <td>
                                     <?php if ((int)$u['id'] !== (int)$user['id']): ?>
+                                        <button type="button" class="btn btn-secondary btn-sm btn-open-reset-pwd" data-id="<?= $u['id'] ?>" data-name="<?= htmlspecialchars($u['name']) ?>" style="padding: 4px 8px; font-size: 12px; margin-right: 5px;">
+                                            🔑 Senha
+                                        </button>
                                         <?php if ($u['status'] === 'PENDENTE'): ?>
                                             <form action="<?= $this->baseUrl('admin/users/activate-direct') ?>" method="POST" style="display:inline; margin-right: 5px;">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
@@ -218,6 +221,36 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para Redefinir Senha do Usuário -->
+<div id="resetPasswordModal" class="modal-overlay hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Redefinir Senha de Usuário</h3>
+            <button id="btnCloseResetPwdModal" class="btn-close-modal">&times;</button>
+        </div>
+        <form action="<?= $this->baseUrl('admin/users/reset-password') ?>" method="POST" class="modal-form">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" id="reset_user_id" name="user_id" value="">
+
+            <div class="form-group">
+                <label>Usuário Selected:</label>
+                <input type="text" id="reset_user_name" class="input-disabled" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">Nova Senha Forte</label>
+                <input type="password" id="new_password" name="new_password" required placeholder="Digite a nova senha" autocomplete="new-password">
+                <small class="form-help">Mínimo 8 caracteres, contendo maiúscula, minúscula, número e caractere especial (@, #, $, _, !).</small>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="btnCancelResetPwd" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Alterar Senha</button>
+            </div>
+        </form>
+    </div>
+</div>
 <?php endif; ?>
 
 <!-- JavaScript para controle de modais e cópia de links -->
@@ -241,12 +274,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnClose) btnClose.addEventListener('click', closeModal);
     if (btnCancel) btnCancel.addEventListener('click', closeModal);
 
+    // Controla modal de Redefinição de Senha
+    const resetPwdModal = document.getElementById('resetPasswordModal');
+    const btnCloseResetPwd = document.getElementById('btnCloseResetPwdModal');
+    const btnCancelResetPwd = document.getElementById('btnCancelResetPwd');
+    const resetUserIdInput = document.getElementById('reset_user_id');
+    const resetUserNameInput = document.getElementById('reset_user_name');
+
+    document.querySelectorAll('.btn-open-reset-pwd').forEach(btn => {
+        btn.addEventListener('click', () => {
+            resetUserIdInput.value = btn.dataset.id;
+            resetUserNameInput.value = btn.dataset.name;
+            resetPwdModal.classList.remove('hidden');
+        });
+    });
+
+    const closeResetPwdModal = () => {
+        if (resetPwdModal) resetPwdModal.classList.add('hidden');
+    };
+
+    if (btnCloseResetPwd) btnCloseResetPwd.addEventListener('click', closeResetPwdModal);
+    if (btnCancelResetPwd) btnCancelResetPwd.addEventListener('click', closeResetPwdModal);
+
     // Fecha ao clicar fora do modal card
     inviteModal.addEventListener('click', (e) => {
         if (e.target === inviteModal) {
             closeModal();
         }
     });
+
+    if (resetPwdModal) {
+        resetPwdModal.addEventListener('click', (e) => {
+            if (e.target === resetPwdModal) {
+                closeResetPwdModal();
+            }
+        });
+    }
 
     // Lógica para exclusão em dois passos (Two-Step Verification)
     const deleteButtons = document.querySelectorAll('.btn-delete-confirm');
