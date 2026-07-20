@@ -155,8 +155,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 31: Blindagem da Automação de Deploy (`.github/workflows/deploy.yml`)
+* **Ação Realizada:** Refatorado o script SSH do GitHub Actions para executar `git fetch origin main && git reset --hard origin/main`.
+
+---
+
+## 📅 Sessão 32: Compilação e Emissão do Manual de Cadastro em PDF
 * **Ação Realizada:**
-  1. Identificado que o comando `git pull` na VPS abortava quando existiam arquivos locais alterados ou com permissões modificadas no servidor de produção.
-  2. Refatorado o script SSH do GitHub Actions (`.github/workflows/deploy.yml`) para executar `git fetch origin main && git reset --hard origin/main`.
-  3. Com essa melhoria, qualquer deploy automático sobrescreverá a VPS de forma limpa, confiável e sem erros de conflito.
-  4. Código publicado no GitHub sob a tag `commit bc83a04`.
+  1. Desenvolvido o gerador executivo em Python (`scratch/generate_manual_pdf.py`).
+  2. Compilado o PDF oficial `Manual_Cadastro_Colaborador_SGE.pdf` contendo o POP completo de contratação, prazos, tabela de status e termo de aprovação RH/Jurídico.
+  3. PDF disponibilizado e commitado no repositório (`commit a88c6c1`).
