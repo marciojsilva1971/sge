@@ -195,6 +195,9 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 39: Botão e Recurso de Exclusão de Colaboradores Pendentes de Homologação
-* **Ações Implementadas:**
-  1. **Botão Visual `🗑️ Excluir Colaborador`:** Adicionado à coluna de Ações da tabela na tela `/admin/rh` para qualquer colaborador que ainda esteja em fase de cadastro ou conferência (com confirmação nativa `confirm()` conforme diretriz `AGENTS.md`).
-  2. **Endpoint e Lógica de Remoção (`RhController::excluir`):** Criado o método e a rota `POST /admin/rh/excluir`, que limpa os contratos associados, apaga arquivos temporários de RG/CNH/Contrato no servidor e exclui o registro no banco de dados com auditoria em `logs_auditoria`.
+* **Ação Realizada:** Adicionado botão `🗑️ Excluir Colaborador` e fluxo backend de remoção de contrato/arquivos e colaborador com auditoria.
+
+---
+
+## 📅 Sessão 40: Correção de Importação da Classe `AuditLogger` em `RhController.php`
+* **Ação Realizada:** Adicionada a instrução `use App\Services\AuditLogger;` no topo do `RhController.php`, resolvendo a exceção `Class AuditLogger not found`.

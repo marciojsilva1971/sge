@@ -6,9 +6,11 @@ use App\Core\Session;
 use App\Models\Colaborador;
 use App\Models\Contrato;
 use App\Models\Role;
+use App\Models\User;
 use App\Models\Expense;
 use App\Models\Supplier;
 use App\Services\WhatsAppService;
+use App\Services\AuditLogger;
 use Exception;
 
 /**
