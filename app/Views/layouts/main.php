@@ -27,7 +27,7 @@
                             <span class="nav-label">Dashboard</span>
                         </a>
                     </li>
-                    <?php if (!empty($user['role_permissions']['invite_user'])): ?>
+                    <?php if (($user['role_name'] ?? '') === 'ADMINISTRADOR' || !empty($user['role_permissions']['invite_user'])): ?>
                     <li>
                         <a href="<?= $this->baseUrl('admin/users') ?>" class="nav-item">
                             <span class="nav-icon">👥</span>
