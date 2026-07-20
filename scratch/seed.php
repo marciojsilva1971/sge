@@ -40,19 +40,29 @@ try {
     die("Erro de conexão MySQL: " . $e->getMessage() . "\n");
 }
 
-// 3. Executa o schema.sql
+// 3. Executa o schema.sql e schema_rh.sql
 $schemaPath = dirname(__DIR__) . '/schema.sql';
-if (!file_exists($schemaPath)) {
-    die("Erro: Arquivo schema.sql não encontrado em {$schemaPath}.\n");
+if (file_exists($schemaPath)) {
+    echo "Executando arquivo schema.sql...\n";
+    $sql = file_get_contents($schemaPath);
+    try {
+        $pdo->exec($sql);
+        echo "Tabelas principais criadas com sucesso (ou já existentes).\n";
+    } catch (PDOException $e) {
+        echo "Aviso ao executar schema.sql: " . $e->getMessage() . "\n";
+    }
 }
 
-echo "Executando arquivo schema.sql...\n";
-$sql = file_get_contents($schemaPath);
-try {
-    $pdo->exec($sql);
-    echo "Tabelas criadas com sucesso (ou já existentes).\n";
-} catch (PDOException $e) {
-    die("Erro ao executar schema.sql: " . $e->getMessage() . "\n");
+$schemaRhPath = dirname(__DIR__) . '/schema_rh.sql';
+if (file_exists($schemaRhPath)) {
+    echo "Executando arquivo schema_rh.sql...\n";
+    $sqlRh = file_get_contents($schemaRhPath);
+    try {
+        $pdo->exec($sqlRh);
+        echo "Tabelas de RH criadas com sucesso (ou já existentes).\n";
+    } catch (PDOException $e) {
+        echo "Aviso ao executar schema_rh.sql: " . $e->getMessage() . "\n";
+    }
 }
 
 // 4. Insere perfis iniciais (roles)
