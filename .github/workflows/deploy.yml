@@ -18,7 +18,8 @@ jobs:
           script: |
             git config --global --add safe.directory /var/www/sge
             cd /var/www/sge
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             chown -R www-data:www-data /var/www/sge
             chmod -R 755 /var/www/sge
             chmod -R 775 /var/www/sge/storage /var/www/sge/public/uploads
