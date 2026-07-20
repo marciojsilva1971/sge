@@ -70,7 +70,8 @@
 
         <div class="form-group">
             <label for="cep">CEP</label>
-            <input type="text" id="cep" name="cep" placeholder="00000-000">
+            <input type="text" id="cep" name="cep" placeholder="00000-000" onkeyup="mascaraCep(this)" onblur="buscarCep(this)" maxlength="9">
+            <small id="cep_msg" class="form-help" style="display:none; font-weight:bold;"></small>
         </div>
 
         <div class="form-group span-2">
@@ -145,5 +146,78 @@ function previewDocumento(input) {
     } else {
         wrapper.style.display = 'none';
     }
+}
+
+function mascaraCep(input) {
+    let v = input.value.replace(/\D/g, '');
+    if (v.length > 5) {
+        v = v.replace(/^(\d{5})(\d)/, '$1-$2');
+    }
+    input.value = v.substring(0, 9);
+
+    const clean = input.value.replace(/\D/g, '');
+    if (clean.length === 8) {
+        buscarCep(input);
+    }
+}
+
+function buscarCep(input) {
+    const cepClean = input.value.replace(/\D/g, '');
+    const msgBox = document.getElementById('cep_msg');
+
+    if (cepClean.length !== 8) return;
+
+    if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.color = '#38bdf8';
+        msgBox.textContent = '🔍 Buscando endereço nos Correios...';
+    }
+
+    fetch(`https://viacep.com.br/ws/${cepClean}/json/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.erro) {
+                if (msgBox) {
+                    msgBox.style.color = '#ef4444';
+                    msgBox.textContent = '⚠ CEP não encontrado nos Correios.';
+                }
+                return;
+            }
+
+            if (msgBox) {
+                msgBox.style.color = '#10b981';
+                msgBox.textContent = '✔ Endereço preenchido automaticamente!';
+                setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
+            }
+
+            const logradouroInput = document.getElementById('logradouro');
+            const cidadeInput = document.getElementById('cidade');
+            const bairroInput = document.getElementById('bairro');
+            const ufInput = document.getElementById('uf');
+            const numeroInput = document.getElementById('numero');
+
+            if (logradouroInput) logradouroInput.value = data.logradouro || '';
+            if (bairroInput) bairroInput.value = data.bairro || '';
+            if (ufInput) ufInput.value = data.uf || '';
+
+            if (cidadeInput) {
+                if (ufInput) {
+                    cidadeInput.value = data.localidade || '';
+                } else {
+                    cidadeInput.value = (data.localidade && data.uf) ? (data.localidade + ' / ' + data.uf) : (data.localidade || '');
+                }
+            }
+
+            if (numeroInput) {
+                numeroInput.focus();
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            if (msgBox) {
+                msgBox.style.color = '#f59e0b';
+                msgBox.textContent = '⚠ Indisponibilidade temporária na busca dos Correios.';
+            }
+        });
 }
 </script>

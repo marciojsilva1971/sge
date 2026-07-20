@@ -205,7 +205,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 41: Janela Interativa para Envio do Link de Auto-Cadastro via WhatsApp
+* **Ação Realizada:** Criado modal interativo de digitação do WhatsApp para envio do link de auto-cadastro via Z-API ou Web.
+
+---
+
+## 📅 Sessão 42: Auto-Preenchimento Inteligente de Endereço via CEP (ViaCEP / Correios)
 * **Ações Implementadas:**
-  1. **Modal `🔗 Enviar Convite de Auto-Cadastro` (`#conviteAutoCadastroModal`):** O botão do topo da tela do RH agora abre um modal interativo solicitando o WhatsApp do colaborador que irá receber o convite.
-  2. **Atualização Dinâmica e Disparo:** O modal ajusta em tempo real os links para disparo direto via Z-API (`⚡ Disparar via WhatsApp API`), envio no WhatsApp Web (`💬 Enviar pelo meu WhatsApp`), cópia rápida do link (`📋 Copiar`) ou abertura direta no navegador.
-  3. **Backend (`RhController::enviarConviteWhatsApp`):** Criada rota `POST /admin/rh/enviar-convite-whatsapp` para disparo automático com notificação de confirmação.
+  1. **Autocompletar Automático (`colaborador/cadastro.php` & `admin/rh/create.php`):** Implementada a consulta em tempo real à base de dados dos Correios (ViaCEP API) ao digitar os 8 dígitos do CEP ou ao sair do campo (`onblur`/`onkeyup`).
+  2. **UX & Preenchimento de Campos:** Preenchimento instantâneo dos campos Logradouro/Rua, Bairro, Cidade e UF, posicionando o cursor diretamente no campo Número para digitação contínua.
+  3. **Feedback Visual de Busca:** Exibição de indicador visual durante a consulta (`🔍 Buscando endereço nos Correios...` -> `✔ Endereço preenchido automaticamente!`).
