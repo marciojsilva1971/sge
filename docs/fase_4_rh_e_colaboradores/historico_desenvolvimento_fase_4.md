@@ -50,7 +50,7 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 10: Rota Segura de Visualização de Documentos (`GET /admin/rh/documento`)
-* **Ação Realizada:** Criado o endpoint de streaming seguro para fotos de identificação e contratos assinados.
+* **Ação Realizada:** Criado el endpoint de streaming seguro para fotos de identificação e contratos assinados.
 
 ---
 
@@ -159,8 +159,9 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ---
 
-## 📅 Sessão 32: Compilação e Emissão do Manual de Cadastro em PDF
+## 📅 Sessão 32: Recompilação Executiva do PDF via ReportLab (Sem Cortes Laterais)
 * **Ação Realizada:**
-  1. Desenvolvido o gerador executivo em Python (`scratch/generate_manual_pdf.py`).
-  2. Compilado o PDF oficial `Manual_Cadastro_Colaborador_SGE.pdf` contendo o POP completo de contratação, prazos, tabela de status e termo de aprovação RH/Jurídico.
-  3. PDF disponibilizado e commitado no repositório (`commit a88c6c1`).
+  1. Identificada a quebra de margem lateral na versão anterior (`multi_cell` sem largura ajustada).
+  2. Migrado o motor de geração de PDF para **ReportLab Engine 5.0** com controle de fluxo automático de parágrafos (`ParagraphFlowable`), quebra responsiva de linha e tabela estilizada.
+  3. Gerado o novo arquivo **`Manual_Cadastro_Colaborador_SGE_v2.pdf`** com layout visual corporativo impecável e 100% legível.
+  4. Arquivo comitado e enviado para o repositório (`commit d18a8d3`).
