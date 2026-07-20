@@ -16,6 +16,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            git config --global --add safe.directory /var/www/sge
             cd /var/www/sge
             git pull origin main
             chown -R www-data:www-data /var/www/sge
