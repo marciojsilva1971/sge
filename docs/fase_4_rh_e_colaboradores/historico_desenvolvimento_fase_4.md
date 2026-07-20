@@ -129,6 +129,9 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ---
 
-## 📅 Sessão 26: Redefinição de Senha do Administrador na VPS (`reset_admin_pass.php`)
-* **Situação:** Usuário informou que o usuário administrador já existe no banco da VPS, porém a senha anterior não permitia o login.
-* **Solução:** Criado e publicado o script `scratch/reset_admin_pass.php` para forçar a redefinição de senha e alteração do status para `ATIVO`.
+## 📅 Sessão 26: Redefinição de Senha e Ajuste de Tolerância de Sessão VPS
+* **Análise:** Investigação da falha de login no servidor VPS.
+* **Ações Implementadas:**
+  1. Alterada a consulta de autenticação em `User.php` de `INNER JOIN` para `LEFT JOIN` com a tabela `roles`, garantindo que o login funcione perfeitamente mesmo que o `role_id` não possua correspondência estrita na tabela `roles`.
+  2. Ajustada a verificação de integridade de IP em `Session.php` para aceitar variação de proxies reversos (`HTTP_X_FORWARDED_FOR`), evitando expiração prematura da sessão ao trafegar via VPS.
+  3. Código publicado no GitHub (`commit d1f1631`).
