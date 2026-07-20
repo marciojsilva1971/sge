@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /projeto-eleicao/
+
+    # 1. Se for um arquivo estático (CSS, JS, imagens) existente na pasta public, sirva diretamente
+    RewriteCond %{DOCUMENT_ROOT}/projeto-eleicao/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # 2. Se a requisição já for para a pasta public/, permita que o public/.htaccess processe
+    RewriteCond %{REQUEST_URI} ^/projeto-eleicao/public/ [NC]
+    RewriteRule ^ - [L]
+
+    # 3. Para todas as rotas dinâmicas, envie diretamente para o Front Controller public/index.php
+    RewriteRule ^(.*)$ public/index.php [L,QSA]
+</IfModule>
