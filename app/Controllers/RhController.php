@@ -36,10 +36,14 @@ class RhController extends Controller {
         $roles = $roleModel->all();
 
         $this->render('admin/rh/index', [
-            'user'          => $user,
-            'colaboradores' => $colaboradores,
-            'roles'         => $roles,
-            'filters'       => $filters
+            'user'           => $user,
+            'colaboradores'  => $colaboradores,
+            'roles'          => $roles,
+            'filters'        => $filters,
+            'avalSuccess'    => Session::getFlash('avalSuccess'),
+            'homologSuccess' => Session::getFlash('homologSuccess'),
+            'error'          => Session::getFlash('error'),
+            'success'        => Session::getFlash('success')
         ], 'main');
     }
 
@@ -145,21 +149,35 @@ class RhController extends Controller {
 
             $colaboradorModel->darAvalEEmitirContrato($colaboradorId, $contratoData);
 
-            // Disparo automático via Z-API API (WhatsApp)
+            // Disparo automático via Z-API API (WhatsApp) e geração de links de envio manual
             $colaborador = $colaboradorModel->find($colaboradorId);
             if ($colaborador && !empty($colaborador['celular_whatsapp'])) {
                 $linkContrato = $this->baseUrl('colaborador/contrato?token=' . $colaborador['token_cadastro']);
                 $linkPdf = $this->baseUrl('colaborador/contrato-pdf?token=' . $colaborador['token_cadastro']);
 
-                $msg = "Olá " . $colaborador['nome_completo'] . "! Seu cadastro foi aprovado e seu contrato de campanha foi emitido.\n\n";
+                $msg = "Olá " . $colaborador['nome_completo'] . "! Seu cadastro de colaborador de campanha foi aprovado e seu contrato foi emitido.\n\n";
+                if (!empty($contratoData['external_signature_url'])) {
+                    $msg .= "✍️ Link para Assinatura Digital Externa (Plataforma):\n" . $contratoData['external_signature_url'] . "\n\n";
+                }
                 $msg .= "📄 Para BAIXAR e IMPRIMIR o Contrato (PDF):\n" . $linkPdf . "\n\n";
                 $msg .= "🌐 Para enviar o documento assinado ou acompanhar o cadastro:\n" . $linkContrato . "\n\n";
-                $msg .= "Por favor, imprima, assine e envie a cópia digitalizada pelo link acima.";
+                $msg .= "Por favor, imprima/assine e envie a cópia pelo link acima.";
 
-                WhatsAppService::send($colaborador['celular_whatsapp'], $msg);
+                $zapiSent = WhatsAppService::send($colaborador['celular_whatsapp'], $msg);
+                $clickToChatUrl = WhatsAppService::generateClickToChat($colaborador['celular_whatsapp'], $msg);
+
+                Session::setFlash('avalSuccess', [
+                    'nome'           => $colaborador['nome_completo'],
+                    'celular'        => $colaborador['celular_whatsapp'],
+                    'msg'            => $msg,
+                    'link_pdf'       => $linkPdf,
+                    'link_contrato'  => $linkContrato,
+                    'zapi_sent'      => $zapiSent,
+                    'click_to_chat'  => $clickToChatUrl
+                ]);
             }
 
-            Session::setFlash('success', 'Aval concedido e contrato emitido! Notificação enviada via API do WhatsApp para o colaborador.');
+            Session::setFlash('success', 'Aval concedido e contrato emitido com sucesso! Links gerados.');
             $this->redirect('/admin/rh');
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao conceder aval e emitir contrato: ' . $e->getMessage());
@@ -188,21 +206,33 @@ class RhController extends Controller {
             $this->redirect('/admin/rh');
         }
 
+        // Busca dados do contrato para resgatar a external_signature_url se existir
+        $contratoModel = new Contrato();
+        $contrato = $contratoModel->getContratoPorColaborador($colaboradorId);
+
         $linkContrato = $this->baseUrl('colaborador/contrato?token=' . $colaborador['token_cadastro']);
         $linkPdf = $this->baseUrl('colaborador/contrato-pdf?token=' . $colaborador['token_cadastro']);
 
         $msg = "Olá " . $colaborador['nome_completo'] . "! Seu cadastro foi aprovado e seu contrato de campanha foi emitido.\n\n";
+        if (!empty($contrato['external_signature_url'])) {
+            $msg .= "✍️ Link para Assinatura Digital Externa (Plataforma):\n" . $contrato['external_signature_url'] . "\n\n";
+        }
         $msg .= "📄 Para BAIXAR e IMPRIMIR o Contrato (PDF):\n" . $linkPdf . "\n\n";
         $msg .= "🌐 Para enviar o documento assinado ou acompanhar o cadastro:\n" . $linkContrato . "\n\n";
-        $msg .= "Por favor, imprima, assine e envie a cópia digitalizada pelo link acima.";
+        $msg .= "Por favor, imprima/assine e envie a cópia pelo link acima.";
 
         $sucesso = WhatsAppService::send($colaborador['celular_whatsapp'], $msg);
+        $clickToChatUrl = WhatsAppService::generateClickToChat($colaborador['celular_whatsapp'], $msg);
 
-        if ($sucesso) {
-            Session::setFlash('success', 'Mensagem enviada com sucesso via API do WhatsApp (Z-API) para ' . $colaborador['celular_whatsapp'] . '!');
-        } else {
-            Session::setFlash('error', 'Falha no envio via Z-API. Verifique os logs e se o número ' . $colaborador['celular_whatsapp'] . ' é um WhatsApp válido.');
-        }
+        Session::setFlash('avalSuccess', [
+            'nome'           => $colaborador['nome_completo'],
+            'celular'        => $colaborador['celular_whatsapp'],
+            'msg'            => $msg,
+            'link_pdf'       => $linkPdf,
+            'link_contrato'  => $linkContrato,
+            'zapi_sent'      => $sucesso,
+            'click_to_chat'  => $clickToChatUrl
+        ]);
 
         $this->redirect('/admin/rh');
     }
@@ -239,16 +269,27 @@ class RhController extends Controller {
                 $loginUrl = $this->baseUrl('login');
                 $msg = "Olá " . $colaborador['nome_completo'] . "! Parabéns, seu contrato de campanha foi conferido e aprovado!\n\n";
                 $msg .= "Seu cadastro no Sistema de Gestão Eleitoral (SGE) foi homologado com sucesso.\n\n";
-                $msg .= "🔑 *DADOS DE ACESSO AO SISTEMA:*\n";
-                $msg .= "🌐 *Link de Acesso:* " . $loginUrl . "\n";
-                $msg .= "👤 *Usuário (E-mail):* " . $colaborador['email'] . "\n";
-                $msg .= "🔒 *Senha Provisória:* " . $tempPassword . "\n\n";
+                $msg .= "🔑 DADOS DE ACESSO AO SISTEMA:\n";
+                $msg .= "🌐 Link de Acesso: " . $loginUrl . "\n";
+                $msg .= "👤 Usuário (E-mail): " . $colaborador['email'] . "\n";
+                $msg .= "🔒 Senha Provisória: " . $tempPassword . "\n\n";
                 $msg .= "Recomendamos que você efetue seu primeiro acesso e altere sua senha no seu perfil.";
 
-                WhatsAppService::send($colaborador['celular_whatsapp'], $msg);
+                $zapiSent = WhatsAppService::send($colaborador['celular_whatsapp'], $msg);
+                $clickToChatUrl = WhatsAppService::generateClickToChat($colaborador['celular_whatsapp'], $msg);
+
+                Session::setFlash('homologSuccess', [
+                    'nome'          => $colaborador['nome_completo'],
+                    'celular'       => $colaborador['celular_whatsapp'],
+                    'email'         => $colaborador['email'],
+                    'temp_password' => $tempPassword,
+                    'msg'           => $msg,
+                    'zapi_sent'     => $zapiSent,
+                    'click_to_chat' => $clickToChatUrl
+                ]);
             }
 
-            Session::setFlash('success', 'Contrato conferido! Colaborador homologado com sucesso. Credenciais provisórias (Usuário: ' . $colaborador['email'] . ' | Senha: ' . $tempPassword . ') enviadas via WhatsApp.');
+            Session::setFlash('success', 'Contrato conferido! Colaborador homologado com sucesso.');
             $this->redirect('/admin/rh');
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao homologar e conceder permissões: ' . $e->getMessage());

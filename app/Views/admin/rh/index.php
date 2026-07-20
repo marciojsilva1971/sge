@@ -334,6 +334,83 @@
     </div>
 </div>
 
+<!-- Modal de Sucesso após Aval Cadastral & Emissão de Contrato -->
+<?php if (!empty($avalSuccess)): ?>
+<div id="avalSuccessModal" class="modal-overlay">
+    <div class="modal-card success-modal-card" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Contrato Emitido & Links Gerados!</h3>
+            <button onclick="document.getElementById('avalSuccessModal').classList.add('hidden')" class="btn-close-modal">&times;</button>
+        </div>
+        <div class="modal-body text-center" style="padding: 20px;">
+            <div class="success-icon" style="font-size:42px; color:#10b981; margin-bottom:10px;">✓</div>
+            <p style="font-size:16px;">O aval foi concedido para <strong><?= htmlspecialchars($avalSuccess['nome']) ?></strong> e o contrato foi emitido com sucesso.</p>
+            
+            <div style="background:#0f172a; padding:14px; border-radius:8px; margin: 15px 0; text-align:left; border:1px solid rgba(16,185,129,0.3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="color:#38bdf8;">Status do Envio Automático Z-API:</strong>
+                    <?php if (!empty($avalSuccess['zapi_sent'])): ?>
+                        <span class="badge badge-success">Enviado com sucesso via WhatsApp</span>
+                    <?php else: ?>
+                        <span class="badge badge-danger" style="background:#ef4444; color:#fff;">Envio Z-API Indisponível / Use o Botão Abaixo</span>
+                    <?php endif; ?>
+                </div>
+                <div style="font-size:12px; color:#cbd5e1; white-space:pre-wrap; background:#1e293b; padding:10px; border-radius:6px; font-family:monospace; margin-top:5px; max-height:140px; overflow-y:auto;"><?= htmlspecialchars($avalSuccess['msg']) ?></div>
+            </div>
+
+            <!-- Botão de Click-to-Chat do WhatsApp para o Administrador Enviar Manualmente -->
+            <a href="<?= htmlspecialchars($avalSuccess['click_to_chat']) ?>" target="_blank" class="btn btn-success btn-block" style="background:#25D366; color:#fff; font-weight:bold; font-size:15px; padding:12px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; width:100%; margin-top:10px;">
+                💬 Enviar Contrato pelo meu WhatsApp Pessoal (Web)
+            </a>
+            
+            <p class="modal-notice" style="font-size:12px; color:#94a3b8; margin-top:10px;">Caso o envio automático pelo Z-API não chegue imediatamente ao colaborador, clique no botão verde acima para disparar do seu WhatsApp.</p>
+        </div>
+        <div class="modal-footer">
+            <button onclick="document.getElementById('avalSuccessModal').classList.add('hidden')" class="btn btn-secondary">Fechar</button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Modal de Sucesso após Homologação & Atribuição de Perfil SGE -->
+<?php if (!empty($homologSuccess)): ?>
+<div id="homologSuccessModal" class="modal-overlay">
+    <div class="modal-card success-modal-card" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Colaborador Homologado & Credenciais Geradas!</h3>
+            <button onclick="document.getElementById('homologSuccessModal').classList.add('hidden')" class="btn-close-modal">&times;</button>
+        </div>
+        <div class="modal-body text-center" style="padding: 20px;">
+            <div class="success-icon" style="font-size:42px; color:#10b981; margin-bottom:10px;">🎉</div>
+            <p style="font-size:16px;">O colaborador <strong><?= htmlspecialchars($homologSuccess['nome']) ?></strong> foi homologado e ativado no sistema!</p>
+
+            <div style="background:#0f172a; padding:14px; border-radius:8px; margin: 15px 0; text-align:left; border:1px solid rgba(59, 130, 246, 0.4);">
+                <div style="color:#60a5fa; font-weight:bold; margin-bottom:8px;">🔑 Credenciais de Acesso Criadas:</div>
+                <div style="font-size:13px; color:#f8fafc; margin-bottom:4px;">👤 <strong>E-mail:</strong> <?= htmlspecialchars($homologSuccess['email']) ?></div>
+                <div style="font-size:13px; color:#f8fafc; margin-bottom:8px;">🔒 <strong>Senha Provisória:</strong> <code style="background:#334155; padding:2px 6px; border-radius:4px; font-weight:bold; color:#38bdf8;"><?= htmlspecialchars($homologSuccess['temp_password']) ?></code></div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <strong style="color:#94a3b8; font-size:12px;">Status do Disparo Z-API:</strong>
+                    <?php if (!empty($homologSuccess['zapi_sent'])): ?>
+                        <span class="badge badge-success">Enviado via WhatsApp</span>
+                    <?php else: ?>
+                        <span class="badge badge-danger" style="background:#ef4444; color:#fff;">Usar Envio Manual</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Botão Click-to-Chat -->
+            <a href="<?= htmlspecialchars($homologSuccess['click_to_chat']) ?>" target="_blank" class="btn btn-success btn-block" style="background:#25D366; color:#fff; font-weight:bold; font-size:15px; padding:12px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; width:100%; margin-top:10px;">
+                💬 Enviar Dados de Acesso pelo meu WhatsApp Pessoal
+            </a>
+        </div>
+        <div class="modal-footer">
+            <button onclick="document.getElementById('homologSuccessModal').classList.add('hidden')" class="btn btn-secondary">Fechar</button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 function mascaraMoeda(input) {
     let v = input.value.replace(/\D/g, '');

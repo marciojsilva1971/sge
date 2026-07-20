@@ -170,6 +170,14 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 34: Exibição Garantida de Mensagens de Confirmação no Botão "Salvar Alterações"
+* **Ação Realizada:** Adicionados blocos de alerta proeminentes com ícones de status (`✅ Perfil atualizado com sucesso!` e `⚠️ Falha/Erro`) no topo de `admin/profile.php`, `admin/users.php` e `admin/rbac.php`.
+
+---
+
+## 📅 Sessão 35: Geração Completa de Mensagens de WhatsApp na Primeira Conferência de Documentos do Colaborador
 * **Ações Implementadas:**
-  1. Identificada a causa da ausência de mensagens (o método `Session::getFlash()` consumia a variável na Controller antes da renderização do layout global).
-  2. Adicionados blocos de alerta proeminentes com ícones de status (`✅ Perfil atualizado com sucesso!` e `⚠️ Falha/Erro`) diretamente no topo das views `admin/profile.php`, `admin/users.php` e `admin/rbac.php`.
+  1. **Inclusão Dinâmica de Links na Mensagem de WhatsApp:** Na primeira conferência de documentos (`RhController::darAval`), a mensagem gerada passou a incorporar obrigatoriamente:
+     * O link de download/impressão do Contrato PDF (`/colaborador/contrato-pdf?token=...`).
+     * O link de acesso ao Portal do Colaborador para envio de contrato assinado (`/colaborador/contrato?token=...`).
+     * O link para assinatura digital em plataforma de terceiros (`external_signature_url` - ZapSign/Clicksign/Gov.br) caso tenha sido informado.
+  2. **Disparo Híbrido Automático e Manual (Modal Click-to-Chat):** O sistema dispara a mensagem automaticamente via API da Z-API e, simultaneamente, abre o modal de confirmação visual `#avalSuccessModal` na tela `/admin/rh`, contendo o botão verde **`💬 Enviar Contrato pelo meu WhatsApp Pessoal`** (Click-to-Chat `https://wa.me/...`). Isso garante que a mensagem seja entregue imediatamente, mesmo se a API Z-API estiver off-line ou em testes locais.
