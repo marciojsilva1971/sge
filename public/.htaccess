@@ -1,6 +1,5 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /projeto-eleicao/public/
     DirectoryIndex index.php
 
     # Se o arquivo ou diretório solicitado fisicamente existir, acesse diretamente
