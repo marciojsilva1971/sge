@@ -45,19 +45,7 @@
                     <li>
                         <a href="<?= $this->baseUrl('admin/financeiro') ?>" class="nav-item">
                             <span class="nav-icon">💰</span>
-                            <span class="nav-label">Módulo Financeiro</span>
-                        </a>
-                    </li>
-                    <li style="padding-left: 14px; border-left: 2px solid rgba(20, 184, 166, 0.3); margin-left: 10px;">
-                        <a href="<?= $this->baseUrl('admin/financeiro/fila') ?>" class="nav-item" style="font-size: 13px; padding: 6px 10px;">
-                            <span class="nav-icon" style="font-size: 14px;">⚖️</span>
-                            <span class="nav-label">Fila de Aprovações</span>
-                        </a>
-                    </li>
-                    <li style="padding-left: 14px; border-left: 2px solid rgba(20, 184, 166, 0.3); margin-left: 10px;">
-                        <a href="<?= $this->baseUrl('admin/financeiro/tipos-despesas') ?>" class="nav-item" style="font-size: 13px; padding: 6px 10px;">
-                            <span class="nav-icon" style="font-size: 14px;">🏷️</span>
-                            <span class="nav-label">Tipos de Despesas</span>
+                            <span class="nav-label">Financeiro</span>
                         </a>
                     </li>
                     <?php endif; ?>
