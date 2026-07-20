@@ -140,6 +140,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 28: Exibição Redundante do Menu de RH e Atualização de Sessão em Produção
-* **Diagnóstico:** A sessão armazenada no navegador em produção mantinha a estrutura do usuário carregada antes das atualizações do banco/perfil.
-* **Ação Realizada:** Adicionadas travas redundantes em `app/Views/layouts/main.php` (`role_name === ADMINISTRADOR`, `role_id === 1`, `email === admin@sge.com` ou permissão `invite_user`) garantindo a visibilidade imediata do menu `📇 Gestão de RH`.
-* **Código Publicado:** `commit 16c9b4e`.
+* **Ação Realizada:** Adicionadas travas redundantes em `app/Views/layouts/main.php` garantindo a visibilidade do menu de RH.
+
+---
+
+## 📅 Sessão 29: Unificação do Módulo Financeiro e Sub-Navegação por Abas
+* **Ação Realizada:**
+  1. Reorganizado a barra lateral (`app/Views/layouts/main.php`) para agrupar **Fila de Aprovações** e **Tipos de Despesas** como sub-itens indentados dentro de **Módulo Financeiro**.
+  2. Criada a barra de abas horizontais unificada (`app/Views/admin/financeiro/_nav_tabs.php`), presente em todas as telas financeiras (Visão Geral, Fila de Aprovações, Tipos de Despesas, Lançamento de Despesas e Fornecedores).
+  3. Código publicado no GitHub sob a tag `commit 88b377b`.
