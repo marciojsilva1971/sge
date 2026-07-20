@@ -113,6 +113,7 @@ $router->get('/admin/rh/contrato-pdf', 'RhController@contratoPdf');
 $router->get('/admin/rh/consultar-tse', 'RhController@consultarTse');
 $router->post('/admin/rh/atualizar-telefone', 'RhController@atualizarTelefone');
 $router->post('/admin/rh/excluir', 'RhController@excluir');
+$router->post('/admin/rh/enviar-convite-whatsapp', 'RhController@enviarConviteWhatsApp');
 
 // Rotas Públicas do Colaborador (Auto-cadastro e Contrato)
 $router->get('/colaborador/cadastro', 'RhController@publicCadastro');

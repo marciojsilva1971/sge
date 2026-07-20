@@ -200,4 +200,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 40: Correção de Importação da Classe `AuditLogger` em `RhController.php`
-* **Ação Realizada:** Adicionada a instrução `use App\Services\AuditLogger;` no topo do `RhController.php`, resolvendo a exceção `Class AuditLogger not found`.
+* **Ação Realizada:** Adicionada a instrução `use App\Services\AuditLogger;` no `RhController.php`.
+
+---
+
+## 📅 Sessão 41: Janela Interativa para Envio do Link de Auto-Cadastro via WhatsApp
+* **Ações Implementadas:**
+  1. **Modal `🔗 Enviar Convite de Auto-Cadastro` (`#conviteAutoCadastroModal`):** O botão do topo da tela do RH agora abre um modal interativo solicitando o WhatsApp do colaborador que irá receber o convite.
+  2. **Atualização Dinâmica e Disparo:** O modal ajusta em tempo real os links para disparo direto via Z-API (`⚡ Disparar via WhatsApp API`), envio no WhatsApp Web (`💬 Enviar pelo meu WhatsApp`), cópia rápida do link (`📋 Copiar`) ou abertura direta no navegador.
+  3. **Backend (`RhController::enviarConviteWhatsApp`):** Criada rota `POST /admin/rh/enviar-convite-whatsapp` para disparo automático com notificação de confirmação.

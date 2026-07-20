@@ -3,9 +3,9 @@
     <div class="page-header">
         <h2>Gestão de Colaboradores e Equipe de Campanha (RH)</h2>
         <div class="page-actions">
-            <a href="<?= $this->baseUrl('colaborador/cadastro') ?>" target="_blank" class="btn btn-teal">
+            <button type="button" onclick="openConviteAutoCadastroModal()" class="btn btn-teal" style="font-weight:bold; cursor:pointer;">
                 🔗 Link de Auto-Cadastro Público
-            </a>
+            </button>
             <a href="<?= $this->baseUrl('admin/rh/novo') ?>" class="btn btn-primary">
                 + Novo Colaborador (Admin)
             </a>
@@ -456,6 +456,50 @@
     </div>
 </div>
 
+<!-- Modal 4: Enviar Convite de Auto-Cadastro Público por WhatsApp -->
+<div id="conviteAutoCadastroModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>🔗 Enviar Convite de Auto-Cadastro</h3>
+            <button onclick="closeConviteAutoCadastroModal()" class="btn-close-modal">&times;</button>
+        </div>
+        <form action="<?= $this->baseUrl('admin/rh/enviar-convite-whatsapp') ?>" method="POST" class="modal-form" id="formConviteAutoCadastro">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
+            <div class="form-group mb-3">
+                <label for="celular_convite">Telefone / WhatsApp do Colaborador *</label>
+                <input type="text" id="celular_convite" name="celular_convite" required placeholder="(11) 99999-9999" oninput="atualizarLinksConvite()">
+                <small class="form-help">Informe o número do WhatsApp para o qual o link de auto-cadastro será enviado.</small>
+            </div>
+
+            <div style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #334155;">
+                <label style="font-size:12px; color:#94a3b8; font-weight:bold; display:block; margin-bottom:4px;">🌐 Link Público de Auto-Cadastro:</label>
+                <div style="display:flex; gap:6px;">
+                    <input type="text" id="link_publico_input" readonly value="<?= $this->baseUrl('colaborador/cadastro') ?>" style="font-size:12px; background:#1e293b; color:#38bdf8; border:1px solid #475569; border-radius:4px; padding:6px 10px; width:100%; font-weight:bold;">
+                    <button type="button" onclick="copiarLinkCadastro()" class="btn btn-secondary btn-sm" style="white-space:nowrap; font-size:11px;">📋 Copiar</button>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display:flex; flex-direction:column; gap:8px;">
+                <button type="submit" class="btn btn-teal btn-block" style="font-weight:bold; font-size:14px; padding:10px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    ⚡ Disparar via WhatsApp API (Automático)
+                </button>
+
+                <a id="btn_web_convite" href="https://api.whatsapp.com/send?text=<?= rawurlencode("Olá! Acesse o link para se cadastrar como colaborador de campanha: " . $this->baseUrl('colaborador/cadastro')) ?>" target="_blank" class="btn btn-block" style="background:#25D366; color:#fff; font-weight:bold; font-size:13px; padding:9px; border-radius:6px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    💬 Enviar pelo meu WhatsApp (Web)
+                </a>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:5px;">
+                    <a href="<?= $this->baseUrl('colaborador/cadastro') ?>" target="_blank" style="font-size:12px; color:#38bdf8; text-decoration:underline;">
+                        🔗 Abrir Formulário no Navegador
+                    </a>
+                    <button type="button" onclick="closeConviteAutoCadastroModal()" class="btn btn-secondary btn-sm">Fechar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function mascaraMoeda(input) {
     let v = input.value.replace(/\D/g, '');
@@ -601,5 +645,42 @@ function openEditarTelefoneModal(id, nome, celular) {
 
 function closeEditarTelefoneModal() {
     document.getElementById('editarTelefoneModal').classList.add('hidden');
+}
+
+function openConviteAutoCadastroModal() {
+    document.getElementById('conviteAutoCadastroModal').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('celular_convite').focus();
+    }, 100);
+}
+
+function closeConviteAutoCadastroModal() {
+    document.getElementById('conviteAutoCadastroModal').classList.add('hidden');
+}
+
+function atualizarLinksConvite() {
+    const rawTel = document.getElementById('celular_convite').value.replace(/\D/g, '');
+    let formattedTel = rawTel;
+    if (formattedTel.length <= 11 && formattedTel.length > 0) {
+        formattedTel = '55' + formattedTel;
+    }
+    const linkCadastro = "<?= $this->baseUrl('colaborador/cadastro') ?>";
+    const msg = encodeURIComponent("Olá! Você foi convidado(a) para se cadastrar como colaborador(a) na Equipe de Campanha Eleitoral.\n\nPor favor, acesse o link abaixo para preencher seus dados e anexar a foto do seu documento (RG/CNH):\n\n🌐 Link de Auto-Cadastro:\n" + linkCadastro);
+    const webBtn = document.getElementById('btn_web_convite');
+    if (webBtn) {
+        webBtn.href = "https://api.whatsapp.com/send?phone=" + formattedTel + "&text=" + msg;
+    }
+}
+
+function copiarLinkCadastro() {
+    const input = document.getElementById('link_publico_input');
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        alert('✅ Link de auto-cadastro copiado para a área de transferência!');
+    }).catch(() => {
+        document.execCommand('copy');
+        alert('✅ Link copiado!');
+    });
 }
 </script>

@@ -442,6 +442,42 @@ class RhController extends Controller {
     }
 
     /**
+     * Envia convite de auto-cadastro público via WhatsApp Z-API.
+     */
+    public function enviarConviteWhatsApp(): void {
+        $this->requirePermission('invite_user');
+        $this->validatePostCsrf();
+
+        $celular = trim($_POST['celular_convite'] ?? '');
+        if (empty($celular)) {
+            Session::setFlash('error', 'Informe o número de WhatsApp do colaborador.');
+            $this->redirect('/admin/rh');
+        }
+
+        $linkCadastro = $this->baseUrl('colaborador/cadastro');
+        $msg = "Olá! Você foi convidado(a) para se cadastrar como colaborador(a) na Equipe de Campanha Eleitoral.\n\n";
+        $msg .= "Por favor, acesse o link abaixo para preencher seus dados cadastrais e anexar a foto do seu documento de identificação (RG ou CNH):\n\n";
+        $msg .= "🌐 Link de Auto-Cadastro:\n" . $linkCadastro . "\n\n";
+        $msg .= "Aguardamos o envio dos seus dados para emissão do seu contrato!";
+
+        $zapiSent = WhatsAppService::send($celular, $msg);
+        $clickToChatUrl = WhatsAppService::generateClickToChat($celular, $msg);
+
+        if ($zapiSent) {
+            Session::setFlash('success', 'Convite de auto-cadastro enviado com sucesso via WhatsApp para ' . htmlspecialchars($celular) . '!');
+        } else {
+            Session::setFlash('conviteSuccess', [
+                'celular'       => $celular,
+                'msg'           => $msg,
+                'click_to_chat' => $clickToChatUrl
+            ]);
+            Session::setFlash('error', 'O disparo automático via API não foi concluído. Utilize o botão verde para enviar pelo seu WhatsApp pessoal.');
+        }
+
+        $this->redirect('/admin/rh');
+    }
+
+    /**
      * Página Pública de Auto-Cadastro do Colaborador (Link Externo via WhatsApp/Email).
      */
     public function publicCadastro(): void {
