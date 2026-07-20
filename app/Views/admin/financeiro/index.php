@@ -13,6 +13,8 @@
     </div>
 </div>
 
+<?php include __DIR__ . '/_nav_tabs.php'; ?>
+
 <!-- KPIs Grid -->
 <div class="kpis-grid">
     <div class="kpi-card">

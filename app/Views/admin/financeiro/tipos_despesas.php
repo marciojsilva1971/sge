@@ -10,6 +10,8 @@
     </div>
 </div>
 
+<?php include __DIR__ . '/_nav_tabs.php'; ?>
+
 <div class="dashboard-sections">
     
     <!-- Formulário Cadastro/Edição -->

@@ -10,6 +10,8 @@
     </div>
 </div>
 
+<?php include __DIR__ . '/_nav_tabs.php'; ?>
+
 <div class="dashboard-sections">
     
     <!-- Lançamento de Despesa -->

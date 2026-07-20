@@ -10,6 +10,8 @@
     </div>
 </div>
 
+<?php include __DIR__ . '/_nav_tabs.php'; ?>
+
 <!-- Secção 1: Despesas Gerais Pendentes -->
 <div class="panel-card">
     <div class="card-header">
