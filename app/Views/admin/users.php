@@ -236,21 +236,22 @@
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Modal para Redefinir Senha do Usuário -->
 <div id="resetPasswordModal" class="modal-overlay hidden">
     <div class="modal-card">
         <div class="modal-header">
             <h3>Redefinir Senha de Usuário</h3>
-            <button id="btnCloseResetPwdModal" class="btn-close-modal">&times;</button>
+            <button id="btnCloseResetPwdModal" onclick="closeResetPwdModal()" class="btn-close-modal">&times;</button>
         </div>
         <form action="<?= $this->baseUrl('admin/users/reset-password') ?>" method="POST" class="modal-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" id="reset_user_id" name="user_id" value="">
 
             <div class="form-group">
-                <label>Usuário Selected:</label>
-                <input type="text" id="reset_user_name" class="input-disabled" readonly>
+                <label>Usuário Selecionado:</label>
+                <input type="text" id="reset_user_name" class="input-disabled" readonly style="font-weight:bold;">
             </div>
 
             <div class="form-group">
@@ -260,13 +261,12 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" id="btnCancelResetPwd" class="btn btn-secondary">Cancelar</button>
+                <button type="button" id="btnCancelResetPwd" onclick="closeResetPwdModal()" class="btn btn-secondary">Cancelar</button>
                 <button type="submit" class="btn btn-primary">Alterar Senha</button>
             </div>
         </form>
     </div>
 </div>
-<?php endif; ?>
 
 <!-- JavaScript para controle de modais e cópia de links -->
 <script>
@@ -304,12 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const closeResetPwdModal = () => {
-        if (resetPwdModal) resetPwdModal.classList.add('hidden');
+    window.closeResetPwdModal = function() {
+        const modal = document.getElementById('resetPasswordModal');
+        if (modal) modal.classList.add('hidden');
     };
 
-    if (btnCloseResetPwd) btnCloseResetPwd.addEventListener('click', closeResetPwdModal);
-    if (btnCancelResetPwd) btnCancelResetPwd.addEventListener('click', closeResetPwdModal);
+    if (btnCloseResetPwd) btnCloseResetPwd.addEventListener('click', window.closeResetPwdModal);
+    if (btnCancelResetPwd) btnCancelResetPwd.addEventListener('click', window.closeResetPwdModal);
 
     // Fecha ao clicar fora do modal card
     inviteModal.addEventListener('click', (e) => {

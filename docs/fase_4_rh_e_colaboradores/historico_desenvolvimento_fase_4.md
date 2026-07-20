@@ -215,6 +215,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 43: Padronização Global do Fuso Horário para América/São Paulo (UTC-3)
+* **Ação Realizada:** Configurado `date_default_timezone_set('America/Sao_Paulo')` no PHP e `time_zone = '-03:00'` no PDO MySQL.
+
+---
+
+## 📅 Sessão 44: Correção do Botão `🔑 Senha` na Gestão de Usuários (`/admin/users`)
 * **Ações Implementadas:**
-  1. **PHP Timezone (`public/index.php`):** Configurado `date_default_timezone_set('America/Sao_Paulo');` no Front Controller para garantir que todas as funções PHP de data (`date()`, `DateTime()`, etc.) sigam o horário oficial de Brasília/São Paulo.
-  2. **PDO / MySQL Timezone (`app/Core/Database.php`):** Adicionado o comando `SET time_zone = '-03:00'` na inicialização da conexão PDO com o MySQL, garantindo que os timestamps automáticos (`created_at`, `updated_at`) e consultas gravadas no banco de dados reflitam com precisão a hora de São Paulo.
+  1. **Posicionamento do Modal (`#resetPasswordModal`):** O modal de redefinição de senha estava erroneamente aninhado dentro da trava condicional `<?php if (!empty($inviteSuccess)): ?>`, impedindo que o elemento HTML existisse no DOM quando a página era carregada sem um convite ativo.
+  2. **Ajuste na View (`app/Views/admin/users.php`):** O fechamento `<?php endif; ?>` foi movido para antes do modal, tornando o `#resetPasswordModal` permanentemente disponível no DOM.
+  3. **Acesso Global à Função JS:** A função `window.closeResetPwdModal` foi exposta no escopo global para garantir que o fechamento e cancelamento do modal funcionem perfeitamente via listeners ou eventos inline.
