@@ -27,7 +27,7 @@
                             <span class="nav-label">Dashboard</span>
                         </a>
                     </li>
-                    <?php if (($user['role_name'] ?? '') === 'ADMINISTRADOR' || !empty($user['role_permissions']['invite_user'])): ?>
+                    <?php if (($user['role_name'] ?? '') === 'ADMINISTRADOR' || !empty($user['role_permissions']['invite_user']) || ($user['role_id'] ?? 0) == 1 || ($user['email'] ?? '') === 'admin@sge.com'): ?>
                     <li>
                         <a href="<?= $this->baseUrl('admin/users') ?>" class="nav-item">
                             <span class="nav-icon">👥</span>
@@ -41,7 +41,7 @@
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if ($user['role_name'] === 'ADMINISTRADOR' || $user['role_name'] === 'FINANCEIRO'): ?>
+                    <?php if (($user['role_name'] ?? '') === 'ADMINISTRADOR' || ($user['role_name'] ?? '') === 'FINANCEIRO' || ($user['role_id'] ?? 0) == 1 || ($user['email'] ?? '') === 'admin@sge.com'): ?>
                     <li>
                         <a href="<?= $this->baseUrl('admin/financeiro') ?>" class="nav-item">
                             <span class="nav-icon">💰</span>
