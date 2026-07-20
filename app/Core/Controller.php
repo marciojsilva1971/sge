@@ -11,7 +11,7 @@ abstract class Controller {
      * Retorna a URL base do aplicativo.
      */
     protected function baseUrl(string $path = ''): string {
-        $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost/projeto-eleicao/';
+        $baseUrl = $_ENV['APP_URL'] ?? 'http://localhost/sge/public/';
         return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
     }
 
