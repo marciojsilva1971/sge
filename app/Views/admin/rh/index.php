@@ -78,9 +78,14 @@
                                     <div><?= htmlspecialchars($c['cpf']) ?></div>
                                     <small class="text-secondary">RG: <?= htmlspecialchars($c['rg']) ?> <?= htmlspecialchars($c['rg_orgao_emissor']) ?></small>
                                      <?php if (!empty($c['documento_foto_path'])): ?>
-                                         <div><a href="<?= $this->baseUrl('admin/rh/documento?id=' . $c['id'] . '&tipo=doc') ?>" target="_blank" style="font-size:11px; color:#0d9488; font-weight:bold;">🪪 Ver Doc. (RG/CNH/CIN)</a></div>
+                                         <div style="margin-top:4px;">
+                                             <span class="badge" style="background:#10b981; color:#fff; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:4px;">✔ RG/CNH Anexado</span>
+                                         </div>
+                                         <div style="margin-top:2px;">
+                                             <a href="<?= $this->baseUrl('admin/rh/documento?id=' . $c['id'] . '&tipo=doc') ?>" target="_blank" style="font-size:11px; color:#0d9488; font-weight:bold; text-decoration:underline;">🪪 Ver Documento (Foto/PDF)</a>
+                                         </div>
                                      <?php else: ?>
-                                        <div><span class="text-danger" style="font-size:11px;">⚠ Sem Doc. Anexo</span></div>
+                                        <div style="margin-top:4px;"><span class="badge badge-danger" style="font-size:10px;">⚠ Sem Doc. Anexo</span></div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -99,11 +104,30 @@
                                         <small class="text-secondary" style="display:block; margin-bottom:4px;">
                                             <?= $c['tipo_assinatura'] === 'TERCEIROS_API' ? '🌐 Terceiros (API)' : '📄 Upload Manual' ?>
                                         </small>
-                                        <div>
-                                            <a href="<?= $this->baseUrl('admin/rh/contrato-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:3px 7px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
-                                                📄 Visualizar Contrato (PDF)
-                                            </a>
-                                        </div>
+                                        
+                                        <?php if (!empty($c['pdf_assinado_path'])): ?>
+                                            <div style="margin-top:4px; margin-bottom:4px;">
+                                                <span class="badge" style="background:#10b981; color:#fff; font-size:10px; font-weight:bold; padding:3px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">
+                                                    ✅ Contrato Assinado Enviado
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <a href="<?= $this->baseUrl('admin/rh/documento?id=' . $c['id'] . '&tipo=contrato') ?>" target="_blank" class="btn btn-sm" style="background:#059669; color:#fff; font-size:11px; font-weight:bold; padding:3px 7px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                                    📥 Ver PDF Assinado (Enviado)
+                                                </a>
+                                            </div>
+                                        <?php else: ?>
+                                            <div style="margin-top:4px; margin-bottom:4px;">
+                                                <span class="badge badge-warning" style="font-size:10px; background:#f59e0b; color:#000; font-weight:bold; padding:2px 6px;">
+                                                    ⏳ Aguardando Envio pelo Colaborador
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <a href="<?= $this->baseUrl('admin/rh/contrato-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:3px 7px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                                    📄 Ver Modelo Emitido (PDF)
+                                                </a>
+                                            </div>
+                                        <?php endif; ?>
                                     <?php else: ?>
                                         <span class="text-secondary" style="font-style:italic;">Aguardando Emissão</span>
                                     <?php endif; ?>
@@ -355,16 +379,19 @@ function openConferirContratoModal(colaborador) {
 
     // 1. Cópia do contrato assinado enviado pelo colaborador (Upload)
     if (colaborador.pdf_assinado_path) {
-        html += `<div style="margin-bottom:8px;">
-            <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=contrato" target="_blank" class="btn btn-success btn-sm" style="font-weight:bold; width:100%; display:inline-block; text-align:center; padding:8px 12px;">
+        html += `<div style="font-size:12px; color:#10b981; font-weight:bold; margin-bottom:4px;">✔ Contrato Assinado: ENVIADO PELO COLABORADOR</div>`;
+        html += `<div style="margin-bottom:10px;">
+            <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=contrato" target="_blank" class="btn btn-success btn-sm" style="font-weight:bold; width:100%; display:inline-block; text-align:center; padding:8px 12px; background:#059669; color:#fff;">
                 📄 Visualizar Cópia do Contrato Assinado Enviado (Upload)
             </a>
         </div>`;
+    } else {
+        html += `<div style="font-size:12px; color:#f59e0b; font-weight:bold; margin-bottom:6px;">⏳ Contrato Assinado: PENDENTE DE ENVIO</div>`;
     }
 
     // 2. Link de assinatura em plataforma de terceiros (ZapSign / Clicksign)
     if (colaborador.external_signature_url) {
-        html += `<div style="margin-bottom:8px;">
+        html += `<div style="margin-bottom:10px;">
             <a href="${colaborador.external_signature_url}" target="_blank" class="btn btn-teal btn-sm" style="font-weight:bold; width:100%; display:inline-block; text-align:center; padding:8px 12px;">
                 🌐 Visualizar Assinatura na Plataforma Externa (ZapSign / Clicksign)
             </a>
@@ -373,7 +400,7 @@ function openConferirContratoModal(colaborador) {
 
     // 3. Modelo oficial de contrato emitido em PDF pelo SGE
     if (colaborador.titulo_contrato) {
-        html += `<div style="margin-bottom:8px;">
+        html += `<div style="margin-bottom:10px;">
             <a href="<?= $this->baseUrl('admin/rh/contrato-pdf?id=') ?>${colaborador.id}" target="_blank" class="btn btn-primary btn-sm" style="font-weight:bold; background:#0284c7; width:100%; display:inline-block; text-align:center; padding:8px 12px;">
                 📄 Visualizar Modelo Oficial do Contrato Emitido (PDF)
             </a>
@@ -382,11 +409,14 @@ function openConferirContratoModal(colaborador) {
 
     // 4. Foto do Documento de Identificação (RG / CNH / CIN)
     if (colaborador.documento_foto_path) {
-        html += `<div style="margin-bottom:4px;">
+        html += `<div style="margin-top:10px; margin-bottom:4px;">
+            <div style="font-size:12px; color:#10b981; font-weight:bold; margin-bottom:4px;">✔ Foto do Documento de Identificação: ENVIADA</div>
             <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=doc" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px; width:100%; display:inline-block; text-align:center; padding:6px 10px;">
                 🪪 Visualizar Foto do Documento de Identificação (RG/CNH)
             </a>
         </div>`;
+    } else {
+        html += `<div style="font-size:12px; color:#ef4444; font-weight:bold; margin-top:10px;">⚠ Foto do Documento de Identificação: NÃO ANEXADA</div>`;
     }
 
     if (!html) {
