@@ -139,7 +139,7 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ---
 
-## 📅 Sessão 28: Exibição Explícita da Opção "Gestão de RH" no Sidebar Lateral (`main.php`)
-* **Situação:** O usuário enviou imagem do menu lateral onde o item "Gestão de RH" não estava visível.
-* **Solução:** Atualizada a condição em `app/Views/layouts/main.php` para garantir que o menu `📇 Gestão de RH` seja visível incondicionalmente para perfil `ADMINISTRADOR` ou usuários com a permissão `invite_user`.
-* **Código Publicado:** `commit 7f9eeb0`.
+## 📅 Sessão 28: Exibição Redundante do Menu de RH e Atualização de Sessão em Produção
+* **Diagnóstico:** A sessão armazenada no navegador em produção mantinha a estrutura do usuário carregada antes das atualizações do banco/perfil.
+* **Ação Realizada:** Adicionadas travas redundantes em `app/Views/layouts/main.php` (`role_name === ADMINISTRADOR`, `role_id === 1`, `email === admin@sge.com` ou permissão `invite_user`) garantindo a visibilidade imediata do menu `📇 Gestão de RH`.
+* **Código Publicado:** `commit 16c9b4e`.
