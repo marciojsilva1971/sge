@@ -15,18 +15,17 @@ Por que executar: Garante que o servidor esteja com todas as correções de vuln
 Agora vamos instalar todos os programas que compõem o servidor web, banco de dados e o interpretador PHP.
 
 Comando 2.1:
-```bash
-sudo apt install apache2 mysql-server php php-curl php-mysql php-mbstring php-xml php-gd php-zip unzip git -y
-```
+bash
+sudo apt install apache2 mysql-server php8.2 php8.2-curl php8.2-pdo php8.2-mysql php8.2-mbstring php8.2-xml php8.2-gd php8.2-zip unzip git -y
 O que faz: Instala em um único lote:
-- `apache2`: Servidor HTTP que recebe os acessos dos usuários.
-- `mysql-server`: Banco de dados relacional para guardar dados do SGE.
-- `php`: Interpretador oficial da linguagem PHP.
-- `php-mysql`: Extensão PDO/MySQL para conexão com o banco de dados.
-- `php-curl`: Módulo para fazer requisições HTTP externas (API Z-API do WhatsApp).
-- `php-gd`: Módulo de processamento de imagens (fotos de perfil e militância).
-- `php-mbstring` e `php-xml`: Processamento de texto e dados em UTF-8.
-- `git`: Ferramenta de controle de versão para receber o deploy do projeto.
+apache2: Servidor HTTP que recebe os acessos dos usuários.
+mysql-server: Banco de dados relacional para guardar dados do SGE.
+php8.2: Interpretador da linguagem PHP.
+php8.2-pdo e php8.2-mysql: Extensões de conexão segura com o MySQL via PDO.
+php8.2-curl: Módulo para fazer requisições HTTP externas (necessário para enviar mensagens no WhatsApp via API Z-API).
+php8.2-gd: Módulo de processamento de imagens (usado na compactação de fotos da militância e fotos de perfil).
+php8.2-mbstring e php8.2-xml: Processamento de texto e dados em UTF-8.
+git: Ferramenta de controle de versão para receber o deploy do projeto.
 Por que executar: Instala todos os pré-requisitos que o sistema PHP Puro precisa para rodar.
 ⚙️ ETAPA 3: Ativação de Módulos e Reinicialização do Apache
 O roteamento de URLs do SGE (/login, /ativar, /admin/dashboard) exige que o Apache saiba reescrever URLs amigáveis.
@@ -77,13 +76,12 @@ Para atender ao requisito de Segurança por Design e LGPD, a pasta onde ficam os
 
 Comando 5.1 (Criar diretórios do projeto):
 bash
-sudo mkdir -p /var/www/sge/public/uploads/profiles
+sudo mkdir -p /var/www/sge/public
 sudo mkdir -p /var/www/sge/storage/uploads
 sudo mkdir -p /var/www/sge/storage/backups
 O que faz: Cria a estrutura oficial onde o código será instalado.
 Por que executar:
 /var/www/sge/public: Será a ÚNICA pasta visível para a internet.
-/var/www/sge/public/uploads/profiles: Armazena as fotos de perfil dos usuários.
 /var/www/sge/storage: Fica fora da web. É onde salvamos comprovantes fiscais criptografados e backups.
 Comando 5.2 (Ajustar permissões de acesso do Apache):
 bash
@@ -166,3 +164,115 @@ cat ~/.ssh/id_ed25519
 (Guarde esses dois textos para colar no painel de configurações do seu repositório no GitHub).
 🎉 Servidor Pronto!
 A VPS está totalmente preparada, blindada e configurada no padrão de segurança do projeto SGE!
+
+
+
+
+
+
+
+Chave SSH:
+
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIE/aBcCzn38IRcKlMaWQTeIxAMvASydyBeYrYIRVaSs deploy-sge-vps
+
+
+-----BEGIN OPENSSH PRIVATE KEY-----
+[COLE_SUA_CHAVE_PRIVADA_GERADA_NA_VPS_AQUI]
+-----END OPENSSH PRIVATE KEY-----
+
+
+
+
+Com as chaves SSH geradas na etapa anterior, estamos com tudo pronto para realizar o Primeiro Deploy Automático!
+
+Já criei o arquivo de automação do GitHub Actions no seu projeto em: 📂 
+.github/workflows/deploy.yml
+
+Siga os passos abaixo na ordem:
+
+📋 Passo a Passo do Primeiro Deploy
+Passo 1: Configurar a Deploy Key no GitHub
+Acesse o seu repositório no GitHub: https://github.com/SEU_USUARIO/SEU_REPOSITORIO
+Clique na aba Settings (no topo) -> Deploy keys (menu lateral esquerdo).
+Clique no botão Add deploy key.
+Title: VPS DigitalOcean
+Key: Cole a sua chave pública:
+text
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIE/aBcCzn38IRcKlMaWQTeIxAMvASydyBeYrYIRVaSs deploy-sge-vps
+Clique em Add key.
+Passo 2: Configurar os Segredos (Secrets) no GitHub
+No mesmo menu Settings do seu repositório GitHub, clique em Secrets and variables (menu lateral) -> Actions.
+
+Clique em New repository secret e crie os 3 segredos:
+
+Segredo 1:
+
+Name: VPS_HOST
+Secret: O IP da sua Droplet na DigitalOcean (ex: 143.198.xxx.xxx)
+Segredo 2:
+
+Name: VPS_USERNAME
+Secret: root
+Segredo 3:
+
+Name: VPS_SSH_KEY
+Secret: Cole todo o bloco da chave privada (incluindo as linhas BEGIN e END):
+text
+-----BEGIN OPENSSH PRIVATE KEY-----
+[COLE_SUA_CHAVE_PRIVADA_GERADA_NA_VPS_AQUI]
+-----END OPENSSH PRIVATE KEY-----
+Passo 3: Clonar o Repositório pela 1ª vez na VPS
+Acesse o terminal da sua VPS (ssh root@IP_DA_DROPLET) e execute:
+
+bash
+# Limpa a pasta temporária para clonar o repositório oficial
+sudo rm -rf /var/www/sge
+# Clona o seu repositório privado do GitHub
+cd /var/www
+git clone git@github.com:SEU_USUARIO/SEU_REPOSITORIO.git sge
+(Substitua SEU_USUARIO e SEU_REPOSITORIO pelos nomes reais da sua conta GitHub).
+
+Recrie as pastas de uploads e ajuste as permissões:
+
+bash
+sudo mkdir -p /var/www/sge/public/uploads/profiles
+sudo mkdir -p /var/www/sge/storage/uploads
+sudo mkdir -p /var/www/sge/storage/backups
+sudo chown -R www-data:www-data /var/www/sge
+sudo chmod -R 755 /var/www/sge
+sudo chmod -R 775 /var/www/sge/storage /var/www/sge/public/uploads
+Passo 4: Criar o arquivo .env na VPS
+Na VPS, crie o arquivo de ambiente em /var/www/sge/.env:
+
+bash
+sudo nano /var/www/sge/.env
+Cole as configurações:
+
+ini
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=sge
+DB_USER=sge_user
+DB_PASS=SUA_SENHA_DO_SGE_USER
+APP_ENV=production
+APP_URL=http://IP_DA_SUA_DROPLET/
+APP_KEY=8f4a7c8e9b6d5c4b3a2f1e0d9c8b7a6e5d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a
+ZAPI_URL=https://api.z-api.io/instances/3F3442BBA01DD1E1BB8B82171A0617F6/token/615EDEA93296491518BBA31A/send-text
+ZAPI_CLIENT_TOKEN=F328a02a354f54675adaa95b599db9eabS
+(Para salvar: Ctrl + O, ENTER. Para sair: Ctrl + X).
+
+Passo 5: Executar o Seed Inicial do Banco na VPS
+Na VPS, execute o script para popular o banco de dados sge com o schema e perfis:
+
+bash
+cd /var/www/sge
+php scratch/seed.php
+Passo 6: Fazer o Push Local para o GitHub
+No terminal do seu computador (dentro da pasta do projeto cds):
+
+bash
+git add .
+git commit -m "Deploy inicial com GitHub Actions"
+git push origin main
+🎉 Pronto! O GitHub Actions será acionado automaticamente e a aba Actions no seu GitHub mostrará o status verde do deploy concluído com sucesso na VPS!
+
