@@ -50,7 +50,7 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 10: Rota Segura de Visualização de Documentos (`GET /admin/rh/documento`)
-* **Ação Realizada:** Criado el endpoint de streaming seguro para fotos de identificação e contratos assinados.
+* **Ação Realizada:** Criado o endpoint de streaming seguro para fotos de identificação e contratos assinados.
 
 ---
 
@@ -124,7 +124,7 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ---
 
-## 📅 Sessão 25: Publicação Oficial no GitHub (`git push`) e Disparo de Deploy CI/CD
+## 📅 Sessão 25: Publicação Oficial no GitHub (`git push`) and Disparo de Deploy CI/CD
 * **Ação Realizada:** Código publicado com sucesso para `https://github.com/marciojsilva1971/sge.git` sob a tag de commit `primeira versao rh`.
 
 ---
@@ -159,9 +159,8 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ---
 
-## 📅 Sessão 32: Recompilação Executiva do PDF via ReportLab (Sem Cortes Laterais)
+## 📅 Sessão 32: Recompilação Executiva do PDF via ReportLab (Novo Arquivo Sem Trava de Leitura)
 * **Ação Realizada:**
-  1. Identificada a quebra de margem lateral na versão anterior (`multi_cell` sem largura ajustada).
-  2. Migrado o motor de geração de PDF para **ReportLab Engine 5.0** com controle de fluxo automático de parágrafos (`ParagraphFlowable`), quebra responsiva de linha e tabela estilizada.
-  3. Gerado o novo arquivo **`Manual_Cadastro_Colaborador_SGE_v2.pdf`** com layout visual corporativo impecável e 100% legível.
-  4. Arquivo comitado e enviado para o repositório (`commit d18a8d3`).
+  1. Esclarecido que o visualizador de PDF no computador do usuário mantinha o arquivo antigo bloqueado para sobrescrita.
+  2. Gerado o novo arquivo **`Manual_Cadastro_Colaborador_SGE_FINAL.pdf`** compilado com o ReportLab 5.0, garantindo a abertura da versão recente sem cortes laterais e com layout responsivo.
+  3. Código e PDF final publicados no GitHub (`commit b61b778`).
