@@ -95,7 +95,10 @@
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <div>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></div>
+                                    <div style="display:flex; align-items:center; gap:4px;">
+                                        <span>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></span>
+                                        <button onclick="openEditarTelefoneModal(<?= $c['id'] ?>, '<?= htmlspecialchars($c['nome_completo'], ENT_QUOTES) ?>', '<?= htmlspecialchars($c['celular_whatsapp'], ENT_QUOTES) ?>')" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:12px; padding:0 2px;" title="Editar Telefone / WhatsApp">✏️</button>
+                                    </div>
                                     <small class="text-secondary"><?= htmlspecialchars($c['email']) ?></small>
                                 </td>
                                 <td>
@@ -411,6 +414,36 @@
 </div>
 <?php endif; ?>
 
+<!-- Modal 3: Editar Telefone / WhatsApp do Colaborador -->
+<div id="editarTelefoneModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3>Editar Telefone / WhatsApp</h3>
+            <button onclick="closeEditarTelefoneModal()" class="btn-close-modal">&times;</button>
+        </div>
+        <form action="<?= $this->baseUrl('admin/rh/atualizar-telefone') ?>" method="POST" class="modal-form">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" id="edit_tel_colaborador_id" name="colaborador_id" value="">
+
+            <div class="form-group mb-2">
+                <label>Colaborador:</label>
+                <input type="text" id="edit_tel_colaborador_nome" readonly class="input-disabled" style="font-weight:bold;">
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="edit_tel_celular_whatsapp">Novo Número de WhatsApp *</label>
+                <input type="text" id="edit_tel_celular_whatsapp" name="celular_whatsapp" required placeholder="(11) 99999-9999">
+                <small class="form-help">Mesmo se informado com zero no DDD (ex: 011), o sistema formatará para o padrão internacional do WhatsApp.</small>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 20px;">
+                <button type="button" onclick="closeEditarTelefoneModal()" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-teal">✔ Salvar Telefone</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function mascaraMoeda(input) {
     let v = input.value.replace(/\D/g, '');
@@ -546,5 +579,15 @@ function openConferirContratoModal(colaborador) {
 
 function closeConferirContratoModal() {
     document.getElementById('conferirContratoModal').classList.add('hidden');
+}
+function openEditarTelefoneModal(id, nome, celular) {
+    document.getElementById('edit_tel_colaborador_id').value = id;
+    document.getElementById('edit_tel_colaborador_nome').value = nome;
+    document.getElementById('edit_tel_celular_whatsapp').value = celular;
+    document.getElementById('editarTelefoneModal').classList.remove('hidden');
+}
+
+function closeEditarTelefoneModal() {
+    document.getElementById('editarTelefoneModal').classList.add('hidden');
 }
 </script>

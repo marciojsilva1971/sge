@@ -111,6 +111,7 @@ $router->post('/admin/rh/enviar-whatsapp', 'RhController@enviarWhatsAppApi');
 $router->get('/admin/rh/documento', 'RhController@documento');
 $router->get('/admin/rh/contrato-pdf', 'RhController@contratoPdf');
 $router->get('/admin/rh/consultar-tse', 'RhController@consultarTse');
+$router->post('/admin/rh/atualizar-telefone', 'RhController@atualizarTelefone');
 
 // Rotas Públicas do Colaborador (Auto-cadastro e Contrato)
 $router->get('/colaborador/cadastro', 'RhController@publicCadastro');

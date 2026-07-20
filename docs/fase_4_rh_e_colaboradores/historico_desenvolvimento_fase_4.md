@@ -175,9 +175,13 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 35: Geração Completa de Mensagens de WhatsApp na Primeira Conferência de Documentos do Colaborador
+* **Ação Realizada:** Ajustada a inclusão de links (PDF, Portal e Assinatura Externa) e criada a modal visual `#avalSuccessModal` com o botão **`💬 Enviar Contrato pelo meu WhatsApp Pessoal`**.
+
+---
+
+## 📅 Sessão 36: Sanitização de DDD com Zero Inicial (ex: `011`) e Recursos de Edição de Telefone
 * **Ações Implementadas:**
-  1. **Inclusão Dinâmica de Links na Mensagem de WhatsApp:** Na primeira conferência de documentos (`RhController::darAval`), a mensagem gerada passou a incorporar obrigatoriamente:
-     * O link de download/impressão do Contrato PDF (`/colaborador/contrato-pdf?token=...`).
-     * O link de acesso ao Portal do Colaborador para envio de contrato assinado (`/colaborador/contrato?token=...`).
-     * O link para assinatura digital em plataforma de terceiros (`external_signature_url` - ZapSign/Clicksign/Gov.br) caso tenha sido informado.
-  2. **Disparo Híbrido Automático e Manual (Modal Click-to-Chat):** O sistema dispara a mensagem automaticamente via API da Z-API e, simultaneamente, abre o modal de confirmação visual `#avalSuccessModal` na tela `/admin/rh`, contendo o botão verde **`💬 Enviar Contrato pelo meu WhatsApp Pessoal`** (Click-to-Chat `https://wa.me/...`). Isso garante que a mensagem seja entregue imediatamente, mesmo se a API Z-API estiver off-line ou em testes locais.
+  1. **Sanitização Automática no Backend (`WhatsAppService::formatPhone`):** Atualizada a lógica de sanitização de telefones para tratar zeros à esquerda no DDD (ex: `011999999999`, `041999999999` ou `55011999999999`), convertendo-os automaticamente para o padrão internacional do WhatsApp (`5511999999999` ou `5541999999999`). Com isso, mesmo que um número tenha sido cadastrado com o `0` no DDD, o sistema realiza o envio sem falhas.
+  2. **Modal e Ação de Edição Rápida de Telefone no RH:**
+     * Criado o ícone de lápis (`✏️`) ao lado do número de WhatsApp na tabela da tela `/admin/rh`.
+     * Criado o modal `editarTelefoneModal` e a rota `POST /admin/rh/atualizar-telefone` (`RhController::atualizarTelefone`), permitindo que o administrador altere o telefone cadastrado de qualquer colaborador instantaneamente.

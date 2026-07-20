@@ -12,7 +12,15 @@ class WhatsAppService {
         // Remove qualquer caractere que não seja número
         $cleaned = preg_replace('/\D/', '', $phone);
 
-        // Se o número estiver sem o DDI (ex: 41999999999), adiciona 55
+        // Se começar com 55 e tiver mais de 11 dígitos (ex: 55011999999999), remove o 55 temporariamente para tratar o 0 do DDD
+        if (str_starts_with($cleaned, '55') && strlen($cleaned) > 11) {
+            $cleaned = substr($cleaned, 2);
+        }
+
+        // Se começar com zero (ex: 011999999999 ou 041999999999), remove o zero à esquerda do DDD
+        $cleaned = ltrim($cleaned, '0');
+
+        // Se o número tiver 10 ou 11 dígitos (ex: 11999999999 ou 4199999999), adiciona o DDI 55 do Brasil
         if (strlen($cleaned) === 10 || strlen($cleaned) === 11) {
             $cleaned = '55' . $cleaned;
         }

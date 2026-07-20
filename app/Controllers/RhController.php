@@ -342,6 +342,46 @@ class RhController extends Controller {
     }
 
     /**
+     * Atualização rápida de telefone/WhatsApp do colaborador pelo Painel de RH.
+     */
+    public function atualizarTelefone(): void {
+        $this->requirePermission('invite_user');
+        $this->validatePostCsrf();
+
+        $colaboradorId = (int)($_POST['colaborador_id'] ?? 0);
+        $novoTelefone = trim($_POST['celular_whatsapp'] ?? '');
+
+        if (!$colaboradorId || empty($novoTelefone)) {
+            Session::setFlash('error', 'Informe o novo número de WhatsApp.');
+            $this->redirect('/admin/rh');
+        }
+
+        $colaboradorModel = new Colaborador();
+        $colaborador = $colaboradorModel->find($colaboradorId);
+
+        if (!$colaborador) {
+            Session::setFlash('error', 'Colaborador não encontrado.');
+            $this->redirect('/admin/rh');
+        }
+
+        $colaboradorModel->update($colaboradorId, [
+            'celular_whatsapp' => $novoTelefone
+        ]);
+
+        // Se o colaborador já possuir registro em users, sincroniza o telefone
+        $userModel = new User();
+        $user = $userModel->findByEmail($colaborador['email']);
+        if ($user) {
+            $userModel->update($user['id'], [
+                'phone' => $novoTelefone
+            ]);
+        }
+
+        Session::setFlash('success', 'Número de WhatsApp de ' . $colaborador['nome_completo'] . ' atualizado com sucesso para ' . $novoTelefone . '!');
+        $this->redirect('/admin/rh');
+    }
+
+    /**
      * Página Pública de Auto-Cadastro do Colaborador (Link Externo via WhatsApp/Email).
      */
     public function publicCadastro(): void {
