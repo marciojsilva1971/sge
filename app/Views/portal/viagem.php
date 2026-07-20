@@ -26,16 +26,44 @@ foreach ($travelReports as $report) {
 
         <!-- Formulário para Adicionar Cupom Fiscal -->
         <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Anexar Novo Cupom Fiscal / Recibo:</h4>
-        <form action="<?= $this->baseUrl('portal/viagem/receipt') ?>" method="POST" enctype="multipart/form-data" style="margin-bottom: 20px; background: rgba(15,23,42,0.3); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.04);">
+        <form action="<?= $this->baseUrl('portal/viagem/receipt') ?>" method="POST" enctype="multipart/form-data" style="margin-bottom: 20px; background: rgba(15,23,42,0.3); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" name="travel_report_id" value="<?= $activeReport['id'] ?>">
 
-            <div class="form-group">
-                <label for="supplier_cnpj" style="font-size: 12px;">CNPJ do Posto de Combustível</label>
-                <input type="text" id="supplier_cnpj" name="supplier_cnpj" placeholder="00.000.000/0001-00" required>
-                <div id="cnpj_supplier_info" style="margin-top: 6px; font-size: 11px;"></div>
+            <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE -->
+            <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
+                <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
+                    📸 1º PASSO: Anexar / Fotografar Comprovante Fiscal (JPEG, PNG ou PDF)
+                </label>
+                <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+                    Tire uma foto legível da nota/cupom fiscal. O sistema lerá a imagem via OCR para autocompletar o CNPJ e o nome do posto!
+                </p>
+                <input type="file" id="comprovante" name="comprovante" accept="image/*, application/pdf" required style="padding: 6px; font-size: 12px; width: 100%;">
+                
+                <!-- Preview da miniatura do arquivo -->
+                <div id="comprovante-preview-container" style="display: none; margin-top: 10px; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
+                    <div id="comprovante-preview-thumb" style="width: 45px; height: 45px; border-radius: 6px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 18px; background-color: rgba(255,255,255,0.05);"></div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div id="comprovante-preview-name" style="font-size: 11px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                        <div id="comprovante-preview-size" style="font-size: 9px; color: var(--text-secondary);"></div>
+                    </div>
+                </div>
             </div>
 
+            <!-- DADOS DO FORNECEDOR (CNPJ + RAZÃO SOCIAL) -->
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group flex-1">
+                    <label for="supplier_cnpj" style="font-size: 12px;">CNPJ do Posto de Combustível</label>
+                    <input type="text" id="supplier_cnpj" name="supplier_cnpj" placeholder="00.000.000/0001-00" required>
+                    <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
+                </div>
+                <div class="form-group flex-1">
+                    <label for="supplier_name" style="font-size: 12px;">Nome / Razão Social da Empresa</label>
+                    <input type="text" id="supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Alvorada Ltda" style="font-weight: 500;">
+                </div>
+            </div>
+
+            <!-- VALOR E DATA -->
             <div style="display: flex; gap: 10px;">
                 <div class="form-group flex-1">
                     <label for="value" style="font-size: 12px;">Valor do Cupom (R$)</label>
@@ -59,22 +87,8 @@ foreach ($travelReports as $report) {
             </div>
 
             <div class="form-group">
-                <label for="comprovante" style="font-size: 12px;">Foto do Cupom Fiscal (JPEG, PNG ou PDF)</label>
-                <input type="file" id="comprovante" name="comprovante" accept="image/*, application/pdf" required style="padding: 4px; font-size: 12px;">
-                
-                <!-- Preview da miniatura do arquivo -->
-                <div id="comprovante-preview-container" style="display: none; margin-top: 12px; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 10px; border: 1px dashed var(--border-color);">
-                    <div id="comprovante-preview-thumb" style="width: 45px; height: 45px; border-radius: 6px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 18px; background-color: rgba(255,255,255,0.05);"></div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div id="comprovante-preview-name" style="font-size: 11px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
-                        <div id="comprovante-preview-size" style="font-size: 9px; color: var(--text-secondary);"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="notes" style="font-size: 12px;">Notas (Opcional)</label>
-                <input type="text" id="notes" name="notes" placeholder="Ex: Viagem para o comitê central">
+                <label for="notes" style="font-size: 12px;">Notas / Observações (Opcional)</label>
+                <input type="text" id="notes" name="notes" placeholder="Ex: Abastecimento equipe de campo">
             </div>
 
             <button type="submit" class="btn btn-teal btn-block btn-sm">
@@ -237,6 +251,7 @@ foreach ($travelReports as $report) {
     // Consulta pública de CNPJ em tempo real
     const cnpjInput = document.getElementById('supplier_cnpj');
     const cnpjInfoDiv = document.getElementById('cnpj_supplier_info');
+    const supplierNameInput = document.getElementById('supplier_name');
 
     function consultarCnpjServico(cnpjVal) {
         const clean = cnpjVal.replace(/\D/g, "");
@@ -251,12 +266,15 @@ foreach ($travelReports as $report) {
             .then(data => {
                 if (data.success) {
                     cnpjInput.value = data.cnpj;
+                    if (supplierNameInput) {
+                        supplierNameInput.value = data.razao_social;
+                    }
                     if (cnpjInfoDiv) {
                         cnpjInfoDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ ${data.razao_social}</span> <span style="color: #94a3b8;">(${data.municipio}/${data.uf})</span>`;
                     }
                 } else {
                     if (cnpjInfoDiv) {
-                        cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ ${data.message || 'CNPJ não encontrado'}</span>`;
+                        cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ ${data.message || 'CNPJ não encontrado na Receita Federal'}</span>`;
                     }
                 }
             })

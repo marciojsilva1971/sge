@@ -226,7 +226,16 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 
 ## 📅 Sessão 45: Automação por OCR e Consulta Cadastral de CNPJ em Comprovantes de Compra
 * **Ações Implementadas:**
-  1. **Serviço de CNPJ (`App\Services\CnpjService.php`):** Criado serviço que consulta em tempo real bases públicas gratuitas da Receita Federal (**BrasilAPI** com fallback para **ReceitaWS**), retornando a Razão Social, Nome Fantasia e Endereço Completo do fornecedor.
+  1. **Serviço de CNPJ (`App\Services\CnpjService.php`):** Consulta em tempo real bases públicas gratuitas da Receita Federal (**BrasilAPI** e **ReceitaWS**).
   2. **Endpoint API (`GET/POST /api/cnpj/consultar`):** Disponibilizada rota para autocompletar dados em tempo real no frontend.
-  3. **Leitura Óptica da Imagem (Tesseract.js OCR):** Integrada a biblioteca Tesseract.js nas telas de envio de comprovante (`portal/viagem.php` e `admin/financeiro/despesas.php`). Ao selecionar a foto do cupom/nota fiscal, o sistema faz o escaneamento inteligente da imagem, identifica a sequência de CNPJ e busca a Razão Social automaticamente sem necessidade de digitação pelo usuário.
-  4. **Autocompletar de Fornecedores (`admin/financeiro/fornecedores.php`):** Ao digitar o CNPJ de um novo fornecedor, a Razão Social, Nome Fantasia e Endereço são preenchidos automaticamente na tela.
+  3. **Leitura Óptica da Imagem (Tesseract.js OCR):** Integrada a biblioteca Tesseract.js para identificação de CNPJ.
+
+---
+
+## 📅 Sessão 46: Reorganização do Layout de Despesas (Digitalização como 1º Passo e Nome do Fornecedor)
+* **Ações Implementadas:**
+  1. **Reordenação Visual dos Formulários:** Em todas as telas de lançamento de gastos (`portal/viagem.php`, `portal/despesas.php` e `admin/financeiro/despesas.php`), o campo de **Digitalização / Fotografar Comprovante Fiscal** foi movido para o **topo como 1º PASSO**, dentro de uma caixa destacada com borda tracejada em var(--accent-teal).
+  2. **Inclusão do Campo Nome / Razão Social da Empresa:** Adicionado campo de texto visível para o Nome/Razão Social do Fornecedor ao lado do CNPJ.
+  3. **Integração Bidirecional (OCR + Digitação Manual):**
+     - Se o usuário envia a foto primeiro, o OCR lê o CNPJ e preenche automaticamente **tanto o CNPJ quanto o Nome da Empresa** obtido na Receita Federal.
+     - Se o OCR não detectar ou a foto for de baixa qualidade, o usuário pode digitar o CNPJ manualmente; o sistema fará a mesma busca automática na Receita Federal e preencherá o Nome da Empresa no campo ao lado.

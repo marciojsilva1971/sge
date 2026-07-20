@@ -22,6 +22,26 @@
         <form action="<?= $this->baseUrl('admin/financeiro/despesas') ?>" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
+            <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (OCR) -->
+            <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
+                <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
+                    📸 1º PASSO: Anexar / Digitalizar Comprovante Fiscal (PDF, PNG, JPG)
+                </label>
+                <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+                    Anexe o comprovante primeiro. O sistema fará o escaneamento OCR para identificar o CNPJ e selecionar automaticamente o fornecedor!
+                </p>
+                <input type="file" id="comprovante" name="comprovante" accept="application/pdf, image/*" required style="padding: 6px; width: 100%;">
+                
+                <!-- Preview da miniatura do arquivo -->
+                <div id="comprovante-preview-container" style="display: none; margin-top: 10px; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
+                    <div id="comprovante-preview-thumb" style="width: 50px; height: 50px; border-radius: 6px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 20px; background-color: rgba(255,255,255,0.05);"></div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div id="comprovante-preview-name" style="font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                        <div id="comprovante-preview-size" style="font-size: 11px; color: var(--text-secondary);"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="description">Descrição do Pagamento / Finalidade</label>
                 <input type="text" id="description" name="description" placeholder="Ex: Impressão de 10.000 Santinhos de Militância" required>
@@ -79,21 +99,6 @@
                             <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-            </div>
-
-            <!-- Upload do comprovante -->
-            <div class="form-group">
-                <label for="comprovante">Comprovante Fiscal (PDF, PNG, JPG, JPEG) - <strong style="color: var(--accent-teal-hover);">Será criptografado simetricamente</strong></label>
-                <input type="file" id="comprovante" name="comprovante" accept="application/pdf, image/*" required style="padding: 6px;">
-                
-                <!-- Preview da miniatura do arquivo -->
-                <div id="comprovante-preview-container" style="display: none; margin-top: 12px; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 10px; border: 1px dashed var(--border-color);">
-                    <div id="comprovante-preview-thumb" style="width: 50px; height: 50px; border-radius: 6px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 20px; background-color: rgba(255,255,255,0.05);"></div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div id="comprovante-preview-name" style="font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
-                        <div id="comprovante-preview-size" style="font-size: 11px; color: var(--text-secondary);"></div>
-                    </div>
                 </div>
             </div>
 
