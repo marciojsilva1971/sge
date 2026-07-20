@@ -1,5 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /projeto-eleicao/
     
     # Se a requisição não for para a pasta public/, redireciona internamente para public/
     RewriteCond %{REQUEST_URI} !/public/

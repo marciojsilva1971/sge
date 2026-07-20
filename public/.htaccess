@@ -1,5 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /projeto-eleicao/public/
     DirectoryIndex index.php
 
     # Se o arquivo ou diretório solicitado fisicamente existir, acesse diretamente
@@ -7,5 +8,5 @@
     RewriteCond %{REQUEST_FILENAME} !-d
 
     # Caso contrário, redirecione para o Front Controller index.php
-    RewriteRule ^ index.php [L]
+    RewriteRule ^ index.php [L,QSA]
 </IfModule>
