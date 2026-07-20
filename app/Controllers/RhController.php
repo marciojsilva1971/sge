@@ -387,6 +387,59 @@ class RhController extends Controller {
     }
 
     /**
+     * Exclui o cadastro de um colaborador que ainda não foi homologado.
+     */
+    public function excluir(): void {
+        $this->requirePermission('invite_user');
+        $this->validatePostCsrf();
+
+        $colaboradorId = (int)($_POST['colaborador_id'] ?? 0);
+        if (!$colaboradorId) {
+            Session::setFlash('error', 'Colaborador não informado.');
+            $this->redirect('/admin/rh');
+        }
+
+        try {
+            $colaboradorModel = new Colaborador();
+            $colaborador = $colaboradorModel->find($colaboradorId);
+
+            if (!$colaborador) {
+                Session::setFlash('error', 'Colaborador não encontrado.');
+                $this->redirect('/admin/rh');
+            }
+
+            if ($colaborador['status'] === 'ATIVO' || !empty($colaborador['usuario_id'])) {
+                Session::setFlash('error', 'Colaboradores homologados com conta ativa no SGE não podem ser excluídos por esta tela. Cancele o usuário no módulo de Usuários.');
+                $this->redirect('/admin/rh');
+            }
+
+            // Exclui foto de documento enviada se existir no disco
+            if (!empty($colaborador['foto_documento_path']) && file_exists($colaborador['foto_documento_path'])) {
+                @unlink($colaborador['foto_documento_path']);
+            }
+
+            // Exclui contratos vinculados do colaborador e arquivos em disco
+            $contratoModel = new Contrato();
+            $contrato = $contratoModel->findByColaborador($colaboradorId);
+            if ($contrato && !empty($contrato['pdf_assinado_path']) && file_exists($contrato['pdf_assinado_path'])) {
+                @unlink($contrato['pdf_assinado_path']);
+            }
+            $contratoModel->deleteByColaborador($colaboradorId);
+
+            // Exclui o colaborador do banco de dados
+            $colaboradorModel->delete($colaboradorId);
+
+            AuditLogger::log('EXCLUIR_COLABORADOR', 'colaboradores', $colaboradorId, $colaborador, null);
+
+            Session::setFlash('success', 'Cadastro do colaborador ' . $colaborador['nome_completo'] . ' foi excluído com sucesso!');
+            $this->redirect('/admin/rh');
+        } catch (Exception $e) {
+            Session::setFlash('error', 'Erro ao excluir cadastro do colaborador: ' . $e->getMessage());
+            $this->redirect('/admin/rh');
+        }
+    }
+
+    /**
      * Página Pública de Auto-Cadastro do Colaborador (Link Externo via WhatsApp/Email).
      */
     public function publicCadastro(): void {

@@ -30,6 +30,14 @@ class Contrato extends Model {
     }
 
     /**
+     * Exclui todos os contratos de um colaborador específico.
+     */
+    public function deleteByColaborador(int $colaboradorId): bool {
+        $stmt = $this->db->prepare("DELETE FROM `{$this->table}` WHERE colaborador_id = :cid");
+        return $stmt->execute(['cid' => $colaboradorId]);
+    }
+
+    /**
      * Emite um novo contrato para um colaborador.
      */
     public function emitirContrato(array $data): int {

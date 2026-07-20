@@ -207,6 +207,18 @@
                                     <?php else: ?>
                                         <span class="badge badge-danger">Rejeitado</span>
                                     <?php endif; ?>
+
+                                    <?php if ($c['status'] !== 'ATIVO'): ?>
+                                        <div style="margin-top:6px;">
+                                            <form action="<?= $this->baseUrl('admin/rh/excluir') ?>" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o cadastro do colaborador <?= htmlspecialchars($c['nome_completo'], ENT_QUOTES) ?>? Esta ação não poderá ser desfeita.');" style="margin:0; display:inline-block;">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                <input type="hidden" name="colaborador_id" value="<?= $c['id'] ?>">
+                                                <button type="submit" class="btn btn-danger btn-sm" style="font-size:10px; padding:2px 6px; background:#ef4444; color:#fff; border:none; border-radius:4px; font-weight:bold; cursor:pointer; display:inline-flex; align-items:center; gap:2px;" title="Excluir cadastro deste colaborador">
+                                                    🗑️ Excluir Colaborador
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
