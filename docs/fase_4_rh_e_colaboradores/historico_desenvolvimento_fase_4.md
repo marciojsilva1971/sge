@@ -125,9 +125,10 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 25: Publicação Oficial no GitHub (`git push`) e Disparo de Deploy CI/CD
-* **Solicitação:** Efetuar o `git push` para o repositório `https://github.com/marciojsilva1971/sge` com a mensagem `"primeira versao rh"`.
-* **Ação Realizada:** 
-  1. Configurado o repositório remoto oficial: `https://github.com/marciojsilva1971/sge.git`.
-  2. Resolvida a unificação de histórico remoto (`merge`) preservando as alterações locais atualizadas.
-  3. Realizado o commit e push com sucesso para o branch `main`: `[main 912f5b5] primeira versao rh`.
-  4. O pipeline do GitHub Actions foi disparado automaticamente para atualizar o servidor na DigitalOcean VPS (`/var/www/sge`).
+* **Ação Realizada:** Código publicado com sucesso para `https://github.com/marciojsilva1971/sge.git` sob a tag de commit `primeira versao rh`.
+
+---
+
+## 📅 Sessão 26: Redefinição de Senha do Administrador na VPS (`reset_admin_pass.php`)
+* **Situação:** Usuário informou que o usuário administrador já existe no banco da VPS, porém a senha anterior não permitia o login.
+* **Solução:** Criado e publicado o script `scratch/reset_admin_pass.php` para forçar a redefinição de senha e alteração do status para `ATIVO`.
