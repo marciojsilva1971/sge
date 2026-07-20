@@ -135,8 +135,11 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 27: Badges Visuais e Destaque de Arquivos Enviados no Painel de RH
-* **Ações Implementadas:**
-  1. Atualizada a tabela do painel administrativo (`app/Views/admin/rh/index.php`) para incluir os badges verdes destacados `✔ RG/CNH Anexado` e `✅ Contrato Assinado Enviado`.
-  2. Adicionados botões diretos de visualização na própria tabela: `🪪 Ver Documento (Foto/PDF)` e `📥 Ver PDF Assinado (Enviado)`.
-  3. Atualizado o modal de conferência (`openConferirContratoModal`) para exibir a confirmação de presença do arquivo anexado.
-  4. Alterações enviadas para o repositório remoto (`commit e5c474a`).
+* **Ações Implementadas:** Atualizada a tabela administrativa e o modal de conferência com os badges verdes `✔ RG/CNH Anexado` e `✅ Contrato Assinado Enviado`.
+
+---
+
+## 📅 Sessão 28: Exibição Explícita da Opção "Gestão de RH" no Sidebar Lateral (`main.php`)
+* **Situação:** O usuário enviou imagem do menu lateral onde o item "Gestão de RH" não estava visível.
+* **Solução:** Atualizada a condição em `app/Views/layouts/main.php` para garantir que o menu `📇 Gestão de RH` seja visível incondicionalmente para perfil `ADMINISTRADOR` ou usuários com a permissão `invite_user`.
+* **Código Publicado:** `commit 7f9eeb0`.
