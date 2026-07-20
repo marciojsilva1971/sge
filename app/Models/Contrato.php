@@ -23,6 +23,13 @@ class Contrato extends Model {
     }
 
     /**
+     * Alias para findByColaborador.
+     */
+    public function getContratoPorColaborador(int $colaboradorId): ?array {
+        return $this->findByColaborador($colaboradorId);
+    }
+
+    /**
      * Emite um novo contrato para um colaborador.
      */
     public function emitirContrato(array $data): int {

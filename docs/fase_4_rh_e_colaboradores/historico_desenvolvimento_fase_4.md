@@ -180,8 +180,9 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 36: Sanitização de DDD com Zero Inicial (ex: `011`) e Recursos de Edição de Telefone
-* **Ações Implementadas:**
-  1. **Sanitização Automática no Backend (`WhatsAppService::formatPhone`):** Atualizada a lógica de sanitização de telefones para tratar zeros à esquerda no DDD (ex: `011999999999`, `041999999999` ou `55011999999999`), convertendo-os automaticamente para o padrão internacional do WhatsApp (`5511999999999` ou `5541999999999`). Com isso, mesmo que um número tenha sido cadastrado com o `0` no DDD, o sistema realiza o envio sem falhas.
-  2. **Modal e Ação de Edição Rápida de Telefone no RH:**
-     * Criado o ícone de lápis (`✏️`) ao lado do número de WhatsApp na tabela da tela `/admin/rh`.
-     * Criado o modal `editarTelefoneModal` e a rota `POST /admin/rh/atualizar-telefone` (`RhController::atualizarTelefone`), permitindo que o administrador altere o telefone cadastrado de qualquer colaborador instantaneamente.
+* **Ação Realizada:** Atualizado `WhatsAppService::formatPhone` para remover `0` do DDD e adicionado modal de edição rápida de telefone em `/admin/rh`.
+
+---
+
+## 📅 Sessão 37: Correção de Método de Busca no Modelo de Contratos (`getContratoPorColaborador`)
+* **Ação Realizada:** Adicionada a declaração do método `getContratoPorColaborador()` no modelo `App\Models\Contrato`, eliminando a exceção `Fatal error: Call to undefined method`.
