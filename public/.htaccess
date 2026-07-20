@@ -1,8 +1,8 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # Define a base do Rewrite se necessário
-    RewriteBase /projeto-eleicao/
+    # Define a base do Rewrite para a raiz do servidor
+    RewriteBase /
 
     # Se o arquivo ou diretório solicitado fisicamente existir, acesse diretamente
     RewriteCond %{REQUEST_FILENAME} !-f
