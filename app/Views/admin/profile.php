@@ -5,6 +5,21 @@
         <p class="subtitle">Mantenha seus dados e credenciais atualizados para garantir a segurança de acesso.</p>
     </div>
 
+    <!-- Alertas Visuais de Sucesso ou Erro -->
+    <?php if (!empty($success)): ?>
+        <div class="alert alert-success" style="padding: 14px 18px; background-color: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; color: #15803d; font-weight: 600; font-size: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">✅</span>
+            <span><?= htmlspecialchars($success) ?></span>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($error)): ?>
+        <div class="alert alert-error" style="padding: 14px 18px; background-color: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; color: #b91c1c; font-weight: 600; font-size: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">⚠️</span>
+            <span><?= htmlspecialchars($error) ?></span>
+        </div>
+    <?php endif; ?>
+
     <div class="panel-card profile-card">
         <form action="<?= $this->baseUrl('admin/profile') ?>" method="POST" enctype="multipart/form-data" class="profile-form">
             <!-- Token CSRF -->

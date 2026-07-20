@@ -165,7 +165,11 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 33: Correção e Aprimoramento da Alteração e Redefinição de Senha de Usuários
+* **Ação Realizada:** Atualizada a validação de caracteres especiais para aceitar underline (`_`) e adicionado modal administrativo em `/admin/users`.
+
+---
+
+## 📅 Sessão 34: Exibição Garantida de Mensagens de Confirmação no Botão "Salvar Alterações"
 * **Ações Implementadas:**
-  1. **Ajuste na Validação de Caracteres Especiais:** Substituída a expressão regular estrita `[\W]` por `[^a-zA-Z0-9]` nos controllers `AdminController.php` e `ActivationController.php`. Isso permite o uso seguro de qualquer caractere especial, incluindo underline (`_`), hífen (`-`), arroba (`@`), tralha (`#`), cifrão (`$`), exclamação (`!`), entre outros.
-  2. **Recurso de Redefinição de Senha Administrativa:** Criada a rota `POST /admin/users/reset-password` e a ação `resetUserPassword()` no `AdminController.php`.
-  3. **Interface Visual e Modal em Gerenciamento de Usuários (`/admin/users`):** Adicionado o botão `🔑 Senha` em cada linha da tabela de usuários e o modal interativo `resetPasswordModal` para redefinição rápida com envio automático da nova senha via WhatsApp (Z-API).
+  1. Identificada a causa da ausência de mensagens (o método `Session::getFlash()` consumia a variável na Controller antes da renderização do layout global).
+  2. Adicionados blocos de alerta proeminentes com ícones de status (`✅ Perfil atualizado com sucesso!` e `⚠️ Falha/Erro`) diretamente no topo das views `admin/profile.php`, `admin/users.php` e `admin/rbac.php`.
