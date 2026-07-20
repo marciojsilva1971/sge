@@ -130,8 +130,13 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 26: Redefinição de Senha e Ajuste de Tolerância de Sessão VPS
-* **Análise:** Investigação da falha de login no servidor VPS.
+* **Ações Implementadas:** Ajustados `User.php` (LEFT JOIN) e `Session.php` (Proxy Headers), com ferramenta `scratch/reset_admin_pass.php` para VPS.
+
+---
+
+## 📅 Sessão 27: Badges Visuais e Destaque de Arquivos Enviados no Painel de RH
 * **Ações Implementadas:**
-  1. Alterada a consulta de autenticação em `User.php` de `INNER JOIN` para `LEFT JOIN` com a tabela `roles`, garantindo que o login funcione perfeitamente mesmo que o `role_id` não possua correspondência estrita na tabela `roles`.
-  2. Ajustada a verificação de integridade de IP em `Session.php` para aceitar variação de proxies reversos (`HTTP_X_FORWARDED_FOR`), evitando expiração prematura da sessão ao trafegar via VPS.
-  3. Código publicado no GitHub (`commit d1f1631`).
+  1. Atualizada a tabela do painel administrativo (`app/Views/admin/rh/index.php`) para incluir os badges verdes destacados `✔ RG/CNH Anexado` e `✅ Contrato Assinado Enviado`.
+  2. Adicionados botões diretos de visualização na própria tabela: `🪪 Ver Documento (Foto/PDF)` e `📥 Ver PDF Assinado (Enviado)`.
+  3. Atualizado o modal de conferência (`openConferirContratoModal`) para exibir a confirmação de presença do arquivo anexado.
+  4. Alterações enviadas para o repositório remoto (`commit e5c474a`).
