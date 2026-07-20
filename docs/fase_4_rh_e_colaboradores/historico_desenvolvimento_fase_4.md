@@ -145,7 +145,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 29: Unificação do Módulo Financeiro e Sub-Navegação por Abas
+* **Ação Realizada:** Criada a barra de abas horizontais unificada (`_nav_tabs.php`) presente em todas as subpáginas financeiras.
+
+---
+
+## 📅 Sessão 30: Simplificação do Menu Lateral (Remoção dos Links Repetidos de Fila e Tipos de Despesas)
 * **Ação Realizada:**
-  1. Reorganizado a barra lateral (`app/Views/layouts/main.php`) para agrupar **Fila de Aprovações** e **Tipos de Despesas** como sub-itens indentados dentro de **Módulo Financeiro**.
-  2. Criada a barra de abas horizontais unificada (`app/Views/admin/financeiro/_nav_tabs.php`), presente em todas as telas financeiras (Visão Geral, Fila de Aprovações, Tipos de Despesas, Lançamento de Despesas e Fornecedores).
-  3. Código publicado no GitHub sob a tag `commit 88b377b`.
+  1. Removidos os links avulsos `Fila de Aprovações` e `Tipos de Despesas` da barra lateral (`app/Views/layouts/main.php`), deixando apenas o menu único **`💰 Financeiro`**.
+  2. Toda a navegação interna entre Visão Geral, Fila de Aprovações, Tipos de Despesas, Lançamento de Despesas e Fornecedores é realizada através da barra de abas horizontais no topo do painel.
+  3. Código publicado no GitHub sob a tag `commit 7f4ccf1`.
