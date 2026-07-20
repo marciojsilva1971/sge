@@ -236,10 +236,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Escaneamento via Tesseract.js OCR
             if (window.Tesseract) {
-                if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: var(--accent-teal); font-weight: 600;">🤖 Lendo imagem para detectar CNPJ (OCR)...</span>';
+                if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: var(--accent-teal); font-weight: 600;">⏳ Lendo e analisando o comprovante fiscal... Por favor, aguarde um instante.</span>';
 
                 Tesseract.recognize(file, 'por', {
-                    logger: m => console.log(m)
+                    logger: m => {
+                        if (m.status === 'recognizing text' && ocrStatusBadge) {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            ocrStatusBadge.innerHTML = `<span style="color: var(--accent-teal); font-weight: 600;">⏳ Analisando imagem (${pct}%)... Por favor, aguarde.</span>`;
+                        }
+                    }
                 }).then(({ data: { text } }) => {
                     const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
                     if (match) {
@@ -249,20 +254,23 @@ document.addEventListener('DOMContentLoaded', () => {
                             consultarCnpj(detectedCnpj);
                             if (ocrStatusBadge) ocrStatusBadge.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✅ CNPJ detectado automaticamente pela foto: ${detectedCnpj}</span>`;
                         } else {
-                            if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ válido identificado na foto. Digite o número abaixo.</span>';
+                            if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível identificar o CNPJ nesta foto automaticamente. Por favor, preencha manualmente o CNPJ e o Nome do Fornecedor nos campos abaixo.</span>';
                         }
                     } else {
-                        if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ lido na foto. Digite o CNPJ abaixo.</span>';
+                        if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Nenhum CNPJ lido na foto. Por favor, preencha manualmente o CNPJ e o Nome do Fornecedor nos campos abaixo.</span>';
                     }
                 }).catch(err => {
                     console.error("Erro OCR:", err);
-                    if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #94a3b8;">Não foi possível ler a imagem com OCR.</span>';
+                    if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível ler o arquivo via OCR. Por favor, preencha os dados do fornecedor manualmente.</span>';
                 });
             }
 
         } else if (file.type === 'application/pdf') {
             previewImage.style.display = 'none';
             pdfPreviewText.style.display = 'block';
+            if (ocrStatusBadge) {
+                ocrStatusBadge.innerHTML = '<span style="color: #38bdf8; font-weight: 500;">ℹ️ Arquivo PDF anexo. Por favor, preencha manualmente o CNPJ e a Razão Social do Fornecedor nos campos abaixo.</span>';
+            }
         } else {
             previewImage.style.display = 'none';
             pdfPreviewText.style.display = 'block';

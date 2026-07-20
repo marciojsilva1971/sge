@@ -236,16 +236,21 @@
                 const infoBadge = document.createElement('div');
                 infoBadge.id = 'ocr-expense-status';
                 infoBadge.style.fontSize = '11px';
-                infoBadge.style.marginTop = '6px';
+                infoBadge.style.marginTop = '8px';
                 infoBadge.style.color = 'var(--accent-teal)';
-                infoBadge.innerHTML = '🤖 Escaneando comprovante (OCR) para selecionar fornecedor...';
+                infoBadge.innerHTML = '⏳ Lendo e analisando o comprovante fiscal... Por favor, aguarde um instante.';
                 
                 const oldBadge = document.getElementById('ocr-expense-status');
                 if (oldBadge) oldBadge.remove();
                 container.after(infoBadge);
 
                 Tesseract.recognize(file, 'por', {
-                    logger: m => console.log(m)
+                    logger: m => {
+                        if (m.status === 'recognizing text' && infoBadge) {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            infoBadge.innerHTML = `<span style="color: var(--accent-teal); font-weight: 600;">⏳ Analisando imagem (${pct}%)... Por favor, aguarde.</span>`;
+                        }
+                    }
                 }).then(({ data: { text } }) => {
                     const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
                     if (match) {
@@ -266,24 +271,32 @@
                                         }
                                     }
                                     if (!found) {
-                                        infoBadge.innerHTML += ` <br><span style="color: #eab308;">💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#eab308; text-decoration:underline;">Clique para cadastrar</a>.</span>`;
+                                        infoBadge.innerHTML += ` <br><span style="color: #eab308;">💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#eab308; text-decoration:underline;">Clique para cadastrar</a> ou selecione manualmente abaixo.</span>`;
                                     }
                                 } else {
-                                    infoBadge.innerHTML = `<span style="color: #94a3b8;">CNPJ Lido: ${match[0]}</span>`;
+                                    infoBadge.innerHTML = `<span style="color: #eab308; font-weight: 500;">⚠️ CNPJ Lido (${match[0]}), porém não encontrado na Receita Federal. Por favor, selecione ou cadastre o fornecedor manualmente.</span>`;
                                 }
                             });
                     } else {
-                        infoBadge.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ detectado automaticamente no anexo.</span>';
+                        infoBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível identificar o CNPJ nesta foto automaticamente. Por favor, selecione o fornecedor manualmente no campo abaixo.</span>';
                     }
                 }).catch(err => {
                     console.error("Erro OCR:", err);
-                    infoBadge.remove();
+                    infoBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível ler o arquivo via OCR. Por favor, selecione o fornecedor manualmente.</span>';
                 });
             }
 
         } else if (file.type === 'application/pdf') {
             thumb.style.backgroundImage = 'none';
             thumb.textContent = '📄';
+            const infoBadge = document.createElement('div');
+            infoBadge.id = 'ocr-expense-status';
+            infoBadge.style.fontSize = '11px';
+            infoBadge.style.marginTop = '8px';
+            infoBadge.innerHTML = '<span style="color: #38bdf8; font-weight: 500;">ℹ️ Arquivo PDF anexo. Por favor, selecione o fornecedor e informe o valor nos campos abaixo.</span>';
+            const oldBadge = document.getElementById('ocr-expense-status');
+            if (oldBadge) oldBadge.remove();
+            container.after(infoBadge);
         } else {
             thumb.style.backgroundImage = 'none';
             thumb.textContent = '📎';

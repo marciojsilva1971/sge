@@ -233,9 +233,11 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 46: Reorganização do Layout de Despesas (Digitalização como 1º Passo e Nome do Fornecedor)
+* **Ações Implementadas:** Reordenado formulário com upload de comprovante no topo (1º passo) e adicionado campo Nome / Razão Social do Fornecedor.
+
+---
+
+## 📅 Sessão 47: Indicador de Progresso OCR (0-100%) e Alerta Claro de Preenchimento Manual
 * **Ações Implementadas:**
-  1. **Reordenação Visual dos Formulários:** Em todas as telas de lançamento de gastos (`portal/viagem.php`, `portal/despesas.php` e `admin/financeiro/despesas.php`), o campo de **Digitalização / Fotografar Comprovante Fiscal** foi movido para o **topo como 1º PASSO**, dentro de uma caixa destacada com borda tracejada em var(--accent-teal).
-  2. **Inclusão do Campo Nome / Razão Social da Empresa:** Adicionado campo de texto visível para o Nome/Razão Social do Fornecedor ao lado do CNPJ.
-  3. **Integração Bidirecional (OCR + Digitação Manual):**
-     - Se o usuário envia a foto primeiro, o OCR lê o CNPJ e preenche automaticamente **tanto o CNPJ quanto o Nome da Empresa** obtido na Receita Federal.
-     - Se o OCR não detectar ou a foto for de baixa qualidade, o usuário pode digitar o CNPJ manualmente; o sistema fará a mesma busca automática na Receita Federal e preencherá o Nome da Empresa no campo ao lado.
+  1. **Feedback de Progresso em Tempo Real:** Adicionado indicador de escaneamento com porcentagem contínua (`⏳ Analisando imagem (0-100%)... Por favor, aguarde.`) logo que o arquivo é selecionado.
+  2. **Alertas de Preenchimento Manual:** Caso a foto apresente desfocagem, não contenha CNPJ ou seja um arquivo PDF, o sistema exibe imediatamente um alerta destacado em amarelo/azul informando ao usuário para digitar o CNPJ/Razão Social nos campos abaixo.

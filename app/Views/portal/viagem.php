@@ -330,13 +330,17 @@ foreach ($travelReports as $report) {
 
                 // Executa OCR inteligente na foto do comprovante para detectar o CNPJ
                 if (window.Tesseract && cnpjInfoDiv) {
-                    cnpjInfoDiv.innerHTML = '<span style="color: var(--accent-teal); font-weight: 600;">🤖 Lendo imagem para detectar CNPJ (OCR)...</span>';
+                    cnpjInfoDiv.innerHTML = '<span style="color: var(--accent-teal); font-weight: 600;">⏳ Lendo e analisando o comprovante fiscal... Por favor, aguarde um instante.</span>';
                     
                     Tesseract.recognize(file, 'por', {
-                        logger: m => console.log(m)
+                        logger: m => {
+                            if (m.status === 'recognizing text' && cnpjInfoDiv) {
+                                const pct = Math.round((m.progress || 0) * 100);
+                                cnpjInfoDiv.innerHTML = `<span style="color: var(--accent-teal); font-weight: 600;">⏳ Analisando imagem (${pct}%)... Por favor, aguarde.</span>`;
+                            }
+                        }
                     }).then(({ data: { text } }) => {
                         console.log("Texto extraído via OCR:", text);
-                        // Regex para identificar padrões de CNPJ
                         const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
                         if (match) {
                             const detectedCnpj = match[0].replace(/\D/g, "");
@@ -344,20 +348,23 @@ foreach ($travelReports as $report) {
                                 cnpjInput.value = detectedCnpj;
                                 consultarCnpjServico(detectedCnpj);
                             } else {
-                                cnpjInfoDiv.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ detectado automaticamente na imagem. Digite se necessário.</span>';
+                                cnpjInfoDiv.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível identificar o CNPJ nesta foto automaticamente. Por favor, preencha manualmente o CNPJ e o Nome da Empresa nos campos abaixo.</span>';
                             }
                         } else {
-                            cnpjInfoDiv.innerHTML = '<span style="color: #94a3b8;">Nenhum CNPJ lido na foto. Por favor, confirme o número.</span>';
+                            cnpjInfoDiv.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Nenhum CNPJ lido na foto. Por favor, preencha manualmente o CNPJ e o Nome da Empresa nos campos abaixo.</span>';
                         }
                     }).catch(err => {
                         console.error("Erro OCR Tesseract:", err);
-                        cnpjInfoDiv.innerHTML = '<span style="color: #94a3b8;">Não foi possível ler a imagem com OCR.</span>';
+                        cnpjInfoDiv.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível ler o arquivo via OCR. Por favor, preencha os dados do fornecedor manualmente.</span>';
                     });
                 }
 
             } else if (file.type === 'application/pdf') {
                 thumb.style.backgroundImage = 'none';
                 thumb.textContent = '📄';
+                if (cnpjInfoDiv) {
+                    cnpjInfoDiv.innerHTML = '<span style="color: #38bdf8; font-weight: 500;">ℹ️ Arquivo PDF anexo. Por favor, preencha manualmente o CNPJ e o Nome do Fornecedor nos campos abaixo.</span>';
+                }
             } else {
                 thumb.style.backgroundImage = 'none';
                 thumb.textContent = '📎';
