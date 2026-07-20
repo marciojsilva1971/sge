@@ -2,6 +2,10 @@
     RewriteEngine On
     DirectoryIndex index.php
 
+    # Nunca reescrever arquivos estáticos (CSS, JS, Imagens, Fontes)
+    RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ [NC]
+    RewriteRule ^ - [L]
+
     # Se o arquivo ou diretório solicitado fisicamente existir, acesse diretamente
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
