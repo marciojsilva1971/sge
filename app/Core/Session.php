@@ -50,7 +50,7 @@ class Session {
      */
     protected static function checkSessionIntegrity(): void {
         $currentUserAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        $currentIp = $_SERVER['REMOTE_ADDR'] ?? '';
+        $currentIp = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_CLIENT_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
 
         if (!self::has('user_agent')) {
             self::set('user_agent', $currentUserAgent);
@@ -59,11 +59,11 @@ class Session {
             self::set('ip_address', $currentIp);
         }
 
-        // Se o IP ou o User Agent mudou repentinamente, destrói a sessão por suspeita de roubo
-        if (self::get('user_agent') !== $currentUserAgent || self::get('ip_address') !== $currentIp) {
+        // Se o User Agent mudou repentinamente, destrói a sessão por suspeita de roubo
+        if (self::get('user_agent') !== $currentUserAgent) {
             self::destroy();
             self::start();
-            self::setFlash('error', 'Sessão encerrada por motivos de segurança (mudança de rede detectada).');
+            self::setFlash('error', 'Sessão encerrada por motivos de segurança (mudança de navegador detectada).');
         }
 
         // Proteção contra inatividade (Expirar sessão após 15 minutos)

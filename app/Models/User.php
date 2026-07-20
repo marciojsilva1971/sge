@@ -18,7 +18,7 @@ class User extends Model {
     public function findByEmail(string $email): ?array {
         $sql = "SELECT u.*, r.name as role_name, r.permissions as role_permissions 
                 FROM `{$this->table}` u
-                JOIN `roles` r ON u.role_id = r.id
+                LEFT JOIN `roles` r ON u.role_id = r.id
                 WHERE u.email = :email LIMIT 1";
         
         $stmt = $this->db->prepare($sql);
@@ -27,7 +27,7 @@ class User extends Model {
         
         if ($result) {
             // Decodifica permissões de JSON para array
-            $result['role_permissions'] = json_decode($result['role_permissions'], true) ?? [];
+            $result['role_permissions'] = json_decode($result['role_permissions'] ?? '[]', true) ?? [];
         }
         
         return $result ? $result : null;
@@ -39,7 +39,7 @@ class User extends Model {
     public function findWithRole(int $id): ?array {
         $sql = "SELECT u.*, r.name as role_name, r.permissions as role_permissions 
                 FROM `{$this->table}` u
-                JOIN `roles` r ON u.role_id = r.id
+                LEFT JOIN `roles` r ON u.role_id = r.id
                 WHERE u.id = :id LIMIT 1";
         
         $stmt = $this->db->prepare($sql);
