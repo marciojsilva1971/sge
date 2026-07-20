@@ -1,0 +1,443 @@
+<div class="rh-page-container">
+    
+    <div class="page-header">
+        <h2>Gestão de Colaboradores e Equipe de Campanha (RH)</h2>
+        <div class="page-actions">
+            <a href="<?= $this->baseUrl('colaborador/cadastro') ?>" target="_blank" class="btn btn-teal">
+                🔗 Link de Auto-Cadastro Público
+            </a>
+            <a href="<?= $this->baseUrl('admin/rh/novo') ?>" class="btn btn-primary">
+                + Novo Colaborador (Admin)
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros -->
+    <div class="panel-card filters-card">
+        <form method="GET" action="<?= $this->baseUrl('admin/rh') ?>" class="filters-form">
+            <div class="form-group mb-0">
+                <label for="filter-nome">Buscar por Nome</label>
+                <input type="text" id="filter-nome" name="nome" value="<?= htmlspecialchars($filters['nome'] ?? '') ?>" placeholder="Ex: João da Silva">
+            </div>
+
+            <div class="form-group mb-0">
+                <label for="filter-cpf">CPF</label>
+                <input type="text" id="filter-cpf" name="cpf" value="<?= htmlspecialchars($filters['cpf'] ?? '') ?>" placeholder="Apenas números">
+            </div>
+
+            <div class="form-group mb-0">
+                <label for="filter-status">Etapa do Fluxo (Status)</label>
+                <select id="filter-status" name="status">
+                    <option value="">Todas as Etapas</option>
+                    <option value="AGUARDANDO_AVAL_CADASTRO" <?= ($filters['status'] ?? '') === 'AGUARDANDO_AVAL_CADASTRO' ? 'selected' : '' ?>>1. Aguardando Aval do Cadastro</option>
+                    <option value="AGUARDANDO_ASSINATURA_CONTRATO" <?= ($filters['status'] ?? '') === 'AGUARDANDO_ASSINATURA_CONTRATO' ? 'selected' : '' ?>>2. Aguardando Assinatura do Contrato</option>
+                    <option value="AGUARDANDO_CONFERENCIA_CONTRATO" <?= ($filters['status'] ?? '') === 'AGUARDANDO_CONFERENCIA_CONTRATO' ? 'selected' : '' ?>>3. Aguardando Conferência do Contrato</option>
+                    <option value="ATIVO" <?= ($filters['status'] ?? '') === 'ATIVO' ? 'selected' : '' ?>>4. Homologado (Ativo)</option>
+                    <option value="REJEITADO" <?= ($filters['status'] ?? '') === 'REJEITADO' ? 'selected' : '' ?>>Rejeitado</option>
+                </select>
+            </div>
+
+            <div class="filters-actions">
+                <button type="submit" class="btn btn-teal">Filtrar</button>
+                <a href="<?= $this->baseUrl('admin/rh') ?>" class="btn btn-secondary">Limpar</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Colaboradores -->
+    <div class="panel-card">
+        <div class="table-responsive">
+            <table class="table table-striped table-colaboradores">
+                <thead>
+                    <tr>
+                        <th>Nome Completo</th>
+                        <th>CPF / Documento</th>
+                        <th>Idade</th>
+                        <th>WhatsApp / E-mail</th>
+                        <th>Contrato</th>
+                        <th>Etapa Atual</th>
+                        <th>Perfil SGE</th>
+                        <th>Ações Obrigatórias</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($colaboradores)): ?>
+                        <tr>
+                            <td colspan="8" class="text-center">Nenhum colaborador encontrado nesta etapa.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($colaboradores as $c): ?>
+                            <tr>
+                                <td>
+                                    <strong><?= htmlspecialchars($c['nome_completo']) ?></strong>
+                                    <?php if (!empty($c['optin_whatsapp'])): ?>
+                                        <span title="Opt-In WhatsApp Confirmado" style="color:#10b981; font-size:12px; margin-left:4px;">✓ Opt-In</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div><?= htmlspecialchars($c['cpf']) ?></div>
+                                    <small class="text-secondary">RG: <?= htmlspecialchars($c['rg']) ?> <?= htmlspecialchars($c['rg_orgao_emissor']) ?></small>
+                                     <?php if (!empty($c['documento_foto_path'])): ?>
+                                         <div><a href="<?= $this->baseUrl('admin/rh/documento?id=' . $c['id'] . '&tipo=doc') ?>" target="_blank" style="font-size:11px; color:#0d9488; font-weight:bold;">🪪 Ver Doc. (RG/CNH/CIN)</a></div>
+                                     <?php else: ?>
+                                        <div><span class="text-danger" style="font-size:11px;">⚠ Sem Doc. Anexo</span></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span><?= $c['idade_calculada'] ?> anos</span>
+                                    <?php if ($c['idade_calculada'] < 18): ?>
+                                        <span class="badge badge-warning" style="font-size: 10px;" title="Menor de idade: Restrições legais de campanha aplicáveis">⚠ Menor</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></div>
+                                    <small class="text-secondary"><?= htmlspecialchars($c['email']) ?></small>
+                                </td>
+                                <td>
+                                    <?php if (!empty($c['titulo_contrato'])): ?>
+                                        <div style="font-weight:bold; color:#10b981;">R$ <?= number_format($c['valor_contratado'], 2, ',', '.') ?></div>
+                                        <small class="text-secondary" style="display:block; margin-bottom:4px;">
+                                            <?= $c['tipo_assinatura'] === 'TERCEIROS_API' ? '🌐 Terceiros (API)' : '📄 Upload Manual' ?>
+                                        </small>
+                                        <div>
+                                            <a href="<?= $this->baseUrl('admin/rh/contrato-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:3px 7px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                                                📄 Visualizar Contrato (PDF)
+                                            </a>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="text-secondary" style="font-style:italic;">Aguardando Emissão</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($c['status'] === 'AGUARDANDO_AVAL_CADASTRO'): ?>
+                                        <span class="badge badge-warning">1. Aguardando Aval Cadastral</span>
+                                    <?php elseif ($c['status'] === 'AGUARDANDO_ASSINATURA_CONTRATO'): ?>
+                                        <span class="badge badge-info">2. Aguardando Assinatura</span>
+                                    <?php elseif ($c['status'] === 'AGUARDANDO_CONFERENCIA_CONTRATO'): ?>
+                                        <span class="badge badge-warning" style="background:#f59e0b; color:#000;">3. Conferir Contrato Assinado</span>
+                                    <?php elseif ($c['status'] === 'ATIVO'): ?>
+                                        <span class="badge badge-success">4. Homologado & Ativo</span>
+                                    <?php else: ?>
+                                        <span class="badge badge-danger">Rejeitado</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($c['role_nome'])): ?>
+                                        <span class="badge badge-primary"><?= htmlspecialchars($c['role_nome']) ?></span>
+                                    <?php else: ?>
+                                        <span class="text-secondary" style="font-size:12px;">Pendente</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($c['status'] === 'AGUARDANDO_AVAL_CADASTRO'): ?>
+                                        <button onclick="openAvalModal(<?= htmlspecialchars(json_encode($c)) ?>)" class="btn btn-warning btn-sm" style="font-weight:bold;">
+                                            🔍 Conferir Doc & Dar Aval
+                                        </button>
+
+                                    <?php elseif ($c['status'] === 'AGUARDANDO_CONFERENCIA_CONTRATO'): ?>
+                                        <button onclick="openConferirContratoModal(<?= htmlspecialchars(json_encode($c)) ?>)" class="btn btn-teal btn-sm" style="font-weight:bold; background:#0d9488; color:#fff; box-shadow: 0 0 10px rgba(13,148,136,0.4);">
+                                            📑 Conferir Contrato & Homologar
+                                        </button>
+
+                                    <?php elseif ($c['status'] === 'AGUARDANDO_ASSINATURA_CONTRATO'): ?>
+                                        <?php 
+                                            $wspPhone = preg_replace('/\D/', '', $c['celular_whatsapp'] ?? '');
+                                            if (strlen($wspPhone) <= 11 && !empty($wspPhone)) $wspPhone = '55' . $wspPhone;
+                                            $linkContrato = $this->baseUrl('colaborador/contrato?token=' . $c['token_cadastro']);
+                                            $wspText = rawurlencode("Olá " . $c['nome_completo'] . "! Seu cadastro de colaborador de campanha foi aprovado! Acesse o link para visualizar e assinar o seu contrato: " . $linkContrato);
+                                            $wspUrl = "https://api.whatsapp.com/send?phone=" . $wspPhone . "&text=" . $wspText;
+                                        ?>
+                                        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+                                            <!-- Botão de Homologar Direto -->
+                                            <button onclick="openConferirContratoModal(<?= htmlspecialchars(json_encode($c)) ?>)" class="btn btn-teal btn-sm" style="font-weight:bold; font-size:11px; padding:4px 8px;">
+                                                📑 Conferir & Homologar
+                                            </button>
+
+                                            <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                                                <!-- Disparo Direto via API Z-API -->
+                                                <form action="<?= $this->baseUrl('admin/rh/enviar-whatsapp') ?>" method="POST" style="margin:0;">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                    <input type="hidden" name="colaborador_id" value="<?= $c['id'] ?>">
+                                                    <button type="submit" class="btn btn-sm" style="background:#10b981; color:#fff; font-weight:bold; font-size:11px; padding:3px 6px; border-radius:4px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Dispara mensagem direta via API da Z-API">
+                                                        ⚡ Reenviar Whats API
+                                                    </button>
+                                                </form>
+
+                                                <!-- Link Web de Contingência -->
+                                                <a href="<?= $wspUrl ?>" target="_blank" style="font-size:10px; color:#25D366; text-decoration:underline;" title="Abrir no WhatsApp Web">
+                                                    💬 Web
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                    <?php elseif ($c['status'] === 'ATIVO'): ?>
+                                        <div style="display:flex; flex-direction:column; gap:4px;">
+                                            <span class="text-success" style="font-size: 11px; font-weight:bold;">✔ Homologado & Ativo</span>
+                                            <button onclick="openConferirContratoModal(<?= htmlspecialchars(json_encode($c)) ?>)" class="btn btn-secondary btn-sm" style="font-size:10px; padding:2px 6px;">
+                                                ✏ Alterar Perfil
+                                            </button>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="badge badge-danger">Rejeitado</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 1: Dar Aval no Cadastro & Emitir Contrato -->
+<div id="avalModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>1. Conferência de Cadastro & Aval para Emissão de Contrato</h3>
+            <button onclick="closeAvalModal()" class="btn-close-modal">&times;</button>
+        </div>
+        <form action="<?= $this->baseUrl('admin/rh/dar-aval') ?>" method="POST" class="modal-form">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" id="aval_colaborador_id" name="colaborador_id" value="">
+
+            <div class="form-group mb-2">
+                <label>Colaborador:</label>
+                <input type="text" id="aval_colaborador_nome" readonly class="input-disabled" style="font-weight:bold;">
+            </div>
+
+            <div class="form-group mb-2" id="aval_doc_link_box" style="background:#1e293b; padding:10px; border-radius:6px; margin-bottom:15px;">
+                <label style="color:#38bdf8; font-weight:bold;">Documento de Identificação Anexado:</label>
+                <div id="aval_doc_preview_link"></div>
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="aval_funcao_campanha">Função na Campanha *</label>
+                <select id="aval_funcao_campanha" name="funcao_campanha" required>
+                    <option value="">Selecione a função...</option>
+                    <option value="Cabo Eleitoral">Cabo Eleitoral</option>
+                    <option value="Coordenador de Bairro / Região">Coordenador de Bairro / Região</option>
+                    <option value="Coordenador Geral de Campanha">Coordenador Geral de Campanha</option>
+                    <option value="Panfletista / Ativista">Panfletista / Ativista</option>
+                    <option value="Motorista de Campanha">Motorista de Campanha</option>
+                    <option value="Mobilizador de Rua">Mobilizador de Rua</option>
+                    <option value="Assessor de Comunicação / Mídias">Assessor de Comunicação / Mídias</option>
+                    <option value="Segurança / Apoio Logístico">Segurança / Apoio Logístico</option>
+                    <option value="Outras Funções de Campanha">Outras Funções de Campanha</option>
+                </select>
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="aval_valor_contratado">Valor do Contrato *</label>
+                <input type="text" id="aval_valor_contratado" name="valor_contratado" required placeholder="R$ 0,00" onkeyup="mascaraMoeda(this)">
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="aval_forma_pagamento">Forma de Pagamento</label>
+                <input type="text" name="forma_pagamento" value="PIX / Transferência Bancária">
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="aval_tipo_assinatura">Modalidade de Assinatura do Contrato *</label>
+                <select name="tipo_assinatura" id="aval_tipo_assinatura" onchange="toggleAvalTerceirosUrl()">
+                    <option value="TERCEIROS_API">Link de Assinatura via Plataforma de Terceiros (ZapSign / Clicksign / Gov.br)</option>
+                    <option value="MANUAL_UPLOAD">Assinatura Manual (Impresso / Upload da Cópia Assinada pelo App/Web)</option>
+                </select>
+            </div>
+
+            <div class="form-group mb-2" id="group_aval_external_url">
+                <label for="aval_external_signature_url">Link de Assinatura Externa (Terceiros)</label>
+                <input type="url" name="external_signature_url" placeholder="https://app.zapsign.com.br/verificar/...">
+            </div>
+
+            <div class="modal-footer" style="margin-top: 20px;">
+                <button type="button" onclick="closeAvalModal()" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-teal">✔ Dar Aval & Liberar Contrato</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Conferir Contrato Assinado & Conceder Perfil (Homologação) -->
+<div id="conferirContratoModal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>2. Conferência do Contrato Assinado & Permissão SGE</h3>
+            <button onclick="closeConferirContratoModal()" class="btn-close-modal">&times;</button>
+        </div>
+        <form action="<?= $this->baseUrl('admin/rh/homologar') ?>" method="POST" class="modal-form">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" id="conf_colaborador_id" name="colaborador_id" value="">
+
+            <div class="form-group mb-2">
+                <label>Colaborador:</label>
+                <input type="text" id="conf_colaborador_nome" readonly class="input-disabled" style="font-weight:bold;">
+            </div>
+
+            <div class="form-group mb-2" style="background:#1e293b; padding:12px; border-radius:6px; margin-bottom:15px; border:1px solid rgba(16,185,129,0.3);">
+                <label style="color:#10b981; font-weight:bold;">Documento / Contrato Assinado para Conferência:</label>
+                <div id="conf_contrato_preview_link" style="margin-top:5px;"></div>
+            </div>
+
+            <!-- Painel de Validação e Situação Cadastral do Candidato a Colaborador -->
+            <div class="form-group mb-2" style="background:#0f172a; padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid rgba(59, 130, 246, 0.4);">
+                <label style="color:#60a5fa; font-weight:bold; font-size:12px; display:flex; align-items:center; gap:6px;">
+                    📋 Situação Cadastral do Candidato a Colaborador (Receita Federal / Res. TSE):
+                </label>
+                <div id="conf_tse_status_box" style="margin-top:6px; font-size:12px;">
+                    <div style="color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+                        <span>⏳ Verificando dados cadastrais do candidato a colaborador...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="conf_role_id">Conceder Perfil de Acesso ao Usuário no SGE (Role): *</label>
+                <select id="conf_role_id" name="role_id" required>
+                    <option value="">Selecione o Cargo / Nível de Acesso...</option>
+                    <?php foreach ($roles as $role): ?>
+                        <option value="<?= $role['id'] ?>"><?= htmlspecialchars($role['name']) ?> - <?= htmlspecialchars($role['description']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <small class="form-help">Após conferir o contrato assinado, selecione a permissão. O usuário será ativado no sistema somente neste momento.</small>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 20px;">
+                <button type="button" onclick="closeConferirContratoModal()" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-primary">✔ Contrato Conferido - Homologar & Liberar Permissão</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function mascaraMoeda(input) {
+    let v = input.value.replace(/\D/g, '');
+    if (v === '') {
+        input.value = '';
+        return;
+    }
+    v = (parseFloat(v) / 100).toFixed(2) + '';
+    v = v.replace('.', ',');
+    v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    input.value = 'R$ ' + v;
+}
+
+function openAvalModal(colaborador) {
+    document.getElementById('aval_colaborador_id').value = colaborador.id;
+    document.getElementById('aval_colaborador_nome').value = colaborador.nome_completo;
+    
+    const docLinkBox = document.getElementById('aval_doc_preview_link');
+    if (colaborador.documento_foto_path) {
+        docLinkBox.innerHTML = `<a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=doc" target="_blank" class="btn btn-teal btn-sm">🪪 Abrir Foto do Documento de Identificação</a>`;
+    } else {
+        docLinkBox.innerHTML = `<span class="text-danger">Nenhum documento anexo.</span>`;
+    }
+
+    document.getElementById('avalModal').classList.remove('hidden');
+}
+
+function closeAvalModal() {
+    document.getElementById('avalModal').classList.add('hidden');
+}
+
+function toggleAvalTerceirosUrl() {
+    const tipo = document.getElementById('aval_tipo_assinatura').value;
+    document.getElementById('group_aval_external_url').style.display = (tipo === 'TERCEIROS_API') ? 'block' : 'none';
+}
+
+function openConferirContratoModal(colaborador) {
+    document.getElementById('conf_colaborador_id').value = colaborador.id;
+    document.getElementById('conf_colaborador_nome').value = colaborador.nome_completo;
+
+    const confBox = document.getElementById('conf_contrato_preview_link');
+    let html = '';
+
+    // 1. Cópia do contrato assinado enviado pelo colaborador (Upload)
+    if (colaborador.pdf_assinado_path) {
+        html += `<div style="margin-bottom:8px;">
+            <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=contrato" target="_blank" class="btn btn-success btn-sm" style="font-weight:bold; width:100%; display:inline-block; text-align:center; padding:8px 12px;">
+                📄 Visualizar Cópia do Contrato Assinado Enviado (Upload)
+            </a>
+        </div>`;
+    }
+
+    // 2. Link de assinatura em plataforma de terceiros (ZapSign / Clicksign)
+    if (colaborador.external_signature_url) {
+        html += `<div style="margin-bottom:8px;">
+            <a href="${colaborador.external_signature_url}" target="_blank" class="btn btn-teal btn-sm" style="font-weight:bold; width:100%; display:inline-block; text-align:center; padding:8px 12px;">
+                🌐 Visualizar Assinatura na Plataforma Externa (ZapSign / Clicksign)
+            </a>
+        </div>`;
+    }
+
+    // 3. Modelo oficial de contrato emitido em PDF pelo SGE
+    if (colaborador.titulo_contrato) {
+        html += `<div style="margin-bottom:8px;">
+            <a href="<?= $this->baseUrl('admin/rh/contrato-pdf?id=') ?>${colaborador.id}" target="_blank" class="btn btn-primary btn-sm" style="font-weight:bold; background:#0284c7; width:100%; display:inline-block; text-align:center; padding:8px 12px;">
+                📄 Visualizar Modelo Oficial do Contrato Emitido (PDF)
+            </a>
+        </div>`;
+    }
+
+    // 4. Foto do Documento de Identificação (RG / CNH / CIN)
+    if (colaborador.documento_foto_path) {
+        html += `<div style="margin-bottom:4px;">
+            <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=doc" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px; width:100%; display:inline-block; text-align:center; padding:6px 10px;">
+                🪪 Visualizar Foto do Documento de Identificação (RG/CNH)
+            </a>
+        </div>`;
+    }
+
+    if (!html) {
+        html = `<div class="text-warning" style="font-size:13px; text-align:center; padding:6px;">Documento em formato físico / impresso entregue em mãos.</div>`;
+    }
+
+    confBox.innerHTML = html;
+
+    // Consulta em tempo real da Situação Cadastral do Candidato a Colaborador
+    const tseBox = document.getElementById('conf_tse_status_box');
+    tseBox.innerHTML = `<div style="color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+        <span>⏳ Verificando regularidade fiscal (CPF) e cadastral do candidato a colaborador...</span>
+    </div>`;
+
+    fetch(`<?= $this->baseUrl('admin/rh/consultar-tse?id=') ?>${colaborador.id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.valido) {
+                let badgeStyle = (data.cor_badge === 'success') ? 'background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4);' : 'background:rgba(14,165,233,0.2); color:#38bdf8; border:1px solid rgba(14,165,233,0.4);';
+                tseBox.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                        <span style="font-size:11px; padding:3px 8px; border-radius:4px; font-weight:bold; ${badgeStyle}">${data.status_tse}</span>
+                        <span style="font-size:11px; color:#10b981; font-weight:bold;">✔ ${data.status_cpf}</span>
+                    </div>
+                    <div style="color:#e2e8f0; font-size:11px; line-height:1.5; background:rgba(255,255,255,0.03); padding:8px; border-radius:6px;">
+                        <strong>Enquadramento:</strong> ${data.cargo}<br>
+                        <strong>Regulamentação:</strong> ${data.partido}<br>
+                        ${data.idade_info ? `<strong>Faixa Etária:</strong> ${data.idade_info}<br>` : ''}
+                        <span style="color:#94a3b8; font-size:10px; display:block; margin-top:4px;">ℹ ${data.detalhes}</span>
+                    </div>
+                `;
+            } else {
+                tseBox.innerHTML = `
+                    <div style="color:#ef4444; font-weight:bold; font-size:11px; margin-bottom:4px;">
+                        ⚠ ${data.status_tse}
+                    </div>
+                    <div style="color:#94a3b8; font-size:10px;">
+                        ${data.detalhes || 'Verifique o número do CPF digitado no cadastro.'}
+                    </div>
+                `;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            tseBox.innerHTML = `<span style="color:#f59e0b; font-size:11px;">⚠ Validação sintática de CPF efetuada. Servidor TSE temporariamente indisponível.</span>`;
+        });
+
+    document.getElementById('conferirContratoModal').classList.remove('hidden');
+}
+
+function closeConferirContratoModal() {
+    document.getElementById('conferirContratoModal').classList.add('hidden');
+}
+</script>
