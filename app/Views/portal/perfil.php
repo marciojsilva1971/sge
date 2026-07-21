@@ -56,52 +56,92 @@
                 <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['nome_completo'] ?? $user['name']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <div class="form-group">
-                    <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">CPF</label>
-                    <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['cpf'] ?? 'Não informado') ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
-                </div>
-                <div class="form-group">
-                    <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">RG</label>
-                    <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['rg'] ?? 'Não informado') ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">E-mail de Acesso</label>
-                <input type="email" class="form-control" value="<?= htmlspecialchars($user['email']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div class="form-group">
-                    <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Função / Papel</label>
-                    <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['papel_eleitoral'] ?? $user['role_name']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
-                </div>
-                <div class="form-group">
-                    <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Status RH</label>
-                    <span class="badge badge-success" style="display: block; padding: 8px; text-align: center; border-radius: 8px; font-weight: 600;">
-                        ✓ <?= htmlspecialchars($colaborador['status_homologacao'] ?? 'ATIVO') ?>
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção 2: Contato e Dados Editáveis -->
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-            <div style="font-size: 14px; font-weight: 600; color: var(--accent-teal-hover); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                <span>📱</span> Contato & PIX
-            </div>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label for="celular" style="font-size: 12px; color: #fff; display: block; margin-bottom: 4px;">Celular / WhatsApp <span style="color: var(--error-color);">*</span></label>
-                <input type="text" id="celular" name="celular" class="form-control" value="<?= htmlspecialchars($colaborador['celular_whatsapp'] ?? $user['celular'] ?? '') ?>" required placeholder="(00) 90000-0000">
-            </div>
-
-            <div class="form-group">
-                <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Chave PIX Cadastrada</label>
-                <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['chave_pix'] ?? 'Não informada') ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
-            </div>
-        </div>
+             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                 <div class="form-group">
+                     <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">CPF</label>
+                     <?php
+                     $cpfVal = $colaborador['cpf'] ?? '';
+                     $cpfMasked = 'Não informado';
+                     if (!empty($cpfVal)) {
+                         $cpfLimpo = preg_replace('/\D/', '', $cpfVal);
+                         if (strlen($cpfLimpo) === 11) {
+                             $cpfMasked = substr($cpfLimpo, 0, 3) . '.' . substr($cpfLimpo, 3, 3) . '.' . substr($cpfLimpo, 6, 3) . '-' . substr($cpfLimpo, 9, 2);
+                         } else {
+                             $cpfMasked = $cpfVal;
+                         }
+                     }
+                     ?>
+                     <input type="text" class="form-control" value="<?= htmlspecialchars($cpfMasked) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
+                 </div>
+                 <div class="form-group">
+                     <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">RG</label>
+                     <?php
+                     $rgVal = $colaborador['rg'] ?? '';
+                     $rgMasked = 'Não informado';
+                     if (!empty($rgVal)) {
+                         $rgLimpo = preg_replace('/[^\dXx]/', '', $rgVal);
+                         if (strlen($rgLimpo) === 9) {
+                             $rgMasked = substr($rgLimpo, 0, 2) . '.' . substr($rgLimpo, 2, 3) . '.' . substr($rgLimpo, 5, 3) . '-' . substr($rgLimpo, 8, 1);
+                         } elseif (strlen($rgLimpo) === 8) {
+                             $rgMasked = substr($rgLimpo, 0, 1) . '.' . substr($rgLimpo, 1, 3) . '.' . substr($rgLimpo, 4, 3) . '-' . substr($rgLimpo, 7, 1);
+                         } else {
+                             $rgMasked = $rgVal;
+                         }
+                     }
+                     ?>
+                     <input type="text" class="form-control" value="<?= htmlspecialchars($rgMasked) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
+                 </div>
+             </div>
+ 
+             <div class="form-group" style="margin-bottom: 12px;">
+                 <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">E-mail de Acesso</label>
+                 <input type="email" class="form-control" value="<?= htmlspecialchars($user['email']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
+             </div>
+ 
+             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                 <div class="form-group">
+                     <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Função / Papel</label>
+                     <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['papel_eleitoral'] ?? $user['role_name']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
+                 </div>
+                 <div class="form-group">
+                     <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Status RH</label>
+                     <span class="badge badge-success" style="display: block; padding: 8px; text-align: center; border-radius: 8px; font-weight: 600;">
+                         ✓ <?= htmlspecialchars($colaborador['status_homologacao'] ?? 'ATIVO') ?>
+                     </span>
+                 </div>
+             </div>
+         </div>
+ 
+         <!-- Seção 2: Contato e Dados Editáveis -->
+         <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+             <div style="font-size: 14px; font-weight: 600; color: var(--accent-teal-hover); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                 <span>📱</span> Contato & PIX
+             </div>
+ 
+             <div class="form-group" style="margin-bottom: 12px;">
+                 <label for="celular" style="font-size: 12px; color: #fff; display: block; margin-bottom: 4px;">Celular / WhatsApp <span style="color: var(--error-color);">*</span></label>
+                 <?php
+                 $celCru = $colaborador['celular_whatsapp'] ?? $user['celular'] ?? '';
+                 $celMasked = '';
+                 if (!empty($celCru)) {
+                     $celLimpo = preg_replace('/\D/', '', $celCru);
+                     if (strlen($celLimpo) === 11) {
+                         $celMasked = '(' . substr($celLimpo, 0, 2) . ') ' . substr($celLimpo, 2, 5) . '-' . substr($celLimpo, 7, 4);
+                     } elseif (strlen($celLimpo) === 10) {
+                         $celMasked = '(' . substr($celLimpo, 0, 2) . ') ' . substr($celLimpo, 2, 4) . '-' . substr($celLimpo, 6, 4);
+                     } else {
+                         $celMasked = $celCru;
+                     }
+                 }
+                 ?>
+                 <input type="text" id="celular" name="celular" class="form-control" value="<?= htmlspecialchars($celMasked) ?>" required placeholder="(00) 90000-0000">
+             </div>
+ 
+             <div class="form-group">
+                 <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Chave PIX Cadastrada</label>
+                 <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['chave_pix'] ?? 'Não informada') ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
+             </div>
+         </div>
 
         <!-- Seção 3: Alteração de Senha de Acesso -->
         <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
@@ -218,4 +258,25 @@ function previewAvatarImage(input) {
         reader.readAsDataURL(file);
     }
 }
+
+// Aplica máscara dinâmica no input de Celular
+document.addEventListener('DOMContentLoaded', function() {
+    const celularInput = document.getElementById('celular');
+    if (celularInput) {
+        celularInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 11) value = value.slice(0, 11);
+            
+            if (value.length > 6) {
+                e.target.value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+            } else if (value.length > 2) {
+                e.target.value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+            } else if (value.length > 0) {
+                e.target.value = `(${value}`;
+            } else {
+                e.target.value = value;
+            }
+        });
+    }
+});
 </script>

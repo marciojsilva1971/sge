@@ -57,9 +57,23 @@
             </div>
 
              <div class="form-group" style="margin-bottom: 16px;">
-                 <label for="celular" style="font-size: 13px; color: #fff; display: block; margin-bottom: 6px;">Celular / WhatsApp</label>
-                 <input type="text" id="celular" name="celular" class="form-control" value="<?= htmlspecialchars($userFull['celular'] ?? $user['celular'] ?? '') ?>" placeholder="(00) 90000-0000" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; width: 100%;">
-             </div>
+                  <label for="celular" style="font-size: 13px; color: #fff; display: block; margin-bottom: 6px;">Celular / WhatsApp</label>
+                  <?php
+                  $celCru = $userFull['celular'] ?? $user['celular'] ?? '';
+                  $celMasked = '';
+                  if (!empty($celCru)) {
+                      $celLimpo = preg_replace('/\D/', '', $celCru);
+                      if (strlen($celLimpo) === 11) {
+                          $celMasked = '(' . substr($celLimpo, 0, 2) . ') ' . substr($celLimpo, 2, 5) . '-' . substr($celLimpo, 7, 4);
+                      } elseif (strlen($celLimpo) === 10) {
+                          $celMasked = '(' . substr($celLimpo, 0, 2) . ') ' . substr($celLimpo, 2, 4) . '-' . substr($celLimpo, 6, 4);
+                      } else {
+                          $celMasked = $celCru;
+                      }
+                  }
+                  ?>
+                  <input type="text" id="celular" name="celular" class="form-control" value="<?= htmlspecialchars($celMasked) ?>" placeholder="(00) 90000-0000" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; width: 100%;">
+              </div>
  
              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                  <div class="form-group">
@@ -191,4 +205,25 @@
          reader.readAsDataURL(file);
      }
  }
- </script>
+
+// Aplica máscara dinâmica no input de Celular
+document.addEventListener('DOMContentLoaded', function() {
+    const celularInput = document.getElementById('celular');
+    if (celularInput) {
+        celularInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 11) value = value.slice(0, 11);
+            
+            if (value.length > 6) {
+                e.target.value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+            } else if (value.length > 2) {
+                e.target.value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+            } else if (value.length > 0) {
+                e.target.value = `(${value}`;
+            } else {
+                e.target.value = value;
+            }
+        });
+    }
+});
+</script>
