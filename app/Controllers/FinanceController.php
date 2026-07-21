@@ -998,7 +998,7 @@ class FinanceController extends Controller {
             'title'      => 'Contratos por Tempo Determinado | SGE',
             'contracts'  => $contracts,
             'suppliers'  => $suppliers,
-            'csrf_token' => Session::generateCsrfToken()
+            'csrf_token' => Session::csrfToken()
         ]);
     }
 
