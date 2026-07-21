@@ -131,6 +131,12 @@ $router->get('/admin/financeiro/spce/export-csv', 'FinanceController@exportSpceC
 $router->get('/admin/financeiro/spce/dossier', 'FinanceController@exportSpcePdf');
 $router->post('/admin/financeiro/spce/mark-72h', 'FinanceController@mark72hReported');
 
+// Módulo Financeiro - Carga Inicial & Conciliação Bancária com Extrato PDF
+$router->get('/admin/financeiro/conciliacao', 'FinanceController@reconciliation');
+$router->post('/admin/financeiro/conciliacao/ajustar', 'FinanceController@adjustBankBalance');
+$router->get('/admin/financeiro/conciliacao/download', 'FinanceController@downloadStatement');
+
+
 // Módulo de RH e Gestão de Colaboradores
 $router->get('/admin/rh', 'RhController@index');
 $router->get('/admin/rh/novo', 'RhController@create');

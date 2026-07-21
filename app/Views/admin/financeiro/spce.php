@@ -14,60 +14,68 @@
     </div>
 
     <!-- Cards de Resumo Financeiro & Alertas de 72h -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 25px;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px;">
         
-        <div class="kpi-card" style="background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; text-transform: uppercase;">Arrecadação Total</span>
-                <span style="font-size: 24px;">💰</span>
+        <div style="background: #1e293b; padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Arrecadação Total</span>
+                    <span style="font-size: 22px;">💰</span>
+                </div>
+                <div style="font-size: 22px; font-weight: 800; color: #4ade80; line-height: 1.2; margin-bottom: 4px;">
+                    R$ <?= number_format($totalReceitas, 2, ',', '.') ?>
+                </div>
             </div>
-            <div style="font-size: 24px; font-weight: bold; color: #4ade80;">
-                R$ <?= number_format($totalReceitas, 2, ',', '.') ?>
-            </div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
                 Total de doações e recursos registrados
             </div>
         </div>
 
-        <div class="kpi-card" style="background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; text-transform: uppercase;">Gastos Acumulados</span>
-                <span style="font-size: 24px;">💸</span>
+        <div style="background: #1e293b; padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Gastos Acumulados</span>
+                    <span style="font-size: 22px;">💸</span>
+                </div>
+                <div style="font-size: 22px; font-weight: 800; color: #f87171; line-height: 1.2; margin-bottom: 4px;">
+                    R$ <?= number_format($totalDespesas, 2, ',', '.') ?>
+                </div>
             </div>
-            <div style="font-size: 24px; font-weight: bold; color: #f87171;">
-                R$ <?= number_format($totalDespesas, 2, ',', '.') ?>
-            </div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
                 Total de despesas com fornecedores
             </div>
         </div>
 
-        <div class="kpi-card" style="background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; text-transform: uppercase;">Alertas de 72 Horas</span>
-                <span style="font-size: 24px;">⌛</span>
+        <div style="background: #1e293b; padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Alertas de 72 Horas</span>
+                    <span style="font-size: 22px;">⌛</span>
+                </div>
+                <?php 
+                    $pending72h = array_filter($revenues, function($r) { return ($r['tse_status'] ?? 'PENDENTE') === 'PENDENTE'; });
+                    $count72h = count($pending72h);
+                ?>
+                <div style="font-size: 22px; font-weight: 800; color: <?= $count72h > 0 ? '#facc15' : '#4ade80' ?>; line-height: 1.2; margin-bottom: 4px;">
+                    <?= $count72h ?> Doaçõ<?= $count72h === 1 ? 'ão' : 'ões' ?>
+                </div>
             </div>
-            <?php 
-                $pending72h = array_filter($revenues, function($r) { return ($r['tse_status'] ?? 'PENDENTE') === 'PENDENTE'; });
-                $count72h = count($pending72h);
-            ?>
-            <div style="font-size: 24px; font-weight: bold; color: <?= $count72h > 0 ? '#facc15' : '#4ade80' ?>;">
-                <?= $count72h ?> Doaçõ<?= $count72h === 1 ? 'ão' : 'ões' ?>
-            </div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
                 <?= $count72h > 0 ? 'Pendente de envio ao TSE' : 'Todas as doações reportadas' ?>
             </div>
         </div>
 
-        <div class="kpi-card" style="background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="color: #94a3b8; font-size: 13px; font-weight: bold; text-transform: uppercase;">Conformidade Legal</span>
-                <span style="font-size: 24px;">⚖️</span>
+        <div style="background: #1e293b; padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="color: #94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Conformidade Legal</span>
+                    <span style="font-size: 22px;">⚖️</span>
+                </div>
+                <div style="font-size: 22px; font-weight: 800; color: <?= count($auditIssues) > 0 ? '#fb923c' : '#4ade80' ?>; line-height: 1.2; margin-bottom: 4px;">
+                    <?= count($auditIssues) ?> <?= count($auditIssues) === 1 ? 'Alerta' : 'Alertas' ?>
+                </div>
             </div>
-            <div style="font-size: 24px; font-weight: bold; color: <?= count($auditIssues) > 0 ? '#fb923c' : '#4ade80' ?>;">
-                <?= count($auditIssues) ?> <?= count($auditIssues) === 1 ? 'Alerta' : 'Alertas' ?>
-            </div>
-            <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
                 <?= count($auditIssues) > 0 ? 'Requer atenção do contador' : 'Nenhuma inconsistência fiscal' ?>
             </div>
         </div>

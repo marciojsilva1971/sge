@@ -1626,5 +1626,211 @@ class FinanceController extends Controller {
         </html>';
         exit;
     }
+
+    /**
+     * Tela de Carga Inicial e Conciliação Bancária com Extratos PDF
+     */
+    public function reconciliation(): void {
+        $user = $this->requireAuth();
+        $db = Database::getInstance();
+
+        // Contas Bancárias ativas
+        $accounts = $db->query("SELECT * FROM `bank_accounts` ORDER BY name ASC")->fetchAll();
+
+        // Histórico de Ajustes e Cargas de Saldo
+        $adjustments = $db->query(
+            "SELECT a.*, b.name as bank_name, b.agency, b.account_number, u.name as created_by_name 
+             FROM `bank_balance_adjustments` a 
+             JOIN `bank_accounts` b ON a.bank_account_id = b.id 
+             JOIN `usuarios` u ON a.created_by = u.id 
+             ORDER BY a.created_at DESC"
+        )->fetchAll();
+
+        $totalBalance = array_sum(array_column($accounts, 'balance'));
+
+        $this->render('admin/financeiro/conciliacao', [
+            'title'        => 'Carga & Conciliação Bancária | SGE',
+            'user'         => $user,
+            'accounts'     => $accounts,
+            'adjustments'  => $adjustments,
+            'totalBalance' => $totalBalance,
+            'csrf_token'   => Session::csrfToken()
+        ]);
+    }
+
+    /**
+     * Processa a Carga Inicial ou Ajuste de Saldo Bancário com Upload Obrigatório de Extrato PDF
+     */
+    public function adjustBankBalance(): void {
+        $user = $this->requireAuth();
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+
+        $bankAccountId   = intval($_POST['bank_account_id'] ?? 0);
+        $adjustmentType  = trim($_POST['adjustment_type'] ?? '');
+        $amountBrl       = trim($_POST['adjustment_amount'] ?? '');
+        $reason          = trim($_POST['reason'] ?? '');
+
+        $amount = floatval(str_replace(',', '.', str_replace('.', '', $amountBrl)));
+
+        if ($bankAccountId <= 0 || empty($adjustmentType) || empty($reason)) {
+            Session::setFlash('error', 'Por favor, preencha todos os campos obrigatórios do formulário.');
+            $this->redirect('/admin/financeiro/conciliacao');
+        }
+
+        // Valida conta bancária existente
+        $stmt = $db->prepare("SELECT * FROM `bank_accounts` WHERE id = :id");
+        $stmt->execute(['id' => $bankAccountId]);
+        $account = $stmt->fetch();
+
+        if (!$account) {
+            Session::setFlash('error', 'Conta bancária não localizada.');
+            $this->redirect('/admin/financeiro/conciliacao');
+        }
+
+        // Validação OBRIGATÓRIA do Extrato Bancário em PDF
+        if (!isset($_FILES['statement_pdf']) || $_FILES['statement_pdf']['error'] !== UPLOAD_ERR_OK) {
+            Session::setFlash('error', 'É obrigatório anexar a cópia do Extrato Bancário em PDF para registrar a carga ou ajuste de saldo.');
+            $this->redirect('/admin/financeiro/conciliacao');
+        }
+
+        $file = $_FILES['statement_pdf'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if ($ext !== 'pdf' || ($mime !== 'application/pdf' && $mime !== 'application/x-pdf')) {
+            Session::setFlash('error', 'O arquivo do extrato bancário deve estar no formato PDF.');
+            $this->redirect('/admin/financeiro/conciliacao');
+        }
+
+        if ($file['size'] > 10 * 1024 * 1024) { // 10MB
+            Session::setFlash('error', 'O arquivo do extrato excede o limite máximo permitido de 10MB.');
+            $this->redirect('/admin/financeiro/conciliacao');
+        }
+
+        // Diretório de armazenamento de extratos
+        $uploadDir = __DIR__ . '/../../storage/uploads/extratos';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $fileName = 'EXTRATO_' . $bankAccountId . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.pdf';
+        $filePath = 'storage/uploads/extratos/' . $fileName;
+        $destination = $uploadDir . '/' . $fileName;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            Session::setFlash('error', 'Falha ao salvar a cópia do extrato bancário no servidor.');
+            $this->redirect('/admin/financeiro/conciliacao');
+        }
+
+        $oldBalance = floatval($account['balance']);
+        $newBalance = $oldBalance;
+
+        if ($adjustmentType === 'CARGA_INICIAL' || $adjustmentType === 'CONCILIACAO') {
+            $newBalance = $amount;
+        } elseif ($adjustmentType === 'AJUSTE_CREDITO') {
+            $newBalance = $oldBalance + $amount;
+        } elseif ($adjustmentType === 'AJUSTE_DEBITO') {
+            $newBalance = $oldBalance - $amount;
+        }
+
+        // Registra transação no banco de dados
+        $db->beginTransaction();
+        try {
+            // 1. Atualiza saldo na conta bancária
+            $stmtUpd = $db->prepare("UPDATE `bank_accounts` SET balance = :balance, updated_at = NOW() WHERE id = :id");
+            $stmtUpd->execute([
+                'balance' => $newBalance,
+                'id'      => $bankAccountId
+            ]);
+
+            // 2. Insere registro de ajuste no histórico
+            $stmtIns = $db->prepare(
+                "INSERT INTO `bank_balance_adjustments` 
+                 (bank_account_id, adjustment_type, old_balance, adjustment_amount, new_balance, reason, statement_file_path, statement_file_name, created_by) 
+                 VALUES (:bank_account_id, :adjustment_type, :old_balance, :adjustment_amount, :new_balance, :reason, :statement_file_path, :statement_file_name, :created_by)"
+            );
+            $stmtIns->execute([
+                'bank_account_id'    => $bankAccountId,
+                'adjustment_type'   => $adjustmentType,
+                'old_balance'        => $oldBalance,
+                'adjustment_amount' => $amount,
+                'new_balance'        => $newBalance,
+                'reason'             => $reason,
+                'statement_file_path'=> $filePath,
+                'statement_file_name'=> $file['name'],
+                'created_by'         => $user['id']
+            ]);
+
+            // 3. Log de auditoria
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (usuario_id, acao, tabela, registro_id, detalhes) 
+                 VALUES (:uid, 'CARGA_CONCILIACAO_BANCARIA', 'bank_balance_adjustments', :rid, :detalhes)"
+            );
+            $stmtLog->execute([
+                'uid'     => $user['id'],
+                'rid'     => $db->lastInsertId(),
+                'detalhes'=> json_encode([
+                    'conta_id'    => $bankAccountId,
+                    'tipo'        => $adjustmentType,
+                    'saldo_ant'   => $oldBalance,
+                    'saldo_novo'  => $newBalance,
+                    'extrato_pdf' => $file['name']
+                ])
+            ]);
+
+            $db->commit();
+            Session::setFlash('success', "Ajuste/Carga de saldo realizado com sucesso! Novo saldo da conta: R$ " . number_format($newBalance, 2, ',', '.'));
+        } catch (\Exception $e) {
+            $db->rollBack();
+            if (file_exists($destination)) {
+                @unlink($destination);
+            }
+            Session::setFlash('error', 'Erro ao salvar alteração de saldo: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/conciliacao');
+    }
+
+    /**
+     * Download / Streaming seguro do arquivo PDF do Extrato Bancário
+     */
+    public function downloadStatement(): void {
+        $user = $this->requireAuth();
+        $db = Database::getInstance();
+        $id = intval($_GET['id'] ?? 0);
+
+        if ($id <= 0) {
+            header("HTTP/1.0 400 Bad Request");
+            echo "ID inválido.";
+            exit;
+        }
+
+        $stmt = $db->prepare("SELECT * FROM `bank_balance_adjustments` WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $adj = $stmt->fetch();
+
+        if (!$adj) {
+            header("HTTP/1.0 404 Not Found");
+            echo "Registro de ajuste não localizado.";
+            exit;
+        }
+
+        $fullPath = __DIR__ . '/../../' . $adj['statement_file_path'];
+
+        if (!file_exists($fullPath)) {
+            header("HTTP/1.0 404 Not Found");
+            echo "Arquivo PDF do extrato bancário não localizado no servidor.";
+            exit;
+        }
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . addslashes($adj['statement_file_name']) . '"');
+        header('Content-Length: ' . filesize($fullPath));
+        readfile($fullPath);
+        exit;
+    }
 }
 

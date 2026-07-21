@@ -389,3 +389,19 @@ eceitas para auditoria do prazo legal impositivo de 72 horas para envio de doaç
      - Criado o gerador do Dossiê Consolidado da Campanha formatado para o contador eleitoral, contendo visão sintética e analítica das contas bancárias, receitas, despesas e instrumentos contratuais.
   6. **Controle de Confirmação do Envio de 72 Horas ao TSE (mark72hReported):**
      - Endpoint e botões de ação para alterar o status da doação após transmissão do relatório financeiro ao sistema do TSE.
+
+---
+
+## 📅 Sessão 63: Módulo de Carga Inicial, Conciliação Bancária com Extratos em PDF e Ajustes de UI
+* **Ações Implementadas:**
+  1. **Ajuste Fino de Layout e CSS na View SPCE (pp/Views/admin/financeiro/spce.php):**
+     - Corrigido o estilo dos cards KPI (como 'Conformidade Legal') eliminando sobreposições, quebras de linhas estranhas e bugs de alinhamento visual reportados em telas de diferentes resoluções.
+  2. **Estrutura de Banco de Dados (update_bank_adjustments_schema.sql e schema.sql):**
+     - Criada a tabela ank_balance_adjustments para rastreamento auditável de cargas de recursos disponibilizados para a campanha, conciliação e ajustes de saldos bancários a crédito ou débitos.
+  3. **Aba de Navegação & View Administrativa (/admin/financeiro/conciliacao):**
+     - Adicionada a aba 🏦 Carga & Conciliação Bancária em _nav_tabs.php.
+     - Criada a view pp/Views/admin/financeiro/conciliacao.php para acompanhamento dos saldos das contas bancárias, lançamento de ajustes e histórico de conciliações.
+  4. **Exigência Impositiva de Extrato Bancário em PDF (FinanceController::adjustBankBalance):**
+     - Implementada validação obrigatória do envio do arquivo em PDF do **Extrato Bancário Oficial** a cada alteração ou carga de saldo realizada no sistema. Os arquivos são salvos com nome único em storage/uploads/extratos/.
+  5. **Endpoint Seguro de Visualização de Extrato PDF (FinanceController::downloadStatement):**
+     - Criado streaming seguro para visualização ou download do arquivo PDF do extrato bancário anexado em cada lançamento.
