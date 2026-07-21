@@ -56,14 +56,28 @@ class AdminController extends Controller {
         $pendingMilitancy = (int)$db->query("SELECT COUNT(*) FROM `militancy_activities` WHERE `status` = 'PENDENTE'")->fetchColumn();
         $totalPending = $pendingDespesas + $pendingMilitancy;
 
+        // 4. KPIs Financeiros Calculados Dinamicamente do Banco de Dados
+        $caixaTotal = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE status = 'ATIVA'")->fetchColumn());
+        $fefc       = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'FEFC' AND status = 'ATIVA'")->fetchColumn());
+        $fundoPart  = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'FUNDO_PARTIDARIO' AND status = 'ATIVA'")->fetchColumn());
+        $outros     = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'OUTROS_RECURSOS' AND status = 'ATIVA'")->fetchColumn());
+
+        // Gastos Aprovados ou Pagos (Despesas + Recibos de Viagem)
+        $totalDespesas = floatval($db->query("SELECT COALESCE(SUM(value), 0) FROM `despesas` WHERE status IN ('APROVADO', 'PAGO')")->fetchColumn());
+        $totalTravel   = floatval($db->query("SELECT COALESCE(SUM(value), 0) FROM `travel_receipts` WHERE status = 'APROVADO'")->fetchColumn());
+        $gastoAtual    = $totalDespesas + $totalTravel;
+
+        $limiteGastos  = 5000000.00;
+        $gastoPercent  = ($limiteGastos > 0) ? min(100, round(($gastoAtual / $limiteGastos) * 100, 2)) : 0;
+
         $kpiFinances = [
-            'caixa_total' => 258400.00,
-            'fefc'        => 180000.00,
-            'fundo_part'  => 50000.00,
-            'outros'      => 28400.00,
-            'limite_gastos'=> 5000000.00,
-            'gasto_atual' => 312000.00,
-            'gasto_percent'=> round((312000.00 / 5000000.00) * 100, 2),
+            'caixa_total'        => $caixaTotal,
+            'fefc'               => $fefc,
+            'fundo_part'         => $fundoPart,
+            'outros'             => $outros,
+            'limite_gastos'      => $limiteGastos,
+            'gasto_atual'        => $gastoAtual,
+            'gasto_percent'      => $gastoPercent,
             'pendente_aprovacao' => $totalPending
         ];
 

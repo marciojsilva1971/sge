@@ -44,4 +44,14 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - **Mapeamento de Rota HTTP:** Adicionado o mapeamento do método `POST` para a URL `/admin/financeiro` no arquivo de rotas (`public/index.php`), direcionando o envio do formulário "Lançar Nova Receita / Doação" para o método `FinanceController::index()`.
   - **Resolução do Erro 404:** O formulário de receita submete via requisição `POST` para a URL `/admin/financeiro`. Sem o registro explícito dessa rota no roteador, ocorria o retorno de 404 Not Found.
 
+---
+
+## 📅 Sessão 6: Dinamização Total dos KPIs Financeiros do Dashboard Principal
+* **Ações:**
+  - **Substituição de Valores Estáticos por Consultas SQL:** Refatorado o método `AdminController::dashboard()` para buscar em tempo real os saldos totais das contas bancárias ativas (`bank_accounts`), detalhados por FEFC, Fundo Partidário e Outros Recursos (Doações Privadas).
+  - **Cômputo Real de Gastos Aprovados:** O indicador de "Limite de Gastos Consumidos" agora é calculado dinamicamente somando todas as despesas aprovadas/pagas (`despesas`) e comprovantes de viagens aprovados (`travel_receipts`).
+  - **Ajuste de Chaves na View:** Corrigida a chave na view `app/Views/admin/dashboard.php` garantindo paridade imediata com as atualizações realizadas no banco de dados.
+
+
+
 

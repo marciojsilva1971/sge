@@ -95,21 +95,21 @@ class FinanceController extends Controller {
 
         // Busca KPIs de Campanha
         // 1. Saldo total em caixa
-        $totalBalance = floatval($db->query("SELECT SUM(balance) FROM `bank_accounts` WHERE status = 'ATIVA'")->fetchColumn());
+        $totalBalance = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE status = 'ATIVA'")->fetchColumn());
 
         // 2. Saldo por tipo de recurso
-        $fefcBalance = floatval($db->query("SELECT SUM(balance) FROM `bank_accounts` WHERE fund_type = 'FEFC' AND status = 'ATIVA'")->fetchColumn());
-        $partidarioBalance = floatval($db->query("SELECT SUM(balance) FROM `bank_accounts` WHERE fund_type = 'FUNDO_PARTIDARIO' AND status = 'ATIVA'")->fetchColumn());
-        $outrosBalance = floatval($db->query("SELECT SUM(balance) FROM `bank_accounts` WHERE fund_type = 'OUTROS_RECURSOS' AND status = 'ATIVA'")->fetchColumn());
+        $fefcBalance = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'FEFC' AND status = 'ATIVA'")->fetchColumn());
+        $partidarioBalance = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'FUNDO_PARTIDARIO' AND status = 'ATIVA'")->fetchColumn());
+        $outrosBalance = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'OUTROS_RECURSOS' AND status = 'ATIVA'")->fetchColumn());
 
-        // 3. Limite de gastos da campanha (Exemplo: R$ 150.000,00)
-        $spendingLimit = 150000.00;
+        // 3. Limite de gastos da campanha (R$ 5.000.000,00)
+        $spendingLimit = 5000000.00;
         // Total gasto (soma de despesas aprovadas ou pagas)
-        $totalSpent = floatval($db->query("SELECT SUM(value) FROM `despesas` WHERE status IN ('APROVADO', 'PAGO')")->fetchColumn());
+        $totalSpent = floatval($db->query("SELECT COALESCE(SUM(value), 0) FROM `despesas` WHERE status IN ('APROVADO', 'PAGO')")->fetchColumn());
         // Soma os recibos de viagens aprovados também
-        $totalTravelSpent = floatval($db->query("SELECT SUM(value) FROM `travel_receipts` WHERE status = 'APROVADO'")->fetchColumn());
+        $totalTravelSpent = floatval($db->query("SELECT COALESCE(SUM(value), 0) FROM `travel_receipts` WHERE status = 'APROVADO'")->fetchColumn());
         $totalSpentCombined = $totalSpent + $totalTravelSpent;
-        $limitPercentage = ($spendingLimit > 0) ? min(100, ($totalSpentCombined / $spendingLimit) * 100) : 0;
+        $limitPercentage = ($spendingLimit > 0) ? min(100, round(($totalSpentCombined / $spendingLimit) * 100, 2)) : 0;
 
         // Lista de Contas Bancárias
         $bankAccounts = $db->query("SELECT * FROM `bank_accounts` ORDER BY name ASC")->fetchAll();

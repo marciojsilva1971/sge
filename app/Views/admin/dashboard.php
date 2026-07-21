@@ -29,7 +29,7 @@
             <div class="kpi-details">
                 <div class="kpi-title">Limite de Gastos da Campanha</div>
                 <div class="kpi-value">R$ <?= number_format($kpis['limite_gastos'], 2, ',', '.') ?></div>
-                <div class="kpi-subtext">Consumido: R$ <?= number_format($kpis['gasto_actual'] ?? 312000, 2, ',', '.') ?> (<?= $kpis['gasto_percent'] ?>%)</div>
+                <div class="kpi-subtext">Consumido: R$ <?= number_format($kpis['gasto_atual'], 2, ',', '.') ?> (<?= $kpis['gasto_percent'] ?>%)</div>
                 <div class="progress-bar-container">
                     <div class="progress-bar" style="width: <?= $kpis['gasto_percent'] ?>%;"></div>
                 </div>
