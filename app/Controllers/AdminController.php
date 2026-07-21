@@ -51,7 +51,11 @@ class AdminController extends Controller {
         );
         $recentLogs = $stmt->fetchAll();
 
-        // 3. Fakes para os KPIs financeiros exigidos pelos mockups (em sprints futuras serão reais)
+        // 3. Contagem dinâmica de comprovantes e relatórios pendentes de homologação
+        $pendingDespesas = (int)$db->query("SELECT COUNT(*) FROM `despesas` WHERE `status` = 'PENDENTE'")->fetchColumn();
+        $pendingMilitancy = (int)$db->query("SELECT COUNT(*) FROM `militancy_activities` WHERE `status` = 'PENDENTE'")->fetchColumn();
+        $totalPending = $pendingDespesas + $pendingMilitancy;
+
         $kpiFinances = [
             'caixa_total' => 258400.00,
             'fefc'        => 180000.00,
@@ -60,7 +64,7 @@ class AdminController extends Controller {
             'limite_gastos'=> 5000000.00,
             'gasto_atual' => 312000.00,
             'gasto_percent'=> round((312000.00 / 5000000.00) * 100, 2),
-            'pendente_aprovacao' => 8
+            'pendente_aprovacao' => $totalPending
         ];
 
         $this->render('admin/dashboard', [
