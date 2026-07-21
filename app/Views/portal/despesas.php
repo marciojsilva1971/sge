@@ -3,21 +3,21 @@
     <p class="subtitle" style="font-size: 12px;">Lance e acompanhe suas despesas de campo pendentes de vinculação financeira/fiscal.</p>
 </div>
 
-<!-- Cards de Resumo Pessoal (4 Colunas) -->
+<!-- Cards de Resumo Pessoal (4 Colunas Interativas) -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 24px;">
-    <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(30, 41, 59, 0.4);">
+    <div class="panel-card card-stat-clicavel" onclick="clicarCardResumo('TODOS')" title="Clique para ver todos os gastos" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(30, 41, 59, 0.4); cursor: pointer; transition: all 0.2s ease;">
         <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Total Lançado</span>
         <span style="font-size: 13px; font-weight: bold; color: var(--text-primary);">R$ <?= number_format($totalLaunched, 2, ',', '.') ?></span>
     </div>
-    <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2);">
+    <div class="panel-card card-stat-clicavel" onclick="clicarCardResumo('PENDENTE')" title="Clique para ver gastos aguardando vínculo" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2); cursor: pointer; transition: all 0.2s ease;">
         <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Aguardando Vínculo</span>
         <span style="font-size: 14px; font-weight: bold; color: var(--warning-color);"><?= $pendingCount ?></span>
     </div>
-    <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
+    <div class="panel-card card-stat-clicavel" onclick="clicarCardResumo('APROVADO')" title="Clique para ver gastos aprovados" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); cursor: pointer; transition: all 0.2s ease;">
         <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Aprovados</span>
         <span style="font-size: 14px; font-weight: bold; color: var(--success-color);"><?= $approvedCount ?></span>
     </div>
-    <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3);">
+    <div class="panel-card card-stat-clicavel" onclick="clicarCardResumo('REPROVADO')" title="Clique para ver gastos reprovados que exigem correção" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); cursor: pointer; transition: all 0.2s ease;">
         <span style="font-size: 11px; color: #fca5a5; display: block; margin-bottom: 4px;">Reprovados (A Corrigir)</span>
         <span style="font-size: 14px; font-weight: bold; color: #ef4444;"><?= $rejectedCount ?? 0 ?></span>
     </div>
@@ -154,7 +154,7 @@
 </div>
 
 <!-- Histórico de Lançamentos com Abas de Filtro -->
-<div class="panel-card" style="padding: 16px;">
+<div id="historico-gastos-container" class="panel-card" style="padding: 16px;">
     <div class="card-header" style="padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <h3 style="font-size: 14px; font-weight: 600; margin: 0;">Histórico de Gastos Enviados</h3>
         
@@ -763,5 +763,24 @@ function abrirModalCorrigirGasto(exp) {
 
     document.getElementById('textoMotivoReprovacaoModal').textContent = exp.notes || 'Nenhuma observação informada.';
     document.getElementById('modalCorrigirGasto').style.display = 'flex';
+}
+
+function clicarCardResumo(status) {
+    const abaBotoes = document.querySelectorAll('.btn-aba-filtro');
+    let targetBtn = null;
+    abaBotoes.forEach(btn => {
+        const text = btn.textContent.toUpperCase();
+        if (status === 'TODOS' && text.includes('TODOS')) targetBtn = btn;
+        if (status === 'PENDENTE' && text.includes('PENDENTES')) targetBtn = btn;
+        if (status === 'APROVADO' && text.includes('APROVADOS')) targetBtn = btn;
+        if (status === 'REPROVADO' && text.includes('REPROVADOS')) targetBtn = btn;
+    });
+
+    filtrarGastosPortal(status, targetBtn);
+
+    const container = document.getElementById('historico-gastos-container');
+    if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 </script>
