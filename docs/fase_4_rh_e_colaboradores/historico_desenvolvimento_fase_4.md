@@ -44,3 +44,13 @@ Este documento mantém o registro permanente de todas as implementações do **M
 * **Ações:**
   - Criado o roteiro e gerador do **Manual de Cadastro e Uso do Portal do Colaborador SGE** em formato PDF.
   - Disponibilizado para o RH encaminhar aos novos contratados durante a admissão.
+
+---
+
+## 📅 Sessão 6: Cadastro de Foto do Rosto (Selfie/Avatar) para Colaboradores
+* **Ações:**
+  - Atualizada a estrutura da tabela `colaboradores` (coluna `foto_rosto_path`) e criado script `update_colaboradores_foto_rosto_schema.sql`.
+  - Adicionada a funcionalidade de upload de foto do rosto (Selfie / Avatar) com pré-visualização instantânea (thumbnail circular) nos formulários de auto-cadastro público e cadastro administrativo.
+  - Atualizado o método `homologarEAtribuirPerfil()` no `Colaborador.php` para sincronizar automaticamente a foto do rosto com o campo `profile_photo_path` na tabela `usuarios`, garantindo avatar em todas as telas acessíveis do SGE.
+  - Atualizada a listagem de colaboradores (`/admin/rh`) com coluna dedicada para exibição do avatar redondo com iniciais como fallback e links nos modais de conferência.
+  - Atualizado o cabeçalho global (`app/Views/layouts/main.php`) e regras CSS (`public/css/style.css`).

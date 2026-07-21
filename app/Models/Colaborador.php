@@ -103,6 +103,7 @@ class Colaborador extends Model {
             'rg'                  => trim($data['rg']),
             'rg_orgao_emissor'    => trim($data['rg_orgao_emissor'] ?? 'SSP'),
             'documento_foto_path' => $data['documento_foto_path'] ?? null,
+            'foto_rosto_path'     => $data['foto_rosto_path'] ?? null,
             'data_nascimento'     => $data['data_nascimento'],
             'idade_calculada'  => $idade,
             'celular_whatsapp' => trim($data['celular_whatsapp']),
@@ -199,23 +200,28 @@ class Colaborador extends Model {
             if (!$user) {
                 // Cria a nova conta de usuário no SGE com status ATIVO e role_id atribuída pelo Admin
                 $userData = [
-                    'name'          => $colaborador['nome_completo'],
-                    'email'         => $colaborador['email'],
-                    'celular'       => $colaborador['celular_whatsapp'],
-                    'password_hash' => $passwordHash,
-                    'role_id'       => $roleId,
-                    'status'        => 'ATIVO'
+                    'name'               => $colaborador['nome_completo'],
+                    'email'              => $colaborador['email'],
+                    'celular'            => $colaborador['celular_whatsapp'],
+                    'password_hash'      => $passwordHash,
+                    'role_id'            => $roleId,
+                    'status'             => 'ATIVO',
+                    'profile_photo_path' => $colaborador['foto_rosto_path'] ?? null
                 ];
                 $userId = $userModel->create($userData);
                 $isNewUser = true;
             } else {
                 $userId = $user['id'];
                 // Atualiza a senha provisória, a role e o status para ATIVO se já existir usuário
-                $userModel->update($userId, [
+                $updateFields = [
                     'role_id'       => $roleId,
                     'password_hash' => $passwordHash,
                     'status'        => 'ATIVO'
-                ]);
+                ];
+                if (!empty($colaborador['foto_rosto_path'])) {
+                    $updateFields['profile_photo_path'] = $colaborador['foto_rosto_path'];
+                }
+                $userModel->update($userId, $updateFields);
                 $isNewUser = false;
             }
 

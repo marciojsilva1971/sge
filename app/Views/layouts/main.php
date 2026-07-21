@@ -88,10 +88,13 @@
                         <div class="user-role"><?= htmlspecialchars($user['role_name']) ?></div>
                     </div>
                     <div class="avatar-wrapper">
-                        <?php if (!empty($user['profile_photo'])): ?>
-                            <img src="<?= $this->baseUrl($user['profile_photo']) ?>" alt="Avatar" class="avatar-img">
+                        <?php 
+                        $userAvatar = !empty($user['profile_photo_path']) ? $user['profile_photo_path'] : (!empty($user['profile_photo']) ? $user['profile_photo'] : null);
+                        ?>
+                        <?php if ($userAvatar): ?>
+                            <img src="<?= $this->baseUrl($userAvatar) ?>" alt="Avatar" class="avatar-img" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #0d9488;">
                         <?php else: ?>
-                            <div class="avatar-placeholder"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                            <div class="avatar-placeholder"><?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?></div>
                         <?php endif; ?>
                     </div>
                 </div>

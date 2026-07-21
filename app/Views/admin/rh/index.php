@@ -50,6 +50,7 @@
             <table class="table table-striped table-colaboradores">
                 <thead>
                     <tr>
+                        <th style="width: 50px; text-align: center;">Foto</th>
                         <th>Nome Completo</th>
                         <th>CPF / Documento</th>
                         <th>Idade</th>
@@ -63,11 +64,22 @@
                 <tbody>
                     <?php if (empty($colaboradores)): ?>
                         <tr>
-                            <td colspan="8" class="text-center">Nenhum colaborador encontrado nesta etapa.</td>
+                            <td colspan="9" class="text-center">Nenhum colaborador encontrado nesta etapa.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($colaboradores as $c): ?>
                             <tr>
+                                <td style="text-align: center; vertical-align: middle;">
+                                    <?php if (!empty($c['foto_rosto_path'])): ?>
+                                        <a href="<?= $this->baseUrl('admin/rh/documento?id=' . $c['id'] . '&tipo=rosto') ?>" target="_blank" title="Clique para ver em tamanho real">
+                                            <img src="<?= $this->baseUrl('admin/rh/documento?id=' . $c['id'] . '&tipo=rosto') ?>" alt="Foto" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid #0d9488; display: block; margin: 0 auto;">
+                                        </a>
+                                    <?php else: ?>
+                                        <div style="width: 42px; height: 42px; border-radius: 50%; background: #1e293b; border: 2px solid #475569; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #94a3b8; font-size: 16px; margin: 0 auto;" title="Sem Foto de Rosto">
+                                            <?= strtoupper(substr($c['nome_completo'], 0, 1)) ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <strong><?= htmlspecialchars($c['nome_completo']) ?></strong>
                                     <?php if (!empty($c['optin_whatsapp'])): ?>
@@ -518,11 +530,21 @@ function openAvalModal(colaborador) {
     document.getElementById('aval_colaborador_nome').value = colaborador.nome_completo;
     
     const docLinkBox = document.getElementById('aval_doc_preview_link');
-    if (colaborador.documento_foto_path) {
-        docLinkBox.innerHTML = `<a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=doc" target="_blank" class="btn btn-teal btn-sm">🪪 Abrir Foto do Documento de Identificação</a>`;
-    } else {
-        docLinkBox.innerHTML = `<span class="text-danger">Nenhum documento anexo.</span>`;
+    let docHtml = '';
+    if (colaborador.foto_rosto_path) {
+        docHtml += `<div style="margin-bottom:8px;">
+            <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=rosto" target="_blank" class="btn btn-teal btn-sm" style="width:100%; display:inline-block; text-align:center;">👤 Visualizar Foto do Rosto (Avatar)</a>
+        </div>`;
     }
+    if (colaborador.documento_foto_path) {
+        docHtml += `<div>
+            <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=doc" target="_blank" class="btn btn-secondary btn-sm" style="width:100%; display:inline-block; text-align:center;">🪪 Visualizar Foto do Documento de Identificação (RG/CNH)</a>
+        </div>`;
+    }
+    if (!docHtml) {
+        docHtml = `<span class="text-danger">Nenhum documento ou foto anexada.</span>`;
+    }
+    docLinkBox.innerHTML = docHtml;
 
     document.getElementById('avalModal').classList.remove('hidden');
 }
@@ -583,6 +605,18 @@ function openConferirContratoModal(colaborador) {
         </div>`;
     } else {
         html += `<div style="font-size:12px; color:#ef4444; font-weight:bold; margin-top:10px;">⚠ Foto do Documento de Identificação: NÃO ANEXADA</div>`;
+    }
+
+    // 5. Foto do Rosto do Colaborador (Selfie / Avatar)
+    if (colaborador.foto_rosto_path) {
+        html += `<div style="margin-top:10px; margin-bottom:4px;">
+            <div style="font-size:12px; color:#10b981; font-weight:bold; margin-bottom:4px;">✔ Foto do Rosto (Avatar/Crachá): ENVIADA</div>
+            <a href="<?= $this->baseUrl('admin/rh/documento?id=') ?>${colaborador.id}&tipo=rosto" target="_blank" class="btn btn-teal btn-sm" style="font-size:11px; width:100%; display:inline-block; text-align:center; padding:6px 10px;">
+                👤 Visualizar Foto do Rosto (Selfie/Avatar)
+            </a>
+        </div>`;
+    } else {
+        html += `<div style="font-size:12px; color:#ef4444; font-weight:bold; margin-top:10px;">⚠ Foto do Rosto: NÃO ANEXADA</div>`;
     }
 
     if (!html) {

@@ -48,6 +48,18 @@
             </div>
         </div>
 
+        <div class="form-group span-2">
+            <label for="foto_rosto">Foto do seu Rosto (Selfie / Avatar para Crachá e Perfil) *</label>
+            <input type="file" id="foto_rosto" name="foto_rosto" required accept=".jpg,.jpeg,.png,.webp" style="background:#1e293b; padding:8px; border-radius:6px; border:1px solid #334155; width:100%;" onchange="previewFotoRosto(this)">
+            <small class="form-help">Anexe uma foto nítida e bem iluminada do seu rosto (Selfie). Ela será usada no seu crachá e perfil de acesso do SGE.</small>
+            
+            <!-- Thumbnail Preview Container para Foto do Rosto -->
+            <div id="rosto_preview_wrapper" style="display:none; margin-top:12px; padding:12px; background:rgba(30, 41, 59, 0.8); border:1px dashed var(--teal-primary); border-radius:8px; text-align:center;">
+                <p style="font-size:12px; color:var(--teal-primary); margin-bottom:8px; font-weight:bold;">👤 Pré-visualização da Foto de Rosto (Avatar):</p>
+                <img id="rosto_img_thumb" src="" alt="Thumbnail Avatar Rosto" style="width:120px; height:120px; border-radius:50%; object-fit:cover; box-shadow:0 4px 10px rgba(0,0,0,0.5); display:none; margin:0 auto; border:3px solid var(--teal-primary);">
+            </div>
+        </div>
+
         <div class="form-group">
             <label for="data_nascimento">Data de Nascimento *</label>
             <input type="date" id="data_nascimento" name="data_nascimento" required>
@@ -140,6 +152,28 @@ function previewDocumento(input) {
             imgThumb.style.display = 'none';
             pdfBadge.style.display = 'block';
             pdfName.textContent = file.name;
+        } else {
+            wrapper.style.display = 'none';
+        }
+    } else {
+        wrapper.style.display = 'none';
+    }
+}
+
+function previewFotoRosto(input) {
+    const wrapper = document.getElementById('rosto_preview_wrapper');
+    const imgThumb = document.getElementById('rosto_img_thumb');
+
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.type.startsWith('image/')) {
+            wrapper.style.display = 'block';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imgThumb.src = e.target.result;
+                imgThumb.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
         } else {
             wrapper.style.display = 'none';
         }

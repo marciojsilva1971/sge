@@ -81,6 +81,7 @@ class RhController extends Controller {
 
             $postData = $_POST;
             $postData['documento_foto_path'] = $this->handleDocumentoUpload('documento_foto');
+            $postData['foto_rosto_path'] = $this->handleFotoRostoUpload('foto_rosto');
 
             $colaboradorId = $colaboradorModel->cadastrarColaborador($postData);
 
@@ -504,6 +505,7 @@ class RhController extends Controller {
 
             $postData = $_POST;
             $postData['documento_foto_path'] = $this->handleDocumentoUpload('documento_foto');
+            $postData['foto_rosto_path'] = $this->handleFotoRostoUpload('foto_rosto');
 
             $colaboradorId = $colaboradorModel->cadastrarColaborador($postData);
             $colaborador = $colaboradorModel->find($colaboradorId);
@@ -542,6 +544,37 @@ class RhController extends Controller {
 
         if (move_uploaded_file($file['tmp_name'], $destPath)) {
             return 'storage/documentos/' . $fileName;
+        }
+
+        return null;
+    }
+
+    /**
+     * Auxiliar para upload de foto do rosto do colaborador (Selfie/Avatar).
+     */
+    private function handleFotoRostoUpload(string $inputName = 'foto_rosto'): ?string {
+        if (empty($_FILES[$inputName]['name'])) {
+            return null;
+        }
+
+        $file = $_FILES[$inputName];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+
+        if (!in_array($ext, $allowedExts)) {
+            throw new Exception("Formato da foto do rosto inválido. Permitido somente JPG, PNG ou WEBP.");
+        }
+
+        $uploadDir = dirname(__DIR__, 2) . '/storage/avatares/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $fileName = 'avatar_colab_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $destPath = $uploadDir . $fileName;
+
+        if (move_uploaded_file($file['tmp_name'], $destPath)) {
+            return 'storage/avatares/' . $fileName;
         }
 
         return null;
@@ -692,7 +725,13 @@ class RhController extends Controller {
         $contratoModel = new Contrato();
         $contrato = $contratoModel->findByColaborador($id);
 
-        $relativePath = ($tipo === 'contrato') ? ($contrato['pdf_assinado_path'] ?? '') : ($colaborador['documento_foto_path'] ?? '');
+        if ($tipo === 'contrato') {
+            $relativePath = $contrato['pdf_assinado_path'] ?? '';
+        } elseif ($tipo === 'rosto') {
+            $relativePath = $colaborador['foto_rosto_path'] ?? '';
+        } else {
+            $relativePath = $colaborador['documento_foto_path'] ?? '';
+        }
 
         if (empty($relativePath)) {
             http_response_code(404);

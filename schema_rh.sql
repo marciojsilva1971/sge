@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `colaboradores` (
     `rg` VARCHAR(20) NOT NULL,
     `rg_orgao_emissor` VARCHAR(20) NOT NULL,
     `documento_foto_path` VARCHAR(255) NULL, -- Foto/PDF do documento de identificação (RG, CNH, CIN)
+    `foto_rosto_path` VARCHAR(255) NULL, -- Foto do Rosto do Colaborador (Avatar / Crachá / Perfil)
     `data_nascimento` DATE NOT NULL,
     `idade_calculada` INT NOT NULL,
     `celular_whatsapp` VARCHAR(20) NOT NULL,
