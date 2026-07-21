@@ -552,7 +552,7 @@ class RhController extends Controller {
      */
     protected function parseBrlCurrency($value): float {
         if (is_numeric($value)) {
-            return (float)$value;
+            return round((float)$value, 2);
         }
         if (empty($value)) {
             return 0.0;
@@ -570,7 +570,7 @@ class RhController extends Controller {
             $clean = str_replace(',', '.', $clean);
         }
 
-        return (float)$clean;
+        return round((float)$clean, 2);
     }
 
     /**

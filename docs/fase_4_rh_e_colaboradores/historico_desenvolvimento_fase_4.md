@@ -291,4 +291,13 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   2. **Acumulador Inteligente de Arquivos (`DataTransfer API`):** Resolvido o problema nativo dos navegadores onde abrir a caixa de diálogo "Escolher arquivos" uma segunda vez substituía a seleção anterior. Agora, novos arquivos são acumulados dinamicamente na lista sem perder os anteriores.
   3. **Resiliência Backend em Controllers:** Refatorados `PortalController.php` e `FinanceController.php` para agrupar e salvar dinamicamente todos os comprovantes enviados (sob qualquer nome de campo), mantendo a criptografia AES-256 e auditoria.
 
+---
+
+## 📅 Sessão 56: Formatação de Moeda BRL e Sanitização Segura para Armazenamento no Banco
+* **Ações Implementadas:**
+  1. **Máscara Moeda no Frontend (`oninput="formatarMoeda(this)"`):** Padronizada em todos os formulários de despesas (`portal/despesas.php`, `portal/viagem.php`, `admin/financeiro/despesas.php`), aplicando formatação automática em tempo real em formato BRL (`R$ 1.234,56`).
+  2. **Sanitização Backend (`parseBrlCurrency` com `round(..., 2)`):** Atualizado o método em `Controller.php` e `RhController.php` para sanitizar qualquer string monetária (removendo símbolos, pontos de milhar e convertendo vírgulas em ponto decimal), aplicando o arredondamento preciso em 2 casas decimais.
+  3. **Integridade de Dados:** Garantido que os dados sejam gravados no MySQL como tipos numéricos exatos (`DECIMAL(12,2)`), assegurando precisão em cálculos financeiros futuros (somas, relatórios e prestação de contas do TSE/SPCE).
+
+
 

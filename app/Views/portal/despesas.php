@@ -127,7 +127,7 @@
                 </div>
                 <div class="form-group">
                     <label for="value">Valor Total (R$)</label>
-                    <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-weight: 600; color: var(--warning-color);">
+                    <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-weight: 600; color: var(--warning-color);" oninput="formatarMoeda(this);">
                 </div>
             </div>
 
@@ -194,6 +194,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
+    function formatarMoeda(input) {
+        let value = input.value.replace(/\D/g, "");
+        if (value === "") {
+            input.value = "";
+            return;
+        }
+        value = (parseFloat(value) / 100).toFixed(2);
+        let formatted = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value);
+        input.value = formatted;
+    }
+
 document.addEventListener('DOMContentLoaded', () => {
     const inputCnpjCpf = document.getElementById('supplier_cnpj_cpf');
     const inputSupplierName = document.getElementById('supplier_name');

@@ -127,15 +127,20 @@ abstract class Controller {
     }
 
     /**
-     * Converte uma string formatada em Real Brasileiro (R$) para float de forma robusta.
+     * Converte uma string formatada em Real Brasileiro (R$) para float de forma robusta e precisa.
      */
     protected function parseBrlCurrency(string $rawValue): float {
-        // Remove todos os caracteres que não são dígitos, vírgula, ponto ou sinal de menos
-        $clean = preg_replace('/[^\d,.-]/', '', $rawValue);
+        if (is_numeric($rawValue)) {
+            return round((float)$rawValue, 2);
+        }
+        $clean = preg_replace('/[^\d,.-]/', '', (string)$rawValue);
+        if (empty($clean)) {
+            return 0.0;
+        }
         if (strpos($clean, ',') !== false) {
             $clean = str_replace('.', '', $clean);
             $clean = str_replace(',', '.', $clean);
         }
-        return floatval($clean);
+        return round((float)$clean, 2);
     }
 }
