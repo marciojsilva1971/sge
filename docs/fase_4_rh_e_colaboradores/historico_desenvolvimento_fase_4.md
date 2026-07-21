@@ -313,7 +313,15 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 * **Ações Implementadas:**
   1. **Acumulador de Fotos (`DataTransfer API`):** Implementado no formulário de militância (`portal/militancia.php`) o mesmo padrão de seleção cumulativa utilizado nos módulos financeiro e de viagens. O militante pode selecionar ou fotografar múltiplos comprovantes sucessivos sem perder os anteriores.
   2. **Galeria de Miniaturas Visuais (`#galeria-miniaturas-container`):** Exibição em tempo real de cards com imagem do comprovante, nome do arquivo e botão de exclusão individual (`✖`).
-  4. **Exibição Exclusiva por Miniaturas:** Removido o container de preview em tamanho expandido (`#preview-container`) da tela de militância, mantendo apenas a galeria de miniaturas (`#galeria-miniaturas-container`), padronizando visualmente e funcionalmente a experiência com a tela de reembolso de combustível (`portal/viagem.php`).
+---
+
+## 📅 Sessão 59: Forçamento de HTTPS, Segurança de Login e Exibição do Cadeado de Site Seguro
+* **Ações Implementadas:**
+  1. **Redirecionamento Automático 301 (HTTP -> HTTPS):** Adicionadas regras no `.htaccess` (raiz e `public/.htaccess`) para redirecionar automaticamente conexões HTTP inseguras para HTTPS em ambiente de produção/web.
+  2. **Detecção Dinâmica de SSL em Proxy (`Controller.php` & `Session.php`):** Atualizados os métodos `baseUrl()` e a configuração de cookies de sessão (`Secure` e `SameSite=Strict`) para reconhecer conexões criptografadas através de proxies reversos (`HTTP_X_FORWARDED_PROTO`, `HTTP_X_FORWARDED_SSL`, porta 443).
+  3. **Cabeçalhos de Segurança HTTP (`public/index.php`):** Ativados cabeçalhos de segurança estritos como **Strict-Transport-Security (HSTS)**, **X-Content-Type-Options: nosniff**, **X-Frame-Options: SAMEORIGIN** e **Referrer-Policy**, assegurando que os navegadores (Chrome/Edge/Safari/Firefox) exibam o **cadeado verde de conexão segura** e eliminem qualquer aviso de formulário inseguro ao enviar usuário e senha.
+  4. **Atualização do Guia de Instalação (`GuiaInstDigOcean.md`):** Incluída a etapa de instalação do Certbot Let's Encrypt (`sudo certbot --apache`) para emissão do certificado SSL gratuito na VPS.
+
 
 
 

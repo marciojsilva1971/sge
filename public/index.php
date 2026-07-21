@@ -43,6 +43,20 @@ if ($appEnv === 'development') {
     error_reporting(0);
 }
 
+// 2.1. Cabeçalhos de Segurança HTTP (HSTS, Anti-Clickjacking, XSS Protection, Referrer-Policy)
+$isHttpsEnv = (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === '1')) ||
+              (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+              (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+              (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
+if ($isHttpsEnv || $appEnv === 'production') {
+    header("Strict-Transport-Security: max-age=31536000; includeSubDomains; preload");
+    header("X-Content-Type-Options: nosniff");
+    header("X-Frame-Options: SAMEORIGIN");
+    header("X-XSS-Protection: 1; mode=block");
+    header("Referrer-Policy: strict-origin-when-cross-origin");
+}
+
 // 3. Autoload PSR-4 básico para classes do namespace App\
 spl_autoload_register(function ($class) {
     $prefix = 'App\\';

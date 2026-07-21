@@ -125,6 +125,12 @@ sudo a2dissite 000-default.conf
 sudo a2ensite sge.conf
 sudo systemctl reload apache2
 O que faz: Desativa a página inicial "Apache2 Ubuntu Default Page" e ativa a configuração oficial do SGE.
+
+Comando 6.3 (Ativação de SSL / HTTPS com Certbot Let's Encrypt - Garante o Cadeado Verde de Segurança):
+bash
+sudo apt install certbot python3-certbot-apache -y
+sudo certbot --apache -d seu-dominio.com.br -d www.seu-dominio.com.br
+O que faz: Emite e instala automaticamente um certificado SSL gratuito e válido para o seu domínio, ativa a porta 443 (HTTPS), redireciona todo o tráfego HTTP para HTTPS e exibe o CADEADO VERDE DE SEGURANÇA no navegador, eliminando qualquer aviso de "Não Seguro" no login.
 🛡️ ETAPA 7: Configuração de Segurança com Firewall (UFW)
 Para evitar acessos não autorizados ou invasões nas portas do servidor, ativamos o Firewall nativo do Ubuntu.
 

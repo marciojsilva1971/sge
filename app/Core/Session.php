@@ -14,12 +14,17 @@ class Session {
             ini_set('session.cookie_httponly', '1'); // Impede acesso via JavaScript (XSS)
             ini_set('session.use_only_cookies', '1'); // Força uso apenas de cookies (impede passar ID por URL)
             
+            $isHttps = (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === '1')) ||
+                       (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                       (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+                       (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
             // Define SameSite=Strict para mitigar CSRF
             $cookieParams = [
                 'lifetime' => 0, // Expira quando o navegador fecha
                 'path'     => '/',
                 'domain'   => '',
-                'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', // Apenas HTTPS se disponível
+                'secure'   => $isHttps, // Apenas HTTPS se disponível ou em ambiente SSL
                 'httponly' => true,
                 'samesite' => 'Strict'
             ];

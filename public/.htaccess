@@ -2,6 +2,13 @@
     RewriteEngine On
     DirectoryIndex index.php
 
+    # Forçar o redirecionamento automático de HTTP para HTTPS em ambientes de produção/Web
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTP_HOST} !^localhost [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
     # Exceção para arquivos estáticos (CSS, JS, Imagens, Fontes) para evitar reescrita em drives mapeados
     RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ [NC]
     RewriteRule ^ - [L]

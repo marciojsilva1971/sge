@@ -15,13 +15,20 @@ abstract class Controller {
     protected function baseUrl(string $path = ''): string {
         $envUrl = $_ENV['APP_URL'] ?? '';
 
+        $isHttps = (isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] === 'on' || $_SERVER['HTTPS'] === '1')) ||
+                   (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                   (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') ||
+                   (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+
         // Se APP_URL estiver configurado no .env para um domínio público da web (não localhost), utiliza ele
         if (!empty($envUrl) && strpos($envUrl, 'localhost') === false) {
             $baseUrl = $envUrl;
+            // Se o servidor responde em HTTPS, força https:// no APP_URL mesmo que estivesse com http:// no .env
+            if ($isHttps && strpos($baseUrl, 'http://') === 0) {
+                $baseUrl = preg_replace('/^http:\/\//i', 'https://', $baseUrl);
+            }
         } elseif (!empty($_SERVER['HTTP_HOST'])) {
-            // Em desenvolvimento local ou testes via IP local (192.168.x.x), detecta o host dinamicamente
-            $isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
-                       (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+            // Em desenvolvimento local ou testes via IP local (192.168.x.x), detecta o host e esquema dinamicamente
             $scheme = $isHttps ? 'https' : 'http';
 
             $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
