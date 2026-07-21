@@ -78,3 +78,9 @@ Este documento mantém o registro permanente de todas as implementações do **M
 
 
 
+
+## 📅 Sessão 9: Funcionalidade de Edição de Fornecedores Cadastrados
+* **Ações:**
+  - **Novas Rotas HTTP**: Mapeada a rota `POST /admin/financeiro/fornecedores/editar` para o método `FinanceController::updateSupplier()`.
+  - **Controlador Financeiro**: Criado o método `updateSupplier()` para realizar validação e persistência das edições de fornecedores com checagem de CPF/CNPJ duplicados e inserção de logs na trilha de auditoria.
+  - **Interface Interativa**: Atualizada a view `app/Views/admin/financeiro/fornecedores.php` adicionando uma coluna *"Ações"* com o botão *"✏️ Editar"*. Ao ser clicado, os dados do fornecedor são carregados dinamicamente no formulário de cadastro, habilitando a alteração de todos os campos (incluindo o status Ativo/Inativo) e adicionando o botão *"❌ Cancelar"* para retornar ao modo de cadastro.
