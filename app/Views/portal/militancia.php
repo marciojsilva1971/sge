@@ -70,14 +70,6 @@
             
             <!-- Galeria de Miniaturas Visuais (Thumbnails) -->
             <div id="galeria-miniaturas-container" style="display: none; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 8px; margin-bottom: 12px;"></div>
-
-            <!-- Preview da foto compactada -->
-            <div id="preview-container" style="display: none; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background-color: #000; text-align: center; position: relative;">
-                <img id="preview-image" src="" alt="Preview da Imagem" style="max-width: 100%; max-height: 250px; object-fit: contain; display: block; margin: 0 auto;">
-                <div style="position: absolute; top: 10px; right: 10px; background: rgba(15,23,42,0.85); padding: 4px 8px; border-radius: 6px; font-size: 10px; color: var(--success-color);">
-                    Optimized (Canvas)
-                </div>
-            </div>
         </div>
 
         <button type="submit" id="submitBtn" class="btn btn-teal btn-block" disabled style="opacity: 0.5; cursor: not-allowed; margin-top: 10px;">
@@ -388,7 +380,6 @@
         if (arquivosAcumulados.files.length === 0) {
             galeriaContainer.style.display = 'none';
             document.getElementById('foto_base64').value = '';
-            document.getElementById('preview-container').style.display = 'none';
             return;
         }
 
@@ -484,8 +475,6 @@
 
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
                 document.getElementById('foto_base64').value = dataUrl;
-                document.getElementById('preview-image').src = dataUrl;
-                document.getElementById('preview-container').style.display = 'block';
             };
             img.src = event.target.result;
         };
