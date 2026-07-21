@@ -319,6 +319,127 @@ foreach ($travelReports as $report) {
     const namePreview = document.getElementById('comprovante-preview-name');
     const sizePreview = document.getElementById('comprovante-preview-size');
 
+    // Validador matemático oficial do Digito Verificador de CNPJ (Módulo 11)
+    function validarCNPJ(cnpj) {
+        cnpj = String(cnpj || '').replace(/[^\d]+/g, '');
+        if (cnpj.length !== 14) return false;
+        if (/^(\d)\1+$/.test(cnpj)) return false;
+
+        let tamanho = cnpj.length - 2;
+        let numeros = cnpj.substring(0, tamanho);
+        let digitos = cnpj.substring(tamanho);
+        let soma = 0;
+        let pos = tamanho - 7;
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+        if (resultado != digitos.charAt(0)) return false;
+
+        tamanho = tamanho + 1;
+        numeros = cnpj.substring(0, tamanho);
+        soma = 0;
+        pos = tamanho - 7;
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+        if (resultado != digitos.charAt(1)) return false;
+
+        return true;
+    }
+
+    // Extrator inteligente de CNPJ com tolerância a ruídos comuns de OCR
+    function extrairCNPJDoTexto(text) {
+        if (!text) return null;
+
+        // 1. Tentar encontrar padrões numéricos próximos ao rótulo CNPJ
+        const matches = text.match(/(?:CNPJ|C\.N\.P\.J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|sS\.\-\/\s]{14,25})/gi) || [];
+        for (let raw of matches) {
+            let clean = raw.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+            for (let i = 0; i <= clean.length - 14; i++) {
+                let sub = clean.substring(i, i + 14);
+                if (validarCNPJ(sub)) return sub;
+            }
+        }
+
+        // 2. Extração genérica de todas as sequências numéricas limpas
+        const apenasNumeros = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, ' ');
+        const tokens = apenasNumeros.split(/\s+/);
+        for (let token of tokens) {
+            if (token.length === 14 && validarCNPJ(token)) {
+                return token;
+            }
+        }
+
+        // 3. Varredura por janela deslizante de 14 dígitos no texto acumulado
+        const todosDigitos = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+        for (let i = 0; i <= todosDigitos.length - 14; i++) {
+            let sub = todosDigitos.substring(i, i + 14);
+            if (validarCNPJ(sub)) return sub;
+        }
+
+        return null;
+    }
+
+    // Otimizador de nitidez/contraste em Canvas HTML5 para comprovantes fiscais
+    function otimizarImagemParaOCR(file, callback) {
+        if (!file || !file.type.startsWith('image/')) {
+            callback(file);
+            return;
+        }
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = function() {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                let maxDim = 1800;
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const imgData = ctx.getImageData(0, 0, width, height);
+                const d = imgData.data;
+                for (let i = 0; i < d.length; i += 4) {
+                    let gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                    gray = gray < 135 ? Math.max(0, gray - 35) : Math.min(255, gray + 35);
+                    d[i] = gray;
+                    d[i + 1] = gray;
+                    d[i + 2] = gray;
+                }
+                ctx.putImageData(imgData, 0, 0);
+
+                canvas.toBlob(function(blob) {
+                    URL.revokeObjectURL(url);
+                    callback(blob || file);
+                }, 'image/jpeg', 0.92);
+            } catch (e) {
+                URL.revokeObjectURL(url);
+                callback(file);
+            }
+        };
+        img.onerror = function() {
+            URL.revokeObjectURL(url);
+            callback(file);
+        };
+        img.src = url;
+    }
+
     function executarDigitalizacaoOCR() {
         const file = compInput ? compInput.files[0] : null;
 
@@ -340,7 +461,7 @@ foreach ($travelReports as $report) {
             statusBadge.innerHTML = `
                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 16px;">⏳</span>
-                    <span>Iniciando motor de leitura OCR... Por favor, aguarde um instante.</span>
+                    <span>Iniciando otimizador de imagem e motor OCR... Por favor, aguarde.</span>
                 </div>
             `;
         }
@@ -364,53 +485,44 @@ foreach ($travelReports as $report) {
 
         const rodarOCR = () => {
             if (!window.Tesseract) {
-                if (statusBadge) {
-                    statusBadge.innerHTML = `
-                        <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">
-                            ⚠️ Não foi possível carregar o leitor OCR. Por favor, preencha os dados do fornecedor manualmente.
-                        </div>
-                    `;
-                }
+                exibirAvisoManual();
                 return;
             }
 
-            Tesseract.recognize(file, 'por', {
-                logger: m => {
-                    if (m.status === 'recognizing text' && statusBadge) {
-                        const pct = Math.round((m.progress || 0) * 100);
-                        statusBadge.innerHTML = `
-                            <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 16px;">🔍</span>
-                                <span>Lendo comprovante via OCR (${pct}%)... Processando imagem.</span>
-                            </div>
-                        `;
+            otimizarImagemParaOCR(file, function(processedFile) {
+                Tesseract.recognize(processedFile, 'por', {
+                    logger: m => {
+                        if (m.status === 'recognizing text' && statusBadge) {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            statusBadge.innerHTML = `
+                                <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 16px;">🔍</span>
+                                    <span>Lendo comprovante via OCR (${pct}%)... Processando nitidez.</span>
+                                </div>
+                            `;
+                        }
                     }
-                }
-            }).then(({ data: { text } }) => {
-                console.log("Texto extraído via OCR:", text);
-                const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
-                if (match) {
-                    const detectedCnpj = match[0].replace(/\D/g, "");
-                    if (detectedCnpj.length === 14) {
+                }).then(({ data: { text } }) => {
+                    console.log("Texto extraído via OCR:", text);
+                    const detectedCnpj = extrairCNPJDoTexto(text);
+                    if (detectedCnpj) {
                         if (cnpjInput) cnpjInput.value = detectedCnpj;
                         consultarCnpjServico(detectedCnpj);
                         if (statusBadge) {
                             statusBadge.innerHTML = `
                                 <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 16px;">✅</span>
-                                    <span>CNPJ (${detectedCnpj}) identificado! Buscando dados na Receita Federal...</span>
+                                    <span>CNPJ (${detectedCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}) validado e lido! Buscando dados na Receita Federal...</span>
                                 </div>
                             `;
                         }
                     } else {
                         exibirAvisoManual();
                     }
-                } else {
+                }).catch(err => {
+                    console.error("Erro OCR Tesseract:", err);
                     exibirAvisoManual();
-                }
-            }).catch(err => {
-                console.error("Erro OCR Tesseract:", err);
-                exibirAvisoManual();
+                });
             });
         };
 

@@ -213,6 +213,127 @@
 <!-- Tesseract.js OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
+    // Validador matemático oficial do Digito Verificador de CNPJ (Módulo 11)
+    function validarCNPJ(cnpj) {
+        cnpj = String(cnpj || '').replace(/[^\d]+/g, '');
+        if (cnpj.length !== 14) return false;
+        if (/^(\d)\1+$/.test(cnpj)) return false;
+
+        let tamanho = cnpj.length - 2;
+        let numeros = cnpj.substring(0, tamanho);
+        let digitos = cnpj.substring(tamanho);
+        let soma = 0;
+        let pos = tamanho - 7;
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+        if (resultado != digitos.charAt(0)) return false;
+
+        tamanho = tamanho + 1;
+        numeros = cnpj.substring(0, tamanho);
+        soma = 0;
+        pos = tamanho - 7;
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+        if (resultado != digitos.charAt(1)) return false;
+
+        return true;
+    }
+
+    // Extrator inteligente de CNPJ com tolerância a ruídos comuns de OCR
+    function extrairCNPJDoTexto(text) {
+        if (!text) return null;
+
+        // 1. Tentar encontrar padrões numéricos próximos ao rótulo CNPJ
+        const matches = text.match(/(?:CNPJ|C\.N\.P\.J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|sS\.\-\/\s]{14,25})/gi) || [];
+        for (let raw of matches) {
+            let clean = raw.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+            for (let i = 0; i <= clean.length - 14; i++) {
+                let sub = clean.substring(i, i + 14);
+                if (validarCNPJ(sub)) return sub;
+            }
+        }
+
+        // 2. Extração genérica de todas as sequências numéricas limpas
+        const apenasNumeros = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, ' ');
+        const tokens = apenasNumeros.split(/\s+/);
+        for (let token of tokens) {
+            if (token.length === 14 && validarCNPJ(token)) {
+                return token;
+            }
+        }
+
+        // 3. Varredura por janela deslizante de 14 dígitos no texto acumulado
+        const todosDigitos = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+        for (let i = 0; i <= todosDigitos.length - 14; i++) {
+            let sub = todosDigitos.substring(i, i + 14);
+            if (validarCNPJ(sub)) return sub;
+        }
+
+        return null;
+    }
+
+    // Otimizador de nitidez/contraste em Canvas HTML5 para comprovantes fiscais
+    function otimizarImagemParaOCR(file, callback) {
+        if (!file || !file.type.startsWith('image/')) {
+            callback(file);
+            return;
+        }
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = function() {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                let maxDim = 1800;
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const imgData = ctx.getImageData(0, 0, width, height);
+                const d = imgData.data;
+                for (let i = 0; i < d.length; i += 4) {
+                    let gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                    gray = gray < 135 ? Math.max(0, gray - 35) : Math.min(255, gray + 35);
+                    d[i] = gray;
+                    d[i + 1] = gray;
+                    d[i + 2] = gray;
+                }
+                ctx.putImageData(imgData, 0, 0);
+
+                canvas.toBlob(function(blob) {
+                    URL.revokeObjectURL(url);
+                    callback(blob || file);
+                }, 'image/jpeg', 0.92);
+            } catch (e) {
+                URL.revokeObjectURL(url);
+                callback(file);
+            }
+        };
+        img.onerror = function() {
+            URL.revokeObjectURL(url);
+            callback(file);
+        };
+        img.src = url;
+    }
+
     const compInputAdmin = document.getElementById('comprovante');
     const btnScanOcrAdmin = document.getElementById('btn-scan-ocr');
     const ocrStatusBadgeAdmin = document.getElementById('ocr_status_badge');
@@ -239,7 +360,7 @@
             ocrStatusBadgeAdmin.innerHTML = `
                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 16px;">⏳</span>
-                    <span>Iniciando motor de leitura OCR... Por favor, aguarde.</span>
+                    <span>Iniciando otimizador de imagem e motor OCR... Por favor, aguarde.</span>
                 </div>
             `;
         }
@@ -263,58 +384,60 @@
                 return;
             }
 
-            Tesseract.recognize(file, 'por', {
-                logger: m => {
-                    if (m.status === 'recognizing text' && ocrStatusBadgeAdmin) {
-                        const pct = Math.round((m.progress || 0) * 100);
-                        ocrStatusBadgeAdmin.innerHTML = `
-                            <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 16px;">🔍</span>
-                                <span>Lendo comprovante via OCR (${pct}%)... Processando.</span>
-                            </div>
-                        `;
+            otimizarImagemParaOCR(file, function(processedFile) {
+                Tesseract.recognize(processedFile, 'por', {
+                    logger: m => {
+                        if (m.status === 'recognizing text' && ocrStatusBadgeAdmin) {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            ocrStatusBadgeAdmin.innerHTML = `
+                                <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 16px;">🔍</span>
+                                    <span>Lendo comprovante via OCR (${pct}%)... Processando nitidez.</span>
+                                </div>
+                            `;
+                        }
                     }
-                }
-            }).then(({ data: { text } }) => {
-                const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
-                if (match) {
-                    const cleanCnpj = match[0].replace(/\D/g, "");
-                    fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cleanCnpj)
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success && ocrStatusBadgeAdmin) {
-                                ocrStatusBadgeAdmin.innerHTML = `
-                                    <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px;">
-                                        ✅ CNPJ Lido: ${data.cnpj} - ${data.razao_social}
-                                    </div>
-                                `;
-                                let found = false;
-                                for (let option of supplierSelect.options) {
-                                    if (option.text.replace(/\D/g, "").includes(cleanCnpj)) {
-                                        supplierSelect.value = option.value;
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                                if (!found) {
-                                    ocrStatusBadgeAdmin.innerHTML += `
-                                        <div style="font-size: 11px; color: #fde047; margin-top: 4px;">
-                                            💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#fde047; text-decoration:underline;">Clique para cadastrar</a> ou selecione manualmente.
+                }).then(({ data: { text } }) => {
+                    console.log("Texto extraído via OCR:", text);
+                    const cleanCnpj = extrairCNPJDoTexto(text);
+                    if (cleanCnpj) {
+                        fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cleanCnpj)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && ocrStatusBadgeAdmin) {
+                                    ocrStatusBadgeAdmin.innerHTML = `
+                                        <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px;">
+                                            ✅ CNPJ Lido e Validado: ${data.cnpj} - ${data.razao_social}
                                         </div>
                                     `;
+                                    let found = false;
+                                    for (let option of supplierSelect.options) {
+                                        if (option.text.replace(/\D/g, "").includes(cleanCnpj)) {
+                                            supplierSelect.value = option.value;
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!found) {
+                                        ocrStatusBadgeAdmin.innerHTML += `
+                                            <div style="font-size: 11px; color: #fde047; margin-top: 4px;">
+                                                💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#fde047; text-decoration:underline;">Clique para cadastrar</a> ou selecione manualmente.
+                                            </div>
+                                        `;
+                                    }
+                                } else if (ocrStatusBadgeAdmin) {
+                                    ocrStatusBadgeAdmin.innerHTML = `<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ Lido (${cleanCnpj}), selecione o fornecedor manualmente.</div>`;
                                 }
-                            } else if (ocrStatusBadgeAdmin) {
-                                ocrStatusBadgeAdmin.innerHTML = `<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ Lido (${match[0]}), selecione o fornecedor manualmente.</div>`;
-                            }
-                        });
-                } else if (ocrStatusBadgeAdmin) {
-                    ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ não identificado automaticamente. Selecione o fornecedor manualmente.</div>';
-                }
-            }).catch(err => {
-                console.error("Erro OCR:", err);
-                if (ocrStatusBadgeAdmin) {
-                    ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Erro ao ler imagem. Selecione o fornecedor manualmente.</div>';
-                }
+                            });
+                    } else if (ocrStatusBadgeAdmin) {
+                        ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ não identificado automaticamente. Selecione o fornecedor manualmente.</div>';
+                    }
+                }).catch(err => {
+                    console.error("Erro OCR:", err);
+                    if (ocrStatusBadgeAdmin) {
+                        ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Erro ao ler imagem. Selecione o fornecedor manualmente.</div>';
+                    }
+                });
             });
         };
 
