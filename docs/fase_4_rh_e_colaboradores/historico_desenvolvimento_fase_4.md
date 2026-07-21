@@ -84,3 +84,13 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - **Formatação de Exibição no Servidor (PHP)**: Adicionada lógica de formatação no load inicial nas views do portal do colaborador e do administrador. CPF, RG e Celular agora são exibidos formatados no padrão brasileiro (`000.000.000-00`, `00.000.000-0` ou `0.000.000-0`, e `(00) 00000-0000`) mesmo que salvos como texto cru no banco de dados.
   - **Máscara Dinâmica Client-Side (JavaScript)**: Implementado event listener no input `#celular` em ambas as views. Conforme o usuário digita ou apaga caracteres, o valor é formatado automaticamente em tempo real para a máscara telefônica nacional `(XX) XXXXX-XXXX`, impedindo inserção de letras ou caracteres inadequados.
   - **Compatibilidade do Backend**: O backend continua a receber e limpar os caracteres especiais via regex antes da persistência no banco de dados, garantindo integridade referencial.
+
+---
+
+## 📅 Sessão 10: Certidão de Regularidade Cadastral (Receita/TSE)
+* **Ações:**
+  - **Modelagem do Banco de Dados:** Criado script SQL `update_colaboradores_regularidade_schema.sql` e adicionadas as colunas `tse_regularidade_json` (TEXT) e `tse_regularidade_data` (DATETIME) na tabela `colaboradores`.
+  - **Integração e Persistência no Fluxo:** Atualizado o método `consultarTse()` em `RhController.php` para persistir o resultado da consulta da regularidade do CPF no banco de dados toda vez que a conferência de cadastro for realizada no painel.
+  - **Mapeamento de Rotas:** Adicionado o endpoint `GET /admin/rh/regularidade-pdf` em `public/index.php`.
+  - **Geração de Certidão PDF/Impressão:** Criada a visão `app/Views/admin/rh/regularidade_pdf.php` em estilo institucional e otimizado para folha A4 com `@media print`, exibindo o status do CPF, elegibilidade no TSE, justificativa legal (Res. TSE 23.607/2019 Art. 35) e carimbo de autenticidade (hash SHA-256).
+  - **Interface Administrativa (RH):** Incluído o botão azul **"📄 Certidão de Regularidade"** na listagem de colaboradores do painel de RH para download/emissão direta sob demanda.

@@ -79,12 +79,24 @@
                                             <?= strtoupper(substr($c['nome_completo'], 0, 1)) ?>
                                         </div>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                                 <td>
                                     <strong><?= htmlspecialchars($c['nome_completo']) ?></strong>
                                     <?php if (!empty($c['optin_whatsapp'])): ?>
                                         <span title="Opt-In WhatsApp Confirmado" style="color:#10b981; font-size:12px; margin-left:4px;">✓ Opt-In</span>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                                 <td>
                                     <div><?= htmlspecialchars($c['cpf']) ?></div>
@@ -99,12 +111,24 @@
                                      <?php else: ?>
                                         <div style="margin-top:4px;"><span class="badge badge-danger" style="font-size:10px;">⚠ Sem Doc. Anexo</span></div>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                                 <td>
                                     <span><?= $c['idade_calculada'] ?> anos</span>
                                     <?php if ($c['idade_calculada'] < 18): ?>
                                         <span class="badge badge-warning" style="font-size: 10px;" title="Menor de idade: Restrições legais de campanha aplicáveis">⚠ Menor</span>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                                 <td>
                                     <div style="display:flex; align-items:center; gap:4px;">
@@ -146,6 +170,12 @@
                                     <?php else: ?>
                                         <span class="text-secondary" style="font-style:italic;">Aguardando Emissão</span>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                                 <td>
                                     <?php if ($c['status'] === 'AGUARDANDO_AVAL_CADASTRO'): ?>
@@ -159,6 +189,12 @@
                                     <?php else: ?>
                                         <span class="badge badge-danger">Rejeitado</span>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                                 <td>
                                     <?php if (!empty($c['role_nome'])): ?>
@@ -166,6 +202,12 @@
                                     <?php else: ?>
                                         <span class="text-secondary" style="font-size:12px;">Pendente</span>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                                 <td>
                                     <?php if ($c['status'] === 'AGUARDANDO_AVAL_CADASTRO'): ?>
@@ -231,6 +273,12 @@
                                             </form>
                                         </div>
                                     <?php endif; ?>
+                                    
+                                    <div style="margin-top:8px;">
+                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
+                                            📄 Certidão de Regularidade
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

@@ -339,6 +339,23 @@ class RhController extends Controller {
             $idade
         );
 
+        // Persiste a consulta de regularidade do colaborador para auditoria e emissão de documento
+        try {
+            $db = \App\Core\Database::getInstance();
+            $stmtUpdate = $db->prepare(
+                "UPDATE `colaboradores` 
+                 SET tse_regularidade_json = :json, 
+                     tse_regularidade_data = NOW() 
+                 WHERE id = :id"
+            );
+            $stmtUpdate->execute([
+                'json' => json_encode($resultado, JSON_UNESCAPED_UNICODE),
+                'id'   => $colaborador['id']
+            ]);
+        } catch (Exception $e) {
+            // Log do erro se necessário, mas não impede o fluxo da consulta em tempo real
+        }
+
         header('Content-Type: application/json');
         echo json_encode($resultado, JSON_UNESCAPED_UNICODE);
         exit;
@@ -939,6 +956,65 @@ class RhController extends Controller {
         header("Cache-Control: private, max-age=86400");
 
         readfile($fullPath);
+        exit;
+    }
+
+    /**
+     * Exibe o documento da Certidão de Regularidade Cadastral em PDF (Administrativo).
+     * GET /admin/rh/regularidade-pdf?id=...
+     */
+    public function regularidadePdf(): void {
+        $this->requirePermission('invite_user');
+
+        $colaboradorId = (int)($_GET['id'] ?? 0);
+        if (!$colaboradorId) {
+            Session::setFlash('error', 'Colaborador não informado.');
+            $this->redirect('/admin/rh');
+        }
+
+        $colaboradorModel = new Colaborador();
+        $colaborador = $colaboradorModel->find($colaboradorId);
+
+        if (!$colaborador) {
+            Session::setFlash('error', 'Colaborador não encontrado.');
+            $this->redirect('/admin/rh');
+        }
+
+        // Se não tiver a consulta salva no banco de dados, executa a consulta em tempo real agora
+        if (empty($colaborador['tse_regularidade_json'])) {
+            $uf = $colaborador['uf'] ?? 'PR';
+            $idade = intval($colaborador['idade_calculada'] ?? 0);
+            $resultado = \App\Services\TseService::consultarSituacaoCadastral(
+                $colaborador['cpf'],
+                $colaborador['nome_completo'],
+                $uf,
+                $idade
+            );
+
+            try {
+                $db = \App\Core\Database::getInstance();
+                $stmtUpdate = $db->prepare(
+                    "UPDATE `colaboradores` 
+                     SET tse_regularidade_json = :json, 
+                         tse_regularidade_data = NOW() 
+                     WHERE id = :id"
+                );
+                $stmtUpdate->execute([
+                    'json' => json_encode($resultado, JSON_UNESCAPED_UNICODE),
+                    'id'   => $colaborador['id']
+                ]);
+
+                // Atualiza o array local para exibição imediata
+                $colaborador['tse_regularidade_json'] = json_encode($resultado, JSON_UNESCAPED_UNICODE);
+                $colaborador['tse_regularidade_data'] = date('Y-m-d H:i:s');
+            } catch (Exception $e) {
+                // Silencioso ou log de erro
+            }
+        }
+
+        $regularidade = json_decode($colaborador['tse_regularidade_json'], true);
+
+        require dirname(__DIR__, 2) . '/app/Views/admin/rh/regularidade_pdf.php';
         exit;
     }
 }
