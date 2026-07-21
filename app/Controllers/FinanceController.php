@@ -2067,7 +2067,7 @@ class FinanceController extends Controller {
 
             $accId = $db->lastInsertId();
 
-            AuditLogger::log($user['id'], 'CREATE_BANK_ACCOUNT', 'bank_accounts', $accId, null, [
+            \App\Services\AuditLogger::log('CREATE_BANK_ACCOUNT', 'bank_accounts', $accId, null, [
                 'name' => $name, 'bank_name' => $bank_name, 'fund_type' => $fund_type, 'balance' => $initial_balance
             ]);
 
@@ -2125,7 +2125,7 @@ class FinanceController extends Controller {
                 'fund_type'      => $fund_type
             ]);
 
-            AuditLogger::log($user['id'], 'UPDATE_BANK_ACCOUNT', 'bank_accounts', $id, null, [
+            \App\Services\AuditLogger::log('UPDATE_BANK_ACCOUNT', 'bank_accounts', $id, null, [
                 'name' => $name, 'bank_name' => $bank_name, 'fund_type' => $fund_type
             ]);
 
@@ -2169,7 +2169,7 @@ class FinanceController extends Controller {
             $stmtUpdate = $db->prepare("UPDATE `bank_accounts` SET status = :status WHERE id = :id");
             $stmtUpdate->execute(['status' => $newStatus, 'id' => $id]);
 
-            AuditLogger::log($user['id'], 'TOGGLE_BANK_ACCOUNT_STATUS', 'bank_accounts', $id, ['status' => $acc['status']], ['status' => $newStatus]);
+            \App\Services\AuditLogger::log('TOGGLE_BANK_ACCOUNT_STATUS', 'bank_accounts', $id, ['status' => $acc['status']], ['status' => $newStatus]);
 
             Session::setFlash('success', 'Status da conta bancária alterado para ' . $newStatus . '!');
         } catch (\Exception $e) {
