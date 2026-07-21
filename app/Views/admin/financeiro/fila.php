@@ -85,8 +85,9 @@
                                             </select>
                                         <?php endif; ?>
                                         
-                                        <div style="display: flex; gap: 8px;">
+                                        <div style="display: flex; gap: 6px;">
                                             <button type="submit" class="btn btn-success btn-sm" style="min-height:30px; font-size: 11px; flex: 1;">Aprovar</button>
+                                            <button type="button" class="btn btn-warning btn-sm" style="min-height:30px; font-size: 11px; flex: 1; background: #eab308; color: #0f172a; border: none; font-weight: bold;" onclick='editarDespesaAdmin(<?= json_encode($exp, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>✏️ Editar</button>
                                             <button type="button" class="btn btn-secondary btn-sm btn-danger-hover" style="min-height:30px; font-size: 11px; flex: 1;" onclick="rejeitarRegistro('expense', <?= $exp['id'] ?>)">Rejeitar</button>
                                         </div>
                                     </form>
@@ -255,7 +256,105 @@
     </div>
 </div>
 
+<!-- Modal de Edição Direta pelo Administrador -->
+<div id="adminEditExpenseModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15,23,42,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px);">
+    <div class="panel-card" style="width: 100%; max-width: 580px; margin-bottom: 0; background-color: #0f172a; border: 2px solid #eab308; max-height: 90vh; overflow-y: auto;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #334155;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #fde047; margin: 0;">✏️ Editar Gasto (Administrador)</h3>
+            <button type="button" onclick="fecharAdminEditModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+        </div>
+
+        <form action="<?= $this->baseUrl('admin/financeiro/despesas/editar') ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" name="redirect_to" value="/admin/financeiro/fila">
+            <input type="hidden" id="admin_edit_id" name="id" value="">
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600;">Descrição do Gasto</label>
+                <input type="text" id="admin_edit_description" name="description" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">CPF/CNPJ Fornecedor</label>
+                    <input type="text" id="admin_edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Razão Social Fornecedor</label>
+                    <input type="text" id="admin_edit_supplier_name" name="supplier_name" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Valor (R$)</label>
+                    <input type="text" id="admin_edit_value" name="value" onkeyup="formatarMoeda(this)" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px; font-weight: bold;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Data do Gasto</label>
+                    <input type="date" id="admin_edit_date_incurred" name="date_incurred" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Tipo de Despesa</label>
+                    <select id="admin_edit_expense_type_id" name="expense_type_id" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                        <option value="">-- Selecione o Tipo --</option>
+                        <?php foreach ($expenseTypes as $type): ?>
+                            <option value="<?= $type['id'] ?>"><?= htmlspecialchars($type['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Conta Bancária Origem</label>
+                    <select id="admin_edit_bank_account_id" name="bank_account_id" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                        <option value="">-- Selecione a Conta --</option>
+                        <?php foreach ($bankAccounts as $acc): ?>
+                            <option value="<?= $acc['id'] ?>"><?= htmlspecialchars($acc['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 12px; font-weight: 600;">Categoria SPCE</label>
+                <select id="admin_edit_spce_category_id" name="spce_category_id" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <option value="">-- Selecione a Categoria SPCE --</option>
+                    <?php foreach ($spceCategories as $cat): ?>
+                        <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 12px; font-weight: 600;">Observações / Notas do Administrador</label>
+                <textarea id="admin_edit_notes" name="notes" rows="3" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 12px;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                <button type="button" class="btn btn-secondary flex-1" onclick="fecharAdminEditModal()">Cancelar</button>
+                <button type="submit" class="btn btn-teal flex-1" style="background: #eab308; color: #0f172a; font-weight: 800;">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    function formatarMoeda(input) {
+        let value = input.value.replace(/\D/g, "");
+        if (value === "") {
+            input.value = "";
+            return;
+        }
+        value = (parseFloat(value) / 100).toFixed(2);
+        let formatted = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value);
+        input.value = formatted;
+    }
+
     function rejeitarRegistro(type, id) {
         document.getElementById('reject_type').value = type;
         document.getElementById('reject_id').value = id;
@@ -265,5 +364,26 @@
 
     function fecharRejectModal() {
         document.getElementById('rejectModal').style.display = 'none';
+    }
+
+    function editarDespesaAdmin(exp) {
+        document.getElementById('admin_edit_id').value = exp.id;
+        document.getElementById('admin_edit_description').value = exp.description || '';
+        document.getElementById('admin_edit_supplier_cnpj_cpf').value = exp.supplier_cnpj_cpf || '';
+        document.getElementById('admin_edit_supplier_name').value = exp.supplier_name || '';
+        document.getElementById('admin_edit_date_incurred').value = exp.date_incurred || '';
+        document.getElementById('admin_edit_expense_type_id').value = exp.expense_type_id || '';
+        document.getElementById('admin_edit_bank_account_id').value = exp.bank_account_id || '';
+        document.getElementById('admin_edit_spce_category_id').value = exp.spce_category_id || '';
+        document.getElementById('admin_edit_notes').value = exp.notes || '';
+
+        const valFloat = parseFloat(exp.value || 0);
+        document.getElementById('admin_edit_value').value = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valFloat);
+
+        document.getElementById('adminEditExpenseModal').style.display = 'flex';
+    }
+
+    function fecharAdminEditModal() {
+        document.getElementById('adminEditExpenseModal').style.display = 'none';
     }
 </script>

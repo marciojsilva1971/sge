@@ -322,6 +322,21 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   3. **Cabeçalhos de Segurança HTTP (`public/index.php`):** Ativados cabeçalhos de segurança estritos como **Strict-Transport-Security (HSTS)**, **X-Content-Type-Options: nosniff**, **X-Frame-Options: SAMEORIGIN** e **Referrer-Policy**, assegurando que os navegadores (Chrome/Edge/Safari/Firefox) exibam o **cadeado verde de conexão segura** e eliminem qualquer aviso de formulário inseguro ao enviar usuário e senha.
   4. **Atualização do Guia de Instalação (`GuiaInstDigOcean.md`):** Incluída a etapa de instalação do Certbot Let's Encrypt (`sudo certbot --apache`) para emissão do certificado SSL gratuito na VPS.
 
+---
+
+## 📅 Sessão 60: Fluxo Completo de Reprovação, Justificativa, Abas e Correção de Gastos (Colaborador e Administrador)
+* **Ações Implementadas:**
+  1. **Abas e Card de Gastos Reprovados no Portal (`portal/despesas.php`):**
+     - Adicionado o 4º Card de Resumo Pessoal **"Reprovados (A Corrigir)"** com destaque visual em vermelho (`#ef4444`).
+     - Criadas abas interativas de filtragem instantânea (`📋 Todos`, `⏳ Pendentes`, `✅ Aprovados`, `❌ Reprovados`).
+  2. **Exibição do Motivo da Reprovação & Botão de Correção (Colaborador):**
+     - Para despesas no status `REJEITADO`, é exibido um alerta destacado com a **justificativa do Administrador** (`notes`).
+     - Disponibilizado o botão **"✏️ Corrigir e Reenviar Gasto"**, abrindo modal preenchido para o colaborador corrigir descrição, CNPJ, Razão Social, Valor, Data, Categoria ou anexar novo comprovante.
+     - Ao enviar a correção, o status reverte automaticamente para `PENDENTE`, reenviando o gasto para a Fila de Aprovação.
+  3. **Edição Direta pelo Administrador (`admin/financeiro/fila` & `FinanceController`):**
+     - Adicionado o botão **"✏️ Editar"** na tabela da Fila de Aprovações para que o Administrador altere ou corrija diretamente qualquer despesa sem necessidade de rejeição prévia.
+     - Criados os endpoints `POST /portal/despesas/corrigir` e `POST /admin/financeiro/despesas/editar` com trilha de auditoria completa em `logs_auditoria`.
+
 
 
 

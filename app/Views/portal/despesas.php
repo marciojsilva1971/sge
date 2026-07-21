@@ -3,11 +3,11 @@
     <p class="subtitle" style="font-size: 12px;">Lance e acompanhe suas despesas de campo pendentes de vinculação financeira/fiscal.</p>
 </div>
 
-<!-- Cards de Resumo Pessoal -->
-<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+<!-- Cards de Resumo Pessoal (4 Colunas) -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 24px;">
     <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(30, 41, 59, 0.4);">
         <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Total Lançado</span>
-        <span style="font-size: 14px; font-weight: bold; color: var(--text-primary);">R$ <?= number_format($totalLaunched, 2, ',', '.') ?></span>
+        <span style="font-size: 13px; font-weight: bold; color: var(--text-primary);">R$ <?= number_format($totalLaunched, 2, ',', '.') ?></span>
     </div>
     <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2);">
         <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Aguardando Vínculo</span>
@@ -16,6 +16,10 @@
     <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2);">
         <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Aprovados</span>
         <span style="font-size: 14px; font-weight: bold; color: var(--success-color);"><?= $approvedCount ?></span>
+    </div>
+    <div class="panel-card" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3);">
+        <span style="font-size: 11px; color: #fca5a5; display: block; margin-bottom: 4px;">Reprovados (A Corrigir)</span>
+        <span style="font-size: 14px; font-weight: bold; color: #ef4444;"><?= $rejectedCount ?? 0 ?></span>
     </div>
 </div>
 
@@ -149,10 +153,26 @@
     </form>
 </div>
 
-<!-- Histórico de Lançamentos -->
+<!-- Histórico de Lançamentos com Abas de Filtro -->
 <div class="panel-card" style="padding: 16px;">
-    <div class="card-header" style="padding-bottom: 10px; margin-bottom: 12px;">
-        <h3 style="font-size: 14px; font-weight: 600;">Histórico de Gastos Enviados</h3>
+    <div class="card-header" style="padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <h3 style="font-size: 14px; font-weight: 600; margin: 0;">Histórico de Gastos Enviados</h3>
+        
+        <!-- Abas de Filtro de Status -->
+        <div style="display: flex; gap: 6px; font-size: 11px;">
+            <button type="button" class="btn-aba-filtro active" onclick="filtrarGastosPortal('TODOS', this)" style="padding: 4px 10px; border-radius: 20px; background: #3b82f6; color: #fff; border: none; cursor: pointer; font-weight: 600;">
+                📋 Todos (<?= count($expenses) ?>)
+            </button>
+            <button type="button" class="btn-aba-filtro" onclick="filtrarGastosPortal('PENDENTE', this)" style="padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
+                ⏳ Pendentes (<?= $pendingCount ?>)
+            </button>
+            <button type="button" class="btn-aba-filtro" onclick="filtrarGastosPortal('APROVADO', this)" style="padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">
+                ✅ Aprovados (<?= $approvedCount ?>)
+            </button>
+            <button type="button" class="btn-aba-filtro" onclick="filtrarGastosPortal('REJEITADO', this)" style="padding: 4px 10px; border-radius: 20px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer; font-weight: 600;">
+                ❌ Reprovados (<?= $rejectedCount ?? 0 ?>)
+            </button>
+        </div>
     </div>
 
     <?php if (empty($expenses)): ?>
@@ -160,36 +180,121 @@
     <?php else: ?>
         <div style="display: flex; flex-direction: column; gap: 12px;">
             <?php foreach ($expenses as $exp): ?>
-                <div style="padding: 12px; background: rgba(15, 23, 42, 0.4); border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); font-size: 12px;">
+                <div class="item-gasto-portal" data-status="<?= htmlspecialchars($exp['status']) ?>" style="padding: 14px; background: <?= $exp['status'] === 'REJEITADO' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(15, 23, 42, 0.4)' ?>; border-radius: 10px; border: 1px solid <?= $exp['status'] === 'REJEITADO' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255,255,255,0.04)' ?>; font-size: 12px; transition: all 0.2s;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 600; color: var(--text-primary);"><?= date('d/m/Y', strtotime($exp['date_incurred'])) ?></span>
                         <div>
                             <?php if ($exp['status'] === 'APROVADO' || $exp['status'] === 'PAGO'): ?>
                                 <span class="badge badge-success">Homologada</span>
                             <?php elseif ($exp['status'] === 'REJEITADO'): ?>
-                                <span class="badge badge-danger" title="<?= htmlspecialchars($exp['notes'] ?? 'Sem justificativa') ?>">Recusada</span>
+                                <span class="badge badge-danger" style="background: #ef4444; color: #fff;">❌ Reprovada</span>
                             <?php else: ?>
-                                <span class="badge badge-warning">Pendente</span>
+                                <span class="badge badge-warning">⏳ Pendente</span>
                             <?php endif; ?>
                         </div>
                     </div>
-                    <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 4px;">
-                        <span class="badge badge-secondary" style="font-size: 10px; padding: 2px 6px; background-color: #334155; color: var(--text-primary); border-radius: 4px; margin-right: 6px;"><?= htmlspecialchars($exp['expense_type_name'] ?? 'Sem Tipo') ?></span>
+                    
+                    <p style="color: var(--text-primary); font-weight: 600; margin-bottom: 4px; font-size: 13px;">
+                        <span class="badge badge-secondary" style="font-size: 10px; padding: 2px 6px; background-color: #334155; color: var(--text-primary); border-radius: 4px; margin-right: 6px;"><?= htmlspecialchars($exp['expense_type_name'] ?? 'Gasto Geral') ?></span>
                         <?= htmlspecialchars($exp['description']) ?>
                     </p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 11px;">
-                        <span>Fornecedor: <?= htmlspecialchars($exp['supplier_name']) ?></span>
-                        <span style="font-weight: 600; color: var(--warning-color);">R$ <?= number_format($exp['value'], 2, ',', '.') ?></span>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 11px; margin-bottom: 6px;">
+                        <span>Fornecedor: <strong><?= htmlspecialchars($exp['supplier_name']) ?></strong> (<?= htmlspecialchars($exp['supplier_cnpj_cpf'] ?? 'Sem documento') ?>)</span>
+                        <span style="font-weight: 700; color: var(--warning-color); font-size: 13px;">R$ <?= number_format($exp['value'], 2, ',', '.') ?></span>
                     </div>
-                    <?php if ($exp['status'] === 'REJEITADO' && !empty($exp['notes'])): ?>
-                        <div style="margin-top: 8px; padding: 8px; background-color: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 6px; color: var(--error-color); font-size: 11px;">
-                            <strong>Motivo da rejeição:</strong> <?= htmlspecialchars($exp['notes']) ?>
+
+                    <?php if ($exp['status'] === 'REJEITADO'): ?>
+                        <div style="margin-top: 8px; padding: 10px 12px; background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #fca5a5; font-size: 12px; line-height: 1.4;">
+                            <strong style="color: #ef4444; font-size: 12px; display: block; margin-bottom: 2px;">⚠️ Motivo da Reprovação pelo Financeiro/Administração:</strong>
+                            <?= htmlspecialchars($exp['notes'] ?? 'Nenhuma observação detalhada foi fornecida.') ?>
+                        </div>
+
+                        <div style="margin-top: 10px; text-align: right;">
+                            <button type="button" onclick='abrirModalCorrigirGasto(<?= json_encode($exp, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)' style="background: #eab308; color: #0f172a; font-weight: 800; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                ✏️ Corrigir e Reenviar Gasto
+                            </button>
                         </div>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
+</div>
+
+<!-- MODAL DE CORREÇÃO DE GASTO REPROVADO PELO COLABORADOR -->
+<div id="modalCorrigirGasto" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px);">
+    <div style="background: #0f172a; border: 2px solid #eab308; border-radius: 16px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 16px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #fde047; margin: 0; display: flex; align-items: center; gap: 8px;">
+                ✏️ Corrigir e Reenviar Gasto
+            </h3>
+            <button type="button" onclick="document.getElementById('modalCorrigirGasto').style.display='none';" style="background: transparent; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; font-weight: bold;">✕</button>
+        </div>
+
+        <div id="alertaMotivoReprovacaoModal" style="background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; padding: 10px; border-radius: 6px; margin-bottom: 14px; font-size: 12px; color: #fca5a5;">
+            <strong>Motivo informado:</strong> <span id="textoMotivoReprovacaoModal"></span>
+        </div>
+
+        <form action="<?= $this->baseUrl('portal/despesas/corrigir') ?>" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" id="edit_expense_id" name="expense_id" value="">
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600;">Descrição do Gasto</label>
+                <input type="text" id="edit_description" name="description" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">CPF/CNPJ Fornecedor</label>
+                    <input type="text" id="edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Razão Social Fornecedor</label>
+                    <input type="text" id="edit_supplier_name" name="supplier_name" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Valor (R$)</label>
+                    <input type="text" id="edit_value" name="value" onkeyup="formatarMoeda(this)" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px; font-weight: bold;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Data do Gasto</label>
+                    <input type="date" id="edit_date_incurred" name="date_incurred" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 12px; font-weight: 600;">Tipo de Despesa</label>
+                <select id="edit_expense_type_id" name="expense_type_id" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <option value="">-- Selecione o Tipo --</option>
+                    <?php foreach ($expenseTypes as $type): ?>
+                        <option value="<?= $type['id'] ?>"><?= htmlspecialchars($type['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px; background: rgba(56, 189, 248, 0.08); padding: 10px; border-radius: 8px; border: 1px dashed #38bdf8;">
+                <label style="font-size: 12px; font-weight: 700; color: #38bdf8; display: block; margin-bottom: 4px;">
+                    📸 Anexar Novo Comprovante / Cupom (Opcional)
+                </label>
+                <input type="file" name="novo_comprovante" accept="image/*, application/pdf" style="font-size: 11px; color: #cbd5e1;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+                <button type="button" onclick="document.getElementById('modalCorrigirGasto').style.display='none';" style="background: #334155; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                    Cancelar
+                </button>
+                <button type="submit" style="background: #22c55e; color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer;">
+                    🚀 Reenviar para Aprovação
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -604,4 +709,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+function filtrarGastosPortal(status, btnElement) {
+    const todosBotoes = document.querySelectorAll('.btn-aba-filtro');
+    todosBotoes.forEach(b => {
+        b.style.background = 'rgba(255,255,255,0.05)';
+        b.style.color = '#94a3b8';
+        b.style.fontWeight = 'normal';
+    });
+
+    if (btnElement) {
+        if (status === 'REPROVADO') {
+            btnElement.style.background = '#ef4444';
+            btnElement.style.color = '#fff';
+        } else {
+            btnElement.style.background = '#3b82f6';
+            btnElement.style.color = '#fff';
+        }
+        btnElement.style.fontWeight = '600';
+    }
+
+    const items = document.querySelectorAll('.item-gasto-portal');
+    items.forEach(item => {
+        const itemStatus = item.getAttribute('data-status');
+        if (status === 'TODOS') {
+            item.style.display = 'block';
+        } else if (status === 'APROVADO') {
+            if (itemStatus === 'APROVADO' || itemStatus === 'PAGO') {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        } else {
+            if (itemStatus === status) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        }
+    });
+}
+
+function abrirModalCorrigirGasto(exp) {
+    document.getElementById('edit_expense_id').value = exp.id;
+    document.getElementById('edit_description').value = exp.description || '';
+    document.getElementById('edit_supplier_cnpj_cpf').value = exp.supplier_cnpj_cpf || '';
+    document.getElementById('edit_supplier_name').value = exp.supplier_name || '';
+    document.getElementById('edit_date_incurred').value = exp.date_incurred || '';
+    document.getElementById('edit_expense_type_id').value = exp.expense_type_id || '';
+    
+    const valFloat = parseFloat(exp.value || 0);
+    document.getElementById('edit_value').value = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valFloat);
+
+    document.getElementById('textoMotivoReprovacaoModal').textContent = exp.notes || 'Nenhuma observação informada.';
+    document.getElementById('modalCorrigirGasto').style.display = 'flex';
+}
 </script>

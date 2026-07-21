@@ -450,10 +450,10 @@ class PortalController extends Controller {
 
         // Busca todas as despesas lançadas pelo próprio colaborador com o nome do tipo
         $stmt = $db->prepare(
-            "SELECT d.*, s.corporate_name AS supplier_name, s.cnpj_cpf AS supplier_cnpj_cpf, cc.id AS doc_id, et.name AS expense_type_name
+            "SELECT d.*, s.corporate_name AS supplier_name, s.cnpj_cpf AS supplier_cnpj_cpf, cc.doc_id, et.name AS expense_type_name
              FROM `despesas` d
-             JOIN `suppliers` s ON d.supplier_id = s.id
-             LEFT JOIN `comprovantes_cripto` cc ON d.id = cc.expense_id
+             LEFT JOIN `suppliers` s ON d.supplier_id = s.id
+             LEFT JOIN (SELECT expense_id, MIN(id) AS doc_id FROM `comprovantes_cripto` GROUP BY expense_id) cc ON d.id = cc.expense_id
              LEFT JOIN `expense_types` et ON d.expense_type_id = et.id
              WHERE d.user_id = :user_id
              ORDER BY d.created_at DESC"
@@ -468,6 +468,7 @@ class PortalController extends Controller {
         $totalLaunched = 0.0;
         $pendingCount = 0;
         $approvedCount = 0;
+        $rejectedCount = 0;
 
         foreach ($expenses as $exp) {
             $totalLaunched += floatval($exp['value']);
@@ -475,6 +476,8 @@ class PortalController extends Controller {
                 $pendingCount++;
             } elseif ($exp['status'] === 'APROVADO' || $exp['status'] === 'PAGO') {
                 $approvedCount++;
+            } elseif ($exp['status'] === 'REJEITADO') {
+                $rejectedCount++;
             }
         }
 
@@ -485,8 +488,126 @@ class PortalController extends Controller {
             'totalLaunched' => $totalLaunched,
             'pendingCount' => $pendingCount,
             'approvedCount' => $approvedCount,
+            'rejectedCount' => $rejectedCount,
             'csrf_token' => Session::csrfToken()
         ], 'portal');
+    }
+
+    /**
+     * Correção e reenvio de gasto pelo colaborador (POST)
+     */
+    public function updateExpense(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $expense_id = intval($_POST['expense_id'] ?? 0);
+            $description = trim($_POST['description'] ?? '');
+            $supplier_cnpj_cpf = preg_replace('/\D/', '', $_POST['supplier_cnpj_cpf'] ?? '');
+            $supplier_name = trim($_POST['supplier_name'] ?? '');
+            $value = $this->parseBrlCurrency($_POST['value'] ?? '0');
+            $date_incurred = $_POST['date_incurred'] ?? '';
+            $expense_type_id = (int)($_POST['expense_type_id'] ?? 0);
+
+            if ($expense_id <= 0 || empty($description) || empty($supplier_cnpj_cpf) || empty($supplier_name) || $value <= 0 || empty($date_incurred) || $expense_type_id <= 0) {
+                throw new Exception("Todos os campos do gasto são obrigatórios para a correção.");
+            }
+
+            // Verifica se a despesa pertence ao colaborador
+            $stmtCheck = $db->prepare("SELECT id, status FROM `despesas` WHERE id = :id AND user_id = :user_id LIMIT 1");
+            $stmtCheck->execute(['id' => $expense_id, 'user_id' => $user['id']]);
+            $exp = $stmtCheck->fetch();
+
+            if (!$exp) {
+                throw new Exception("Despesa não encontrada ou você não tem permissão para alterá-la.");
+            }
+
+            $db->beginTransaction();
+
+            // Cadastra/Obtém fornecedor pelo CNPJ/CPF
+            $stmtSupplier = $db->prepare("SELECT id FROM `suppliers` WHERE cnpj_cpf = :cnpj_cpf LIMIT 1");
+            $stmtSupplier->execute(['cnpj_cpf' => $supplier_cnpj_cpf]);
+            $supplier = $stmtSupplier->fetch();
+
+            if ($supplier) {
+                $supplierId = $supplier['id'];
+                $stmtUpSup = $db->prepare("UPDATE `suppliers` SET corporate_name = :name WHERE id = :id");
+                $stmtUpSup->execute(['name' => $supplier_name, 'id' => $supplierId]);
+            } else {
+                $stmtInsertSupplier = $db->prepare(
+                    "INSERT INTO `suppliers` (cnpj_cpf, corporate_name, status) 
+                     VALUES (:cnpj_cpf, :corporate_name, 'ATIVO')"
+                );
+                $stmtInsertSupplier->execute([
+                    'cnpj_cpf' => $supplier_cnpj_cpf,
+                    'corporate_name' => $supplier_name
+                ]);
+                $supplierId = $db->lastInsertId();
+            }
+
+            // Atualiza os dados da despesa e reverte o status de REJEITADO para PENDENTE
+            $stmtUpdate = $db->prepare(
+                "UPDATE `despesas` 
+                 SET description = :description, 
+                     supplier_id = :supplier_id, 
+                     value = :value, 
+                     date_incurred = :date_incurred, 
+                     expense_type_id = :expense_type_id, 
+                     status = 'PENDENTE', 
+                     notes = CONCAT('Corrigido pelo colaborador em ', DATE_FORMAT(NOW(), '%d/%m/%Y %H:%i')) 
+                 WHERE id = :id"
+            );
+            $stmtUpdate->execute([
+                'description' => $description,
+                'supplier_id' => $supplierId,
+                'value' => $value,
+                'date_incurred' => $date_incurred,
+                'expense_type_id' => $expense_type_id,
+                'id' => $expense_id
+            ]);
+
+            // Se foi anexado um novo comprovante/foto
+            if (isset($_FILES['novo_comprovante']) && $_FILES['novo_comprovante']['error'] === UPLOAD_ERR_OK && !empty($_FILES['novo_comprovante']['tmp_name'])) {
+                $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
+                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($_FILES['novo_comprovante'], $storageDir);
+
+                $stmtCrypto = $db->prepare(
+                    "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
+                     VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
+                );
+                $stmtCrypto->execute([
+                    'expense_id' => $expense_id,
+                    'encrypted_file_path' => $cryptoData['encrypted_file_path'],
+                    'original_name' => $cryptoData['original_name'],
+                    'iv' => $cryptoData['iv'],
+                    'mime_type' => $cryptoData['mime_type']
+                ]);
+            }
+
+            // Log
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, new_values, ip_address, user_agent) 
+                 VALUES (:user_id, 'FIELD_EXPENSE_CORRECT', 'despesas', :record_id, :new_values, :ip_address, :user_agent)"
+            );
+            $stmtLog->execute([
+                'user_id' => $user['id'],
+                'record_id' => $expense_id,
+                'new_values' => json_encode(['description' => $description, 'value' => $value], JSON_UNESCAPED_UNICODE),
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+
+            $db->commit();
+            Session::setFlash('success', 'Gasto corrigido e reenviado para a Fila de Aprovação com sucesso!');
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            Session::setFlash('error', 'Erro ao corrigir gasto: ' . $e->getMessage());
+        }
+
+        $this->redirect('/portal/despesas');
     }
 
     /**

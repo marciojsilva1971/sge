@@ -109,6 +109,7 @@ $router->get('/admin/financeiro/fornecedores', 'FinanceController@suppliers');
 $router->post('/admin/financeiro/fornecedores', 'FinanceController@addSupplier');
 $router->get('/admin/financeiro/despesas', 'FinanceController@expenses');
 $router->post('/admin/financeiro/despesas', 'FinanceController@addExpense');
+$router->post('/admin/financeiro/despesas/editar', 'FinanceController@updateExpense');
 $router->get('/admin/financeiro/fila', 'FinanceController@queue');
 $router->post('/admin/financeiro/aprovar', 'FinanceController@approve');
 $router->post('/admin/financeiro/rejeitar', 'FinanceController@reject');
@@ -152,6 +153,7 @@ $router->get('/portal/militancia', 'PortalController@militancy');
 $router->post('/portal/militancia', 'PortalController@addMilitancy');
 $router->get('/portal/despesas', 'PortalController@expenses');
 $router->post('/portal/despesas', 'PortalController@addExpense');
+$router->post('/portal/despesas/corrigir', 'PortalController@updateExpense');
 
 // API de Consulta Cadastral de CNPJ / OCR
 $router->get('/api/cnpj/consultar', 'PortalController@consultarCnpj');

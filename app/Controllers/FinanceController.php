@@ -469,9 +469,10 @@ class FinanceController extends Controller {
         );
         $pendingMilitancy = $stmtMilitancy->fetchAll();
 
-        // Contas bancárias e categorias para a vinculação (admin)
+        // Contas bancárias, tipos e categorias para a vinculação/edição (admin)
         $bankAccounts = $db->query("SELECT id, name, fund_type, balance FROM `bank_accounts` WHERE status = 'ATIVA' ORDER BY name ASC")->fetchAll();
         $spceCategories = $db->query("SELECT id, code, description FROM `spce_categories` WHERE type = 'DESPESA' ORDER BY code ASC")->fetchAll();
+        $expenseTypes = $db->query("SELECT * FROM `expense_types` ORDER BY name ASC")->fetchAll();
 
         $this->render('admin/financeiro/fila', [
             'user' => $user,
@@ -480,6 +481,7 @@ class FinanceController extends Controller {
             'pendingMilitancy' => $pendingMilitancy,
             'bankAccounts' => $bankAccounts,
             'spceCategories' => $spceCategories,
+            'expenseTypes' => $expenseTypes,
             'csrf_token' => Session::csrfToken()
         ]);
     }
@@ -864,5 +866,102 @@ class FinanceController extends Controller {
         
         Session::setFlash('success', 'Tipo de despesa excluído com sucesso!');
         $this->redirect('admin/financeiro/tipos-despesas');
+    }
+
+    /**
+     * Edição direta de despesa pelo Administrador (POST)
+     */
+    public function updateExpense(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $id = intval($_POST['id'] ?? 0);
+            $description = trim($_POST['description'] ?? '');
+            $supplier_cnpj_cpf = preg_replace('/\D/', '', $_POST['supplier_cnpj_cpf'] ?? '');
+            $supplier_name = trim($_POST['supplier_name'] ?? '');
+            $value = $this->parseBrlCurrency($_POST['value'] ?? '0');
+            $date_incurred = $_POST['date_incurred'] ?? '';
+            $expense_type_id = intval($_POST['expense_type_id'] ?? 0);
+            $bank_account_id = !empty($_POST['bank_account_id']) ? intval($_POST['bank_account_id']) : null;
+            $spce_category_id = !empty($_POST['spce_category_id']) ? intval($_POST['spce_category_id']) : null;
+            $notes = trim($_POST['notes'] ?? '');
+
+            if ($id <= 0 || empty($description) || empty($supplier_name) || $value <= 0 || empty($date_incurred)) {
+                throw new Exception("Descrição, Fornecedor, Valor e Data são obrigatórios.");
+            }
+
+            $db->beginTransaction();
+
+            // Cadastra ou atualiza fornecedor
+            $supplierId = null;
+            if (!empty($supplier_cnpj_cpf)) {
+                $stmtSup = $db->prepare("SELECT id FROM `suppliers` WHERE cnpj_cpf = :cnpj_cpf LIMIT 1");
+                $stmtSup->execute(['cnpj_cpf' => $supplier_cnpj_cpf]);
+                $s = $stmtSup->fetch();
+                if ($s) {
+                    $supplierId = $s['id'];
+                    $db->prepare("UPDATE `suppliers` SET corporate_name = :name WHERE id = :id")->execute(['name' => $supplier_name, 'id' => $supplierId]);
+                } else {
+                    $stmtIns = $db->prepare("INSERT INTO `suppliers` (cnpj_cpf, corporate_name, status) VALUES (:cnpj_cpf, :corporate_name, 'ATIVO')");
+                    $stmtIns->execute(['cnpj_cpf' => $supplier_cnpj_cpf, 'corporate_name' => $supplier_name]);
+                    $supplierId = $db->lastInsertId();
+                }
+            } else {
+                $stmtSup = $db->prepare("SELECT supplier_id FROM `despesas` WHERE id = :id LIMIT 1");
+                $stmtSup->execute(['id' => $id]);
+                $supplierId = $stmtSup->fetchColumn();
+            }
+
+            // Atualiza a despesa
+            $stmtUp = $db->prepare(
+                "UPDATE `despesas` 
+                 SET description = :description, 
+                     supplier_id = :supplier_id, 
+                     value = :value, 
+                     date_incurred = :date_incurred, 
+                     expense_type_id = :expense_type_id, 
+                     bank_account_id = :bank_account_id, 
+                     spce_category_id = :spce_category_id, 
+                     notes = :notes 
+                 WHERE id = :id"
+            );
+            $stmtUp->execute([
+                'description' => $description,
+                'supplier_id' => $supplierId,
+                'value' => $value,
+                'date_incurred' => $date_incurred,
+                'expense_type_id' => $expense_type_id > 0 ? $expense_type_id : null,
+                'bank_account_id' => $bank_account_id,
+                'spce_category_id' => $spce_category_id,
+                'notes' => empty($notes) ? null : $notes,
+                'id' => $id
+            ]);
+
+            // Auditoria
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, new_values, ip_address, user_agent) 
+                 VALUES (:user_id, 'ADMIN_EXPENSE_EDIT', 'despesas', :record_id, :new_values, :ip_address, :user_agent)"
+            );
+            $stmtLog->execute([
+                'user_id' => $user['id'],
+                'record_id' => $id,
+                'new_values' => json_encode(['description' => $description, 'value' => $value], JSON_UNESCAPED_UNICODE),
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+
+            $db->commit();
+            Session::setFlash('success', 'Gasto/Despesa atualizada com sucesso pelo Administrador!');
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            Session::setFlash('error', 'Erro ao atualizar despesa: ' . $e->getMessage());
+        }
+
+        $redirect = $_POST['redirect_to'] ?? '/admin/financeiro/fila';
+        $this->redirect($redirect);
     }
 }
