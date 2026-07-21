@@ -17,10 +17,11 @@
     <!-- Cadastro de Fornecedor -->
     <div class="panel-card flex-1">
         <div class="card-header">
-            <h3>Cadastrar Novo Fornecedor</h3>
+            <h3 id="form_title">Cadastrar Novo Fornecedor</h3>
         </div>
-        <form action="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" method="POST">
+        <form id="supplier_form" action="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" method="POST">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" name="supplier_id" id="supplier_id" value="">
 
             <div class="form-group">
                 <label for="cnpj_cpf">CNPJ ou CPF (Apenas números ou formatado)</label>
@@ -54,9 +55,22 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-teal btn-block" style="margin-top: 10px;">
-                💾 Salvar Fornecedor
-            </button>
+            <div class="form-group" id="status_group" style="display: none;">
+                <label for="status">Status</label>
+                <select id="status" name="status" class="form-control" style="background: rgba(30, 41, 59, 0.5); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: 8px; width: 100%;">
+                    <option value="ATIVO">Ativo</option>
+                    <option value="INATIVO">Inativo</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 15px;">
+                <button type="submit" id="btn_submit" class="btn btn-teal flex-1">
+                    💾 Salvar Fornecedor
+                </button>
+                <button type="button" id="btn_cancel_edit" class="btn btn-secondary" style="display: none;" onclick="cancelEdit()">
+                    ❌ Cancelar
+                </button>
+            </div>
         </form>
     </div>
 
@@ -73,12 +87,13 @@
                         <th>Razão Social / Fantasia</th>
                         <th>Contato</th>
                         <th>Status</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($suppliers)): ?>
                         <tr>
-                            <td colspan="4" style="text-align: center; color: var(--text-secondary);">Nenhum fornecedor cadastrado ainda.</td>
+                            <td colspan="5" style="text-align: center; color: var(--text-secondary);">Nenhum fornecedor cadastrado ainda.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($suppliers as $sup): ?>
@@ -102,6 +117,11 @@
                                     <?php else: ?>
                                         <span class="badge badge-danger">Inativo</span>
                                     <?php endif; ?>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-teal" style="padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" onclick="editSupplier(<?= htmlspecialchars(json_encode($sup), ENT_QUOTES, 'UTF-8') ?>)">
+                                        ✏️ Editar
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -169,5 +189,48 @@
                 if (statusDiv) statusDiv.innerHTML = '';
             }
         });
+    }
+
+    function editSupplier(sup) {
+        document.getElementById('supplier_id').value = sup.id;
+        document.getElementById('cnpj_cpf').value = sup.cnpj_cpf;
+        document.getElementById('corporate_name').value = sup.corporate_name;
+        document.getElementById('trade_name').value = sup.trade_name || "";
+        document.getElementById('address').value = sup.address || "";
+        document.getElementById('phone').value = sup.phone || "";
+        document.getElementById('email').value = sup.email || "";
+        document.getElementById('status').value = sup.status;
+        
+        document.getElementById('status_group').style.display = 'block';
+        document.getElementById('form_title').innerText = 'Editar Fornecedor';
+        document.getElementById('btn_submit').innerText = '💾 Atualizar Fornecedor';
+        document.getElementById('btn_cancel_edit').style.display = 'inline-block';
+        
+        // Altera o action do form para a rota de edição
+        document.getElementById('supplier_form').action = '<?= $this->baseUrl("admin/financeiro/fornecedores/editar") ?>';
+        
+        // Rola a tela até o formulário de forma suave
+        document.getElementById('cnpj_cpf').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+        document.getElementById('supplier_id').value = "";
+        document.getElementById('cnpj_cpf').value = "";
+        document.getElementById('corporate_name').value = "";
+        document.getElementById('trade_name').value = "";
+        document.getElementById('address').value = "";
+        document.getElementById('phone').value = "";
+        document.getElementById('email').value = "";
+        document.getElementById('status').value = "ATIVO";
+        
+        document.getElementById('status_group').style.display = 'none';
+        document.getElementById('form_title').innerText = 'Cadastrar Novo Fornecedor';
+        document.getElementById('btn_submit').innerText = '💾 Salvar Fornecedor';
+        document.getElementById('btn_cancel_edit').style.display = 'none';
+        
+        // Retorna o action original do form
+        document.getElementById('supplier_form').action = '<?= $this->baseUrl("admin/financeiro/fornecedores") ?>';
+        
+        if (statusDiv) statusDiv.innerHTML = '';
     }
 </script>

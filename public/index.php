@@ -113,6 +113,7 @@ $router->post('/admin/financeiro/contas/update', 'FinanceController@updateBankAc
 $router->post('/admin/financeiro/contas/toggle-status', 'FinanceController@toggleBankAccountStatus');
 $router->get('/admin/financeiro/fornecedores', 'FinanceController@suppliers');
 $router->post('/admin/financeiro/fornecedores', 'FinanceController@addSupplier');
+$router->post('/admin/financeiro/fornecedores/editar', 'FinanceController@updateSupplier');
 $router->get('/admin/financeiro/despesas', 'FinanceController@expenses');
 $router->post('/admin/financeiro/despesas', 'FinanceController@addExpense');
 $router->post('/admin/financeiro/despesas/editar', 'FinanceController@updateExpense');

@@ -232,6 +232,94 @@ class FinanceController extends Controller {
     }
 
     /**
+     * Ação de Editar Fornecedor (POST)
+     */
+    public function updateSupplier(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $id = (int)($_POST['supplier_id'] ?? 0);
+            $cnpj_cpf = preg_replace('/[^0-9]/', '', $_POST['cnpj_cpf'] ?? '');
+            $corporate_name = trim($_POST['corporate_name'] ?? '');
+            $trade_name = trim($_POST['trade_name'] ?? '');
+            $address = trim($_POST['address'] ?? '');
+            $phone = trim($_POST['phone'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $status = trim($_POST['status'] ?? 'ATIVO');
+
+            if ($id <= 0) {
+                throw new Exception("ID do fornecedor inválido.");
+            }
+
+            if (empty($cnpj_cpf) || empty($corporate_name)) {
+                throw new Exception("CNPJ/CPF e Razão Social são campos obrigatórios.");
+            }
+
+            // Validação simples de CPF/CNPJ
+            if (strlen($cnpj_cpf) !== 11 && strlen($cnpj_cpf) !== 14) {
+                throw new Exception("CNPJ/CPF inválido. Deve possuir 11 dígitos (CPF) ou 14 dígitos (CNPJ).");
+            }
+
+            // Verifica se o fornecedor existe
+            $stmtCheckExist = $db->prepare("SELECT id FROM `suppliers` WHERE id = :id LIMIT 1");
+            $stmtCheckExist->execute(['id' => $id]);
+            if (!$stmtCheckExist->fetch()) {
+                throw new Exception("Fornecedor não encontrado.");
+            }
+
+            // Verifica duplicidade (excluindo o próprio ID)
+            $stmtCheck = $db->prepare("SELECT id FROM `suppliers` WHERE cnpj_cpf = :cnpj_cpf AND id != :id LIMIT 1");
+            $stmtCheck->execute(['cnpj_cpf' => $_POST['cnpj_cpf'], 'id' => $id]);
+            if ($stmtCheck->fetch()) {
+                throw new Exception("Fornecedor com este CNPJ/CPF já cadastrado.");
+            }
+
+            $stmt = $db->prepare(
+                "UPDATE `suppliers` SET 
+                    cnpj_cpf = :cnpj_cpf, 
+                    corporate_name = :corporate_name, 
+                    trade_name = :trade_name, 
+                    address = :address, 
+                    phone = :phone, 
+                    email = :email,
+                    status = :status
+                 WHERE id = :id"
+            );
+            $stmt->execute([
+                'cnpj_cpf' => $_POST['cnpj_cpf'], // Mantemos formatado para exibição amigável
+                'corporate_name' => $corporate_name,
+                'trade_name' => empty($trade_name) ? null : $trade_name,
+                'address' => empty($address) ? null : $address,
+                'phone' => empty($phone) ? null : $phone,
+                'email' => empty($email) ? null : $email,
+                'status' => $status,
+                'id' => $id
+            ]);
+
+            // Grava Log
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, ip_address, user_agent) 
+                 VALUES (:user_id, 'UPDATE_SUPPLIER', 'suppliers', :record_id, :ip_address, :user_agent)"
+            );
+            $stmtLog->execute([
+                'user_id' => $user['id'],
+                'record_id' => $id,
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+
+            Session::setFlash('success', 'Fornecedor atualizado com sucesso!');
+        } catch (Exception $e) {
+            Session::setFlash('error', 'Erro ao atualizar fornecedor: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/fornecedores');
+    }
+
+
+    /**
      * Cadastro e Listagem de Despesas Gerais
      */
     public function expenses(): void {
