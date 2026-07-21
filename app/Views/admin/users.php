@@ -2,9 +2,16 @@
     
     <div class="page-header">
         <h2>Gerenciamento de Usuários e Acessos</h2>
-        <button id="btnOpenInviteModal" class="btn btn-primary">
-            + Cadastrar Novo Usuário
-        </button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <?php if (!empty($user['role_permissions']['configure_rbac'])): ?>
+                <a href="<?= $this->baseUrl('admin/rbac') ?>" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: 500; font-size: 14px; background-color: var(--card-bg-light); border: 1px solid var(--border-color); color: var(--text-color);">
+                    🔑 Permissões (RBAC)
+                </a>
+            <?php endif; ?>
+            <button id="btnOpenInviteModal" class="btn btn-primary">
+                + Cadastrar Novo Usuário
+            </button>
+        </div>
     </div>
 
     <!-- Alertas Visuais de Sucesso ou Erro -->
@@ -94,7 +101,22 @@
                                 </td>
                                 <td><strong><?= htmlspecialchars($u['name']) ?></strong></td>
                                 <td><?= htmlspecialchars($u['email']) ?></td>
-                                <td><?= htmlspecialchars($u['celular']) ?></td>
+                                <td>
+                                    <?php 
+                                    $celRaw = preg_replace('/\D/', '', $u['celular'] ?? '');
+                                    if (strlen($celRaw) === 12 && substr($celRaw, 0, 1) === '0') {
+                                        $celRaw = substr($celRaw, 1);
+                                    }
+                                    if (strlen($celRaw) === 11) {
+                                        $celFormatted = '(' . substr($celRaw, 0, 2) . ') ' . substr($celRaw, 2, 5) . '-' . substr($celRaw, 7, 4);
+                                    } elseif (strlen($celRaw) === 10) {
+                                        $celFormatted = '(' . substr($celRaw, 0, 2) . ') ' . substr($celRaw, 2, 4) . '-' . substr($celRaw, 6, 4);
+                                    } else {
+                                        $celFormatted = $u['celular'];
+                                    }
+                                    ?>
+                                    <span style="white-space: nowrap;"><?= htmlspecialchars($celFormatted) ?></span>
+                                </td>
                                 <td><span class="badge badge-info"><?= htmlspecialchars($u['role_name']) ?></span></td>
                                 <td>
                                     <?php if ($u['status'] === 'ATIVO'): ?>

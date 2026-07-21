@@ -49,14 +49,6 @@
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if (!empty($user['role_permissions']['configure_rbac'])): ?>
-                    <li>
-                        <a href="<?= $this->baseUrl('admin/rbac') ?>" class="nav-item">
-                            <span class="nav-icon">🔑</span>
-                            <span class="nav-label">Permissões (RBAC)</span>
-                        </a>
-                    </li>
-                    <?php endif; ?>
                     <li>
                         <a href="<?= $this->baseUrl('admin/profile') ?>" class="nav-item">
                             <span class="nav-icon">👤</span>
