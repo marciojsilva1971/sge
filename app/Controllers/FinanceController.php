@@ -289,28 +289,26 @@ class FinanceController extends Controller {
                 throw new Exception("Todos os campos principais da despesa são obrigatórios.");
             }
 
-            // Normaliza upload de comprovante(s) fiscal(is) (1 ou mais arquivos)
-            $filesList = [];
+            // 1. Processa a foto principal do cabeçalho com CNPJ (1º Passo)
+            $mainFile = null;
             if (isset($_FILES['comprovante'])) {
                 if (is_array($_FILES['comprovante']['name'])) {
-                    foreach ($_FILES['comprovante']['name'] as $idx => $fname) {
-                        if ($_FILES['comprovante']['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES['comprovante']['tmp_name'][$idx])) {
-                            $filesList[] = [
-                                'name' => $fname,
-                                'type' => $_FILES['comprovante']['type'][$idx],
-                                'tmp_name' => $_FILES['comprovante']['tmp_name'][$idx],
-                                'error' => $_FILES['comprovante']['error'][$idx],
-                                'size' => $_FILES['comprovante']['size'][$idx]
-                            ];
-                        }
+                    if ($_FILES['comprovante']['error'][0] === UPLOAD_ERR_OK && !empty($_FILES['comprovante']['tmp_name'][0])) {
+                        $mainFile = [
+                            'name' => $_FILES['comprovante']['name'][0],
+                            'type' => $_FILES['comprovante']['type'][0],
+                            'tmp_name' => $_FILES['comprovante']['tmp_name'][0],
+                            'error' => $_FILES['comprovante']['error'][0],
+                            'size' => $_FILES['comprovante']['size'][0]
+                        ];
                     }
                 } elseif ($_FILES['comprovante']['error'] === UPLOAD_ERR_OK) {
-                    $filesList[] = $_FILES['comprovante'];
+                    $mainFile = $_FILES['comprovante'];
                 }
             }
 
-            if (empty($filesList)) {
-                throw new Exception("O upload de pelo menos um comprovante fiscal é obrigatório.");
+            if (!$mainFile) {
+                throw new Exception("O upload da foto do cabeçalho/CNPJ do comprovante é obrigatório.");
             }
 
             $db->beginTransaction();
@@ -336,22 +334,43 @@ class FinanceController extends Controller {
             ]);
             $expenseId = $db->lastInsertId();
 
-            // 2. Criptografa e salva todas as fotos dos comprovantes físicos
+            // 2. Criptografa e salva a foto principal do cabeçalho/CNPJ
             $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
-            foreach ($filesList as $singleFile) {
-                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($singleFile, $storageDir);
+            $mainCryptoData = EncryptionService::encryptAndSaveUploadedFile($mainFile, $storageDir);
 
-                $stmtCripto = $db->prepare(
-                    "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
-                     VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
-                );
-                $stmtCripto->execute([
-                    'expense_id' => $expenseId,
-                    'encrypted_file_path' => $cryptoData['encrypted_file_path'],
-                    'original_name' => $cryptoData['original_name'],
-                    'iv' => $cryptoData['iv'],
-                    'mime_type' => $cryptoData['mime_type']
-                ]);
+            $stmtCripto = $db->prepare(
+                "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
+                 VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
+            );
+            $stmtCripto->execute([
+                'expense_id' => $expenseId,
+                'encrypted_file_path' => $mainCryptoData['encrypted_file_path'],
+                'original_name' => $mainCryptoData['original_name'],
+                'iv' => $mainCryptoData['iv'],
+                'mime_type' => $mainCryptoData['mime_type']
+            ]);
+
+            // 3. Processa fotos adicionais enviadas (sem OCR)
+            if (isset($_FILES['fotos_adicionais']) && is_array($_FILES['fotos_adicionais']['name'])) {
+                foreach ($_FILES['fotos_adicionais']['name'] as $idx => $fname) {
+                    if ($_FILES['fotos_adicionais']['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES['fotos_adicionais']['tmp_name'][$idx])) {
+                        $extraFile = [
+                            'name' => $fname,
+                            'type' => $_FILES['fotos_adicionais']['type'][$idx],
+                            'tmp_name' => $_FILES['fotos_adicionais']['tmp_name'][$idx],
+                            'error' => $_FILES['fotos_adicionais']['error'][$idx],
+                            'size' => $_FILES['fotos_adicionais']['size'][$idx]
+                        ];
+                        $extraCrypto = EncryptionService::encryptAndSaveUploadedFile($extraFile, $storageDir);
+                        $stmtCripto->execute([
+                            'expense_id' => $expenseId,
+                            'encrypted_file_path' => $extraCrypto['encrypted_file_path'],
+                            'original_name' => $extraCrypto['original_name'],
+                            'iv' => $extraCrypto['iv'],
+                            'mime_type' => $extraCrypto['mime_type']
+                        ]);
+                    }
+                }
             }
 
             // 3. Se foi marcado como Pago, atualiza saldo da conta correspondente

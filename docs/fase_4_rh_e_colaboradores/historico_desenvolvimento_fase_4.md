@@ -263,7 +263,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 52: Solicitação Explícita de Fotos Discriminadas e Suporte a Múltiplos Arquivos
+* **Ações Implementadas:** Atualização dos formulários para suporte a upload múltiplo e alertas de orientação.
+
+---
+
+## 📅 Sessão 53: Fluxo de Upload em 2 Etapas (1º Foto CNPJ Nítida com OCR + Fotos Adicionais sem OCR)
 * **Ações Implementadas:**
-  1. **Solicitação em Banner Pós-CNPJ:** Exibição de um banner destacado solicitarando expressamente o envio de 1 ou mais fotos nítidas do comprovante fiscal discriminando os itens/despesas e seus respectivos valores assim que o CNPJ é completado (por OCR ou digitação manual).
-  2. **Upload Múltiplo (`multiple`):** Adicionada a propriedade `multiple` aos inputs de comprovante (`comprovante[]`), permitindo anexar múltiplos arquivos/fotos simultaneamente para cupons longos.
-  3. **Suporte no Backend:** Atualizados `PortalController` e `FinanceController` para processar e criptografar todos os arquivos da lista enviada.
+  1. **1º Passo (Leitura de CNPJ via OCR):** Orientação clara para o usuário tirar 1 foto focada exclusivamente no cabeçalho/CNPJ nítido do comprovante fiscal (`comprovante`). O OCR é executado apenas nesta imagem, garantindo altíssima taxa de acerto.
+  2. **2º Passo (Fotos Adicionais dos Itens Discriminados - Sem OCR):** Dentro do formulário revelado, criado um campo específico para inclusão de 1 ou mais fotos extras (`fotos_adicionais[]`). **Essas imagens adicionais ignoram o OCR**, evitando lentidão no navegador e garantindo que todas as evidências fiscais detalhadas sejam anexadas.
+  3. **Backend Consolidado:** Controllers refatorados para salvar e criptografar (AES-256) tanto a foto principal quanto a lista de fotos adicionais para o mesmo lançamento fiscal.

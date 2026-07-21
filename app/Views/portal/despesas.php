@@ -28,17 +28,15 @@
     <form action="<?= $this->baseUrl('portal/despesas') ?>" method="POST" enctype="multipart/form-data" id="expenseForm">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
-        <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE -->
+        <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (CNPJ NÍTIDO) -->
         <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
             <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
-                📸 1º PASSO: Anexar / Fotografar Comprovante(s) Fiscal(is) (JPEG, PNG ou PDF)
+                📸 1º PASSO: Enviar Foto do Cabeçalho com CNPJ NÍTIDO (para Leitura OCR)
             </label>
             <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                Tire uma ou mais fotos legíveis da nota/cupom fiscal onde estejam discriminadas as despesas e seus valores!
+                Tire uma foto bem nítida e focada no <strong>cabeçalho/topo da nota ou cupom fiscal</strong> onde aparece o CNPJ. O sistema lerá o CNPJ via OCR!
             </p>
-            <input type="file" id="comprovante" name="comprovante[]" accept="image/*,application/pdf" multiple required style="padding: 6px; font-size: 12px; width: 100%;">
+            <input type="file" id="comprovante" name="comprovante" accept="image/*,application/pdf" required style="padding: 6px; font-size: 12px; width: 100%;">
             
             <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
                 🔍 Digitalizar e Ler Comprovante (OCR)
@@ -68,9 +66,21 @@
                     <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
                 </div>
                 <div class="form-group">
-                    <label for="supplier_name">Razão Social / Nome do Fornecedor</label>
-                    <input type="text" id="supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Silva Ltda" required style="font-weight: 500;">
+                    <label for="supplier_name">Razão Social / Nome Fantasia</label>
+                    <input type="text" id="supplier_name" name="supplier_name" placeholder="Nome do Fornecedor" required>
                 </div>
+            </div>
+
+            <!-- FOTOS ADICIONAIS DAS DESPESAS DISCRIMINADAS (SEM OCR) -->
+            <div class="form-group" style="background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(255, 255, 255, 0.15); padding: 12px; border-radius: 10px; margin-top: 14px; margin-bottom: 14px;">
+                <label for="fotos_adicionais" style="font-size: 12px; font-weight: 700; color: #7dd3fc; display: flex; align-items: center; gap: 6px;">
+                    📸 Fotos Adicionais do Comprovante / Itens Discriminados (Opcional - Sem OCR)
+                </label>
+                <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
+                    Se o comprovante tiver mais fotos, verso ou discriminação detalhada dos itens e valores, adicione as fotos extras abaixo. <strong>Estas fotos não passam por OCR.</strong>
+                </p>
+                <input type="file" id="fotos_adicionais" name="fotos_adicionais[]" accept="image/*, application/pdf" multiple style="padding: 6px; font-size: 12px; width: 100%;">
+                <div id="fotos-adicionais-preview" style="font-size: 11px; color: #4ade80; margin-top: 4px; display: none;"></div>
             </div>
 
             <!-- DEMAIS DADOS DA DESPESA -->
@@ -235,6 +245,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '';
         }
     });
+
+    const inputFotosAdicionais = document.getElementById('fotos_adicionais');
+    const previewFotosAdicionais = document.getElementById('fotos-adicionais-preview');
+
+    if (inputFotosAdicionais && previewFotosAdicionais) {
+        inputFotosAdicionais.addEventListener('change', function(e) {
+            const count = e.target.files ? e.target.files.length : 0;
+            if (count > 0) {
+                previewFotosAdicionais.style.display = 'block';
+                previewFotosAdicionais.textContent = `✔ ${count} foto(s) adicional(is) selecionada(s) (sem OCR).`;
+            } else {
+                previewFotosAdicionais.style.display = 'none';
+            }
+        });
+    }
 
     // Máscara dinâmica Moeda BRL
     inputValue.addEventListener('input', (e) => {

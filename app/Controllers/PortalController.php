@@ -152,53 +152,82 @@ class PortalController extends Controller {
                 throw new Exception("Este relatório já foi enviado ou finalizado.");
             }
 
-            // Normaliza arquivos de upload (1 ou múltiplos comprovantes)
-            $filesList = [];
+            // 1. Processa a foto principal do cabeçalho com CNPJ (passada no 1º Passo para OCR)
+            $mainFile = null;
             if (isset($_FILES['comprovante'])) {
                 if (is_array($_FILES['comprovante']['name'])) {
-                    foreach ($_FILES['comprovante']['name'] as $idx => $fname) {
-                        if ($_FILES['comprovante']['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES['comprovante']['tmp_name'][$idx])) {
-                            $filesList[] = [
-                                'name' => $fname,
-                                'type' => $_FILES['comprovante']['type'][$idx],
-                                'tmp_name' => $_FILES['comprovante']['tmp_name'][$idx],
-                                'error' => $_FILES['comprovante']['error'][$idx],
-                                'size' => $_FILES['comprovante']['size'][$idx]
-                            ];
-                        }
+                    if ($_FILES['comprovante']['error'][0] === UPLOAD_ERR_OK && !empty($_FILES['comprovante']['tmp_name'][0])) {
+                        $mainFile = [
+                            'name' => $_FILES['comprovante']['name'][0],
+                            'type' => $_FILES['comprovante']['type'][0],
+                            'tmp_name' => $_FILES['comprovante']['tmp_name'][0],
+                            'error' => $_FILES['comprovante']['error'][0],
+                            'size' => $_FILES['comprovante']['size'][0]
+                        ];
                     }
                 } elseif ($_FILES['comprovante']['error'] === UPLOAD_ERR_OK) {
-                    $filesList[] = $_FILES['comprovante'];
+                    $mainFile = $_FILES['comprovante'];
                 }
             }
 
-            if (empty($filesList)) {
-                throw new Exception("Pelo menos uma foto/arquivo do comprovante fiscal é obrigatório.");
+            if (!$mainFile) {
+                throw new Exception("A foto do cabeçalho com o CNPJ do comprovante é obrigatória.");
             }
 
             $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
 
-            foreach ($filesList as $singleFile) {
-                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($singleFile, $storageDir);
+            // Salva e criptografa a foto do cabeçalho/CNPJ
+            $mainCryptoData = EncryptionService::encryptAndSaveUploadedFile($mainFile, $storageDir);
 
-                // Grava cada comprovante fiscal anexado
-                $stmt = $db->prepare(
-                    "INSERT INTO `travel_receipts` (travel_report_id, supplier_cnpj, receipt_date, value, spce_category_id, encrypted_file_path, iv, status, notes) 
-                     VALUES (:travel_report_id, :supplier_cnpj, :receipt_date, :value, :spce_category_id, :encrypted_file_path, :iv, 'PENDENTE', :notes)"
-                );
-                $stmt->execute([
-                    'travel_report_id' => $travel_report_id,
-                    'supplier_cnpj' => $supplier_cnpj,
-                    'receipt_date' => $receipt_date,
-                    'value' => $value,
-                    'spce_category_id' => $spce_category_id,
-                    'encrypted_file_path' => $cryptoData['encrypted_file_path'],
-                    'iv' => $cryptoData['iv'],
-                    'notes' => empty($notes) ? null : $notes
-                ]);
+            // Grava o recibo principal
+            $stmt = $db->prepare(
+                "INSERT INTO `travel_receipts` (travel_report_id, supplier_cnpj, receipt_date, value, spce_category_id, encrypted_file_path, iv, status, notes) 
+                 VALUES (:travel_report_id, :supplier_cnpj, :receipt_date, :value, :spce_category_id, :encrypted_file_path, :iv, 'PENDENTE', :notes)"
+            );
+            $stmt->execute([
+                'travel_report_id' => $travel_report_id,
+                'supplier_cnpj' => $supplier_cnpj,
+                'receipt_date' => $receipt_date,
+                'value' => $value,
+                'spce_category_id' => $spce_category_id,
+                'encrypted_file_path' => $mainCryptoData['encrypted_file_path'],
+                'iv' => $mainCryptoData['iv'],
+                'notes' => empty($notes) ? null : $notes
+            ]);
+
+            // 2. Processa fotos adicionais enviadas (sem passar por OCR)
+            $totalArquivos = 1;
+            if (isset($_FILES['fotos_adicionais']) && is_array($_FILES['fotos_adicionais']['name'])) {
+                foreach ($_FILES['fotos_adicionais']['name'] as $idx => $fname) {
+                    if ($_FILES['fotos_adicionais']['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES['fotos_adicionais']['tmp_name'][$idx])) {
+                        $extraFile = [
+                            'name' => $fname,
+                            'type' => $_FILES['fotos_adicionais']['type'][$idx],
+                            'tmp_name' => $_FILES['fotos_adicionais']['tmp_name'][$idx],
+                            'error' => $_FILES['fotos_adicionais']['error'][$idx],
+                            'size' => $_FILES['fotos_adicionais']['size'][$idx]
+                        ];
+                        $extraCrypto = EncryptionService::encryptAndSaveUploadedFile($extraFile, $storageDir);
+                        $stmtExtra = $db->prepare(
+                            "INSERT INTO `travel_receipts` (travel_report_id, supplier_cnpj, receipt_date, value, spce_category_id, encrypted_file_path, iv, status, notes) 
+                             VALUES (:travel_report_id, :supplier_cnpj, :receipt_date, :value, :spce_category_id, :encrypted_file_path, :iv, 'PENDENTE', :notes)"
+                        );
+                        $stmtExtra->execute([
+                            'travel_report_id' => $travel_report_id,
+                            'supplier_cnpj' => $supplier_cnpj,
+                            'receipt_date' => $receipt_date,
+                            'value' => $value,
+                            'spce_category_id' => $spce_category_id,
+                            'encrypted_file_path' => $extraCrypto['encrypted_file_path'],
+                            'iv' => $extraCrypto['iv'],
+                            'notes' => 'Foto Adicional do Comprovante (Detalhamento)'
+                        ]);
+                        $totalArquivos++;
+                    }
+                }
             }
 
-            Session::setFlash('success', count($filesList) . ' foto(s)/comprovante(s) fiscal(is) adicionado(s) com sucesso!');
+            Session::setFlash('success', "Recibo registrado com sucesso! ({$totalArquivos} foto(s) anexada(s))");
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao adicionar recibo: ' . $e->getMessage());
         }
@@ -444,31 +473,30 @@ class PortalController extends Controller {
                 $supplierId = $db->lastInsertId();
             }
 
-            // 2. Normaliza upload de comprovante(s) fiscal(is) (aceita 1 ou mais fotos)
-            $filesList = [];
+            // 2. Processa a foto principal do cabeçalho com CNPJ (passada no 1º Passo para OCR)
+            $mainFile = null;
             if (isset($_FILES['comprovante'])) {
                 if (is_array($_FILES['comprovante']['name'])) {
-                    foreach ($_FILES['comprovante']['name'] as $idx => $fname) {
-                        if ($_FILES['comprovante']['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES['comprovante']['tmp_name'][$idx])) {
-                            $filesList[] = [
-                                'name' => $fname,
-                                'type' => $_FILES['comprovante']['type'][$idx],
-                                'tmp_name' => $_FILES['comprovante']['tmp_name'][$idx],
-                                'error' => $_FILES['comprovante']['error'][$idx],
-                                'size' => $_FILES['comprovante']['size'][$idx]
-                            ];
-                        }
+                    if ($_FILES['comprovante']['error'][0] === UPLOAD_ERR_OK && !empty($_FILES['comprovante']['tmp_name'][0])) {
+                        $mainFile = [
+                            'name' => $_FILES['comprovante']['name'][0],
+                            'type' => $_FILES['comprovante']['type'][0],
+                            'tmp_name' => $_FILES['comprovante']['tmp_name'][0],
+                            'error' => $_FILES['comprovante']['error'][0],
+                            'size' => $_FILES['comprovante']['size'][0]
+                        ];
                     }
                 } elseif ($_FILES['comprovante']['error'] === UPLOAD_ERR_OK) {
-                    $filesList[] = $_FILES['comprovante'];
+                    $mainFile = $_FILES['comprovante'];
                 }
             }
 
-            if (empty($filesList)) {
-                throw new Exception("Pelo menos uma foto/arquivo do comprovante é obrigatório.");
+            if (!$mainFile) {
+                throw new Exception("A foto do cabeçalho com o CNPJ do comprovante é obrigatória.");
             }
 
             $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
+            $mainCryptoData = EncryptionService::encryptAndSaveUploadedFile($mainFile, $storageDir);
 
             // 3. Cadastra a despesa
             $stmtExpense = $db->prepare(
@@ -485,21 +513,40 @@ class PortalController extends Controller {
             ]);
             $expenseId = $db->lastInsertId();
 
-            // 4. Cadastra todas as fotos do comprovante criptografadas
-            foreach ($filesList as $singleFile) {
-                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($singleFile, $storageDir);
+            // 4. Cadastra a 1ª foto (cabeçalho/CNPJ) em comprovantes_cripto
+            $stmtCrypto = $db->prepare(
+                "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
+                 VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
+            );
+            $stmtCrypto->execute([
+                'expense_id' => $expenseId,
+                'encrypted_file_path' => $mainCryptoData['encrypted_file_path'],
+                'original_name' => $mainCryptoData['original_name'],
+                'iv' => $mainCryptoData['iv'],
+                'mime_type' => $mainCryptoData['mime_type']
+            ]);
 
-                $stmtCrypto = $db->prepare(
-                    "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
-                     VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
-                );
-                $stmtCrypto->execute([
-                    'expense_id' => $expenseId,
-                    'encrypted_file_path' => $cryptoData['encrypted_file_path'],
-                    'original_name' => $cryptoData['original_name'],
-                    'iv' => $cryptoData['iv'],
-                    'mime_type' => $cryptoData['mime_type']
-                ]);
+            // 5. Processa fotos adicionais enviadas (sem OCR)
+            if (isset($_FILES['fotos_adicionais']) && is_array($_FILES['fotos_adicionais']['name'])) {
+                foreach ($_FILES['fotos_adicionais']['name'] as $idx => $fname) {
+                    if ($_FILES['fotos_adicionais']['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES['fotos_adicionais']['tmp_name'][$idx])) {
+                        $extraFile = [
+                            'name' => $fname,
+                            'type' => $_FILES['fotos_adicionais']['type'][$idx],
+                            'tmp_name' => $_FILES['fotos_adicionais']['tmp_name'][$idx],
+                            'error' => $_FILES['fotos_adicionais']['error'][$idx],
+                            'size' => $_FILES['fotos_adicionais']['size'][$idx]
+                        ];
+                        $extraCrypto = EncryptionService::encryptAndSaveUploadedFile($extraFile, $storageDir);
+                        $stmtCrypto->execute([
+                            'expense_id' => $expenseId,
+                            'encrypted_file_path' => $extraCrypto['encrypted_file_path'],
+                            'original_name' => $extraCrypto['original_name'],
+                            'iv' => $extraCrypto['iv'],
+                            'mime_type' => $extraCrypto['mime_type']
+                        ]);
+                    }
+                }
             }
 
             // 5. Registra na auditoria

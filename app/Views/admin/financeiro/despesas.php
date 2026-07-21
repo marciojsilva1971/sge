@@ -22,15 +22,15 @@
         <form action="<?= $this->baseUrl('admin/financeiro/despesas') ?>" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
-            <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (OCR) -->
+            <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (CNPJ NÍTIDO) -->
             <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
                 <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
-                    📸 1º PASSO: Anexar / Digitalizar Comprovante(s) Fiscal(is) (PDF, PNG, JPG)
+                    📸 1º PASSO: Enviar Foto do Cabeçalho com CNPJ NÍTIDO (para Leitura OCR)
                 </label>
                 <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                    Tire uma ou mais fotos legíveis do comprovante onde estejam discriminadas todas as despesas e seus valores!
+                    Tire uma foto bem nítida e focada no <strong>cabeçalho/topo da nota ou cupom fiscal</strong> onde aparece o CNPJ. O sistema lerá o CNPJ via OCR!
                 </p>
-                <input type="file" id="comprovante" name="comprovante[]" accept="application/pdf, image/*" multiple required style="padding: 6px; width: 100%;">
+                <input type="file" id="comprovante" name="comprovante" accept="application/pdf, image/*" required style="padding: 6px; width: 100%;">
                 
                 <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
                     🔍 Digitalizar e Ler Comprovante (OCR)
@@ -54,6 +54,18 @@
                 <div class="form-group">
                     <label for="description">Descrição do Pagamento / Finalidade</label>
                     <input type="text" id="description" name="description" placeholder="Ex: Impressão de 10.000 Santinhos de Militância" required>
+                </div>
+
+                <!-- FOTOS ADICIONAIS DAS DESPESAS DISCRIMINADAS (SEM OCR) -->
+                <div class="form-group" style="background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(255, 255, 255, 0.15); padding: 12px; border-radius: 10px; margin-top: 14px; margin-bottom: 14px;">
+                    <label for="fotos_adicionais" style="font-size: 12px; font-weight: 700; color: #7dd3fc; display: flex; align-items: center; gap: 6px;">
+                        📸 Fotos Adicionais do Comprovante / Itens Discriminados (Opcional - Sem OCR)
+                    </label>
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
+                        Se o comprovante tiver mais fotos, verso ou discriminação detalhada dos itens e valores, adicione as fotos extras abaixo. <strong>Estas fotos não passam por OCR.</strong>
+                    </p>
+                    <input type="file" id="fotos_adicionais" name="fotos_adicionais[]" accept="image/*, application/pdf" multiple style="padding: 6px; font-size: 12px; width: 100%;">
+                    <div id="fotos-adicionais-preview" style="font-size: 11px; color: #4ade80; margin-top: 4px; display: none;"></div>
                 </div>
 
                 <div style="display: flex; gap: 16px;">
@@ -341,6 +353,20 @@
     const btnScanOcrAdmin = document.getElementById('btn-scan-ocr');
     const ocrStatusBadgeAdmin = document.getElementById('ocr_status_badge');
     const dadosContainerAdmin = document.getElementById('dados-despesa-container');
+    const inputFotosAdicionaisAdmin = document.getElementById('fotos_adicionais');
+    const previewFotosAdicionaisAdmin = document.getElementById('fotos-adicionais-preview');
+
+    if (inputFotosAdicionaisAdmin && previewFotosAdicionaisAdmin) {
+        inputFotosAdicionaisAdmin.addEventListener('change', function(e) {
+            const count = e.target.files ? e.target.files.length : 0;
+            if (count > 0) {
+                previewFotosAdicionaisAdmin.style.display = 'block';
+                previewFotosAdicionaisAdmin.textContent = `✔ ${count} foto(s) adicional(is) selecionada(s) (sem OCR).`;
+            } else {
+                previewFotosAdicionaisAdmin.style.display = 'none';
+            }
+        });
+    }
 
     function executarOCRAdmin() {
         const file = compInputAdmin ? compInputAdmin.files[0] : null;
