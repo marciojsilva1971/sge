@@ -15,11 +15,17 @@ CREATE TABLE IF NOT EXISTS `supplier_contracts` (
   `start_date` DATE NOT NULL,
   `end_date` DATE NOT NULL,
   `status` ENUM('VIGENTE', 'ENCERRADO', 'CANCELADO') NOT NULL DEFAULT 'VIGENTE',
-  `file_path` VARCHAR(255) NOT NULL,
-  `file_name` VARCHAR(255) NOT NULL,
+  `file_path` VARCHAR(255) NULL,
+  `file_name` VARCHAR(255) NULL,
   `created_by` INT NOT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`supplier_id`) REFERENCES `suppliers`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`created_by`) REFERENCES `usuarios`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ajusta colunas caso a tabela ja tenha sido criada anteriormente com NOT NULL
+ALTER TABLE `supplier_contracts` 
+  MODIFY COLUMN `file_path` VARCHAR(255) NULL,
+  MODIFY COLUMN `file_name` VARCHAR(255) NULL;
+
