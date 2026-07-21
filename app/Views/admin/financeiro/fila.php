@@ -41,6 +41,14 @@
                             <td><?= date('d/m/Y', strtotime($exp['date_incurred'])) ?></td>
                             <td>
                                 <div class="user-log-name"><?= htmlspecialchars($exp['supplier_name']) ?></div>
+                                <?php if (!empty($exp['supplier_cnpj_cpf'])): 
+                                    $digitsCnpj = preg_replace('/\D/', '', $exp['supplier_cnpj_cpf']);
+                                    $fmtCnpj = (strlen($digitsCnpj) === 14) 
+                                        ? preg_replace('/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $digitsCnpj) 
+                                        : ((strlen($digitsCnpj) === 11) ? preg_replace('/^(\d{3})(\d{3})(\d{3})(\d{2})$/', '$1.$2.$3-$4', $digitsCnpj) : $exp['supplier_cnpj_cpf']);
+                                ?>
+                                    <div style="font-size: 11px; color: #94a3b8; font-weight: 600;">CNPJ/CPF: <?= htmlspecialchars($fmtCnpj) ?></div>
+                                <?php endif; ?>
                                 <?php if (!empty($exp['spce_code'])): ?>
                                     <span style="font-size: 11px; color: var(--text-secondary);"><?= htmlspecialchars($exp['spce_code']) ?> - <?= htmlspecialchars($exp['spce_desc']) ?></span>
                                 <?php else: ?>
@@ -277,7 +285,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">CPF/CNPJ Fornecedor</label>
-                    <input type="text" id="admin_edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <input type="text" id="admin_edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" oninput="formatarCnpjCpf(this)" maxlength="18" placeholder="00.000.000/0001-00" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
                 </div>
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">Razão Social Fornecedor</label>
@@ -341,6 +349,24 @@
 </div>
 
 <script>
+    function formatarCnpjCpf(input) {
+        let value = input.value.replace(/\D/g, "");
+        if (value.length > 14) {
+            value = value.substring(0, 14);
+        }
+        if (value.length <= 11) {
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        } else {
+            value = value.replace(/^(\d{2})(\d)/, "$1.$2");
+            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            value = value.replace(/(\d{4})(\d)/, "$1-$2");
+        }
+        input.value = value;
+    }
+
     function formatarMoeda(input) {
         let value = input.value.replace(/\D/g, "");
         if (value === "") {
@@ -369,7 +395,13 @@
     function editarDespesaAdmin(exp) {
         document.getElementById('admin_edit_id').value = exp.id;
         document.getElementById('admin_edit_description').value = exp.description || '';
-        document.getElementById('admin_edit_supplier_cnpj_cpf').value = exp.supplier_cnpj_cpf || '';
+        
+        const cnpjInput = document.getElementById('admin_edit_supplier_cnpj_cpf');
+        if (cnpjInput) {
+            cnpjInput.value = exp.supplier_cnpj_cpf || '';
+            formatarCnpjCpf(cnpjInput);
+        }
+
         document.getElementById('admin_edit_supplier_name').value = exp.supplier_name || '';
         document.getElementById('admin_edit_date_incurred').value = exp.date_incurred || '';
         document.getElementById('admin_edit_expense_type_id').value = exp.expense_type_id || '';

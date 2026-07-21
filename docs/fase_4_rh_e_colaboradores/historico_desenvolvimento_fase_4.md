@@ -345,6 +345,9 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   6. **Modal de Confirmação Pós-Envio com Opção de Novo Cadastro:**
      - Implementado modal de sucesso em todas as telas do portal (`portal/militancia.php`, `portal/viagem.php`, `portal/despesas.php`).
      - Ao enviar um comprovante ou salvar um gasto, é exibida a confirmação de êxito perguntando se o colaborador deseja **"➕ Cadastrar um Novo Gasto / Comprovante"** (que limpa e foca no formulário) ou **"📊 Ir para Meus Gastos (Acompanhar Status)"**.
+  7. **Máscara de CNPJ/CPF e Correção de Exibição na Fila de Aprovação:**
+     - Adicionada a função `formatarCnpjCpf(input)` para aplicação dinâmica de máscara de CNPJ (`00.000.000/0001-00`) ou CPF (`000.000.000-00`) durante a digitação e no carregamento dos modais de edição.
+     - Ajustada a consulta SQL `FinanceController::queue()` para incluir `s.cnpj_cpf AS supplier_cnpj_cpf`, garantindo que o CNPJ/CPF do fornecedor seja exibido na Fila de Aprovações do Administrador e pré-preenchido corretamente.
 
 
 

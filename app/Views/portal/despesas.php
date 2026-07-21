@@ -101,7 +101,13 @@
                     </p>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 11px; margin-bottom: 6px;">
-                        <span>Fornecedor: <strong><?= htmlspecialchars($exp['supplier_name']) ?></strong> (<?= htmlspecialchars($exp['supplier_cnpj_cpf'] ?? 'Sem documento') ?>)</span>
+                        <?php 
+                        $digitsCnpjPortal = preg_replace('/\D/', '', $exp['supplier_cnpj_cpf'] ?? '');
+                        $fmtCnpjPortal = (strlen($digitsCnpjPortal) === 14) 
+                            ? preg_replace('/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $digitsCnpjPortal) 
+                            : ((strlen($digitsCnpjPortal) === 11) ? preg_replace('/^(\d{3})(\d{3})(\d{3})(\d{2})$/', '$1.$2.$3-$4', $digitsCnpjPortal) : ($exp['supplier_cnpj_cpf'] ?? 'Sem documento'));
+                        ?>
+                        <span>Fornecedor: <strong><?= htmlspecialchars($exp['supplier_name']) ?></strong> (<?= htmlspecialchars($fmtCnpjPortal) ?>)</span>
                         <span style="font-weight: 700; color: var(--warning-color); font-size: 13px;">R$ <?= number_format($exp['value'], 2, ',', '.') ?></span>
                     </div>
 
@@ -150,7 +156,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">CPF/CNPJ Fornecedor</label>
-                    <input type="text" id="edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <input type="text" id="edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" oninput="formatarCnpjCpf(this)" maxlength="18" placeholder="00.000.000/0001-00" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
                 </div>
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">Razão Social Fornecedor</label>
@@ -200,6 +206,24 @@
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
+    function formatarCnpjCpf(input) {
+        let value = input.value.replace(/\D/g, "");
+        if (value.length > 14) {
+            value = value.substring(0, 14);
+        }
+        if (value.length <= 11) {
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        } else {
+            value = value.replace(/^(\d{2})(\d)/, "$1.$2");
+            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            value = value.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            value = value.replace(/(\d{4})(\d)/, "$1-$2");
+        }
+        input.value = value;
+    }
+
     function formatarMoeda(input) {
         let value = input.value.replace(/\D/g, "");
         if (value === "") {
@@ -654,7 +678,13 @@ function filtrarGastosPortal(status, btnElement) {
 function abrirModalCorrigirGasto(exp) {
     document.getElementById('edit_expense_id').value = exp.id;
     document.getElementById('edit_description').value = exp.description || '';
-    document.getElementById('edit_supplier_cnpj_cpf').value = exp.supplier_cnpj_cpf || '';
+    
+    const cnpjInput = document.getElementById('edit_supplier_cnpj_cpf');
+    if (cnpjInput) {
+        cnpjInput.value = exp.supplier_cnpj_cpf || '';
+        formatarCnpjCpf(cnpjInput);
+    }
+
     document.getElementById('edit_supplier_name').value = exp.supplier_name || '';
     document.getElementById('edit_date_incurred').value = exp.date_incurred || '';
     document.getElementById('edit_expense_type_id').value = exp.expense_type_id || '';

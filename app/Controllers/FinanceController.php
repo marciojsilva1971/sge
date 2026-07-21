@@ -418,7 +418,7 @@ class FinanceController extends Controller {
 
         // 1. Despesas gerais pendentes (status = 'PENDENTE')
         $stmtExpenses = $db->query(
-            "SELECT d.*, COALESCE(s.corporate_name, 'Fornecedor Desconhecido') AS supplier_name, 
+            "SELECT d.*, COALESCE(s.corporate_name, 'Fornecedor Desconhecido') AS supplier_name, s.cnpj_cpf AS supplier_cnpj_cpf, 
                     b.name AS bank_name, c.code AS spce_code, c.description AS spce_desc, 
                     COALESCE(u.name, 'Colaborador de Campo') AS creator_name, cc.doc_id, et.name AS expense_type_name
              FROM `despesas` d
