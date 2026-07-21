@@ -769,6 +769,200 @@ class PortalController extends Controller {
     }
 
     /**
+     * Tela de Registro de Outros Gastos de Campo (Mobile)
+     */
+    public function outros(): void {
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        // Garante que o tipo de gasto 'Outros Gastos' exista na tabela expense_types
+        $stmtEtCheck = $db->query("SELECT id FROM `expense_types` WHERE LOWER(name) LIKE '%outro%' LIMIT 1");
+        $etRow = $stmtEtCheck->fetch();
+        if ($etRow) {
+            $outroTypeId = $etRow['id'];
+        } else {
+            $stmtInsEt = $db->prepare("INSERT INTO `expense_types` (name, category, description) VALUES ('Outros Gastos', 'CAMPO', 'Outros gastos de campo e despesas gerais')");
+            $stmtInsEt->execute();
+            $outroTypeId = $db->lastInsertId();
+        }
+
+        // Busca todas as despesas lançadas sob a modalidade Outros
+        $stmt = $db->prepare(
+            "SELECT d.*, s.corporate_name AS supplier_name, s.cnpj_cpf AS supplier_cnpj_cpf, cc.doc_id, et.name AS expense_type_name
+             FROM `despesas` d
+             LEFT JOIN `suppliers` s ON d.supplier_id = s.id
+             LEFT JOIN (SELECT expense_id, MIN(id) AS doc_id FROM `comprovantes_cripto` GROUP BY expense_id) cc ON d.id = cc.expense_id
+             LEFT JOIN `expense_types` et ON d.expense_type_id = et.id
+             WHERE d.user_id = :user_id AND (d.expense_type_id = :type_id OR et.name LIKE '%Outro%')
+             ORDER BY d.created_at DESC"
+        );
+        $stmt->execute(['user_id' => $user['id'], 'type_id' => $outroTypeId]);
+        $outrosGastos = $stmt->fetchAll();
+
+        // Busca categorias de despesas SPCE
+        $spceCategories = $db->query("SELECT id, code, description FROM `spce_categories` WHERE type = 'DESPESA' ORDER BY code ASC")->fetchAll();
+
+        $this->render('portal/outros', [
+            'user' => $user,
+            'outrosGastos' => $outrosGastos,
+            'spceCategories' => $spceCategories,
+            'outroTypeId' => $outroTypeId,
+            'csrf_token' => Session::csrfToken()
+        ], 'portal');
+    }
+
+    /**
+     * Lançamento de Outro Gasto com OCR e Criptografia (POST)
+     * Encaminhado diretamente para a fila de aprovações (status 'PENDENTE')
+     */
+    public function addOutroGasto(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $description = trim($_POST['description'] ?? '');
+            $supplier_cnpj_cpf = preg_replace('/\D/', '', $_POST['supplier_cnpj'] ?? $_POST['supplier_cnpj_cpf'] ?? '');
+            $supplier_name = trim($_POST['supplier_name'] ?? '');
+            $value = $this->parseBrlCurrency($_POST['value'] ?? '0');
+            $date_incurred = $_POST['date_incurred'] ?? $_POST['receipt_date'] ?? date('Y-m-d');
+            $spce_category_id = intval($_POST['spce_category_id'] ?? 0);
+            $notes = trim($_POST['notes'] ?? '');
+
+            if (empty($description) || empty($supplier_cnpj_cpf) || $value <= 0 || empty($date_incurred)) {
+                throw new Exception("Descrição do gasto, CNPJ/CPF do fornecedor, valor e data são obrigatórios.");
+            }
+
+            // Coleta arquivos enviados
+            $allFiles = [];
+            $checkKeys = ['comprovante', 'foto_cnpj_ocr', 'fotos_adicionais'];
+            foreach ($checkKeys as $key) {
+                if (isset($_FILES[$key])) {
+                    if (is_array($_FILES[$key]['name'])) {
+                        foreach ($_FILES[$key]['name'] as $idx => $fname) {
+                            if (isset($_FILES[$key]['error'][$idx]) && $_FILES[$key]['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES[$key]['tmp_name'][$idx])) {
+                                $allFiles[] = [
+                                    'name' => $fname,
+                                    'type' => $_FILES[$key]['type'][$idx],
+                                    'tmp_name' => $_FILES[$key]['tmp_name'][$idx],
+                                    'error' => $_FILES[$key]['error'][$idx],
+                                    'size' => $_FILES[$key]['size'][$idx]
+                                ];
+                            }
+                        }
+                    } elseif ($_FILES[$key]['error'] === UPLOAD_ERR_OK && !empty($_FILES[$key]['tmp_name'])) {
+                        $allFiles[] = $_FILES[$key];
+                    }
+                }
+            }
+
+            if (empty($allFiles)) {
+                throw new Exception("O envio da foto ou PDF do comprovante fiscal é obrigatório.");
+            }
+
+            $db->beginTransaction();
+
+            // 1. Cadastra/Obtém fornecedor
+            $stmtSupplier = $db->prepare("SELECT id FROM `suppliers` WHERE cnpj_cpf = :cnpj_cpf LIMIT 1");
+            $stmtSupplier->execute(['cnpj_cpf' => $supplier_cnpj_cpf]);
+            $supplier = $stmtSupplier->fetch();
+
+            if ($supplier) {
+                $supplierId = $supplier['id'];
+                if (!empty($supplier_name)) {
+                    $stmtUpSup = $db->prepare("UPDATE `suppliers` SET corporate_name = :name WHERE id = :id");
+                    $stmtUpSup->execute(['name' => $supplier_name, 'id' => $supplierId]);
+                }
+            } else {
+                $stmtInsertSupplier = $db->prepare(
+                    "INSERT INTO `suppliers` (cnpj_cpf, corporate_name, status) 
+                     VALUES (:cnpj_cpf, :corporate_name, 'ATIVO')"
+                );
+                $stmtInsertSupplier->execute([
+                    'cnpj_cpf' => $supplier_cnpj_cpf,
+                    'corporate_name' => !empty($supplier_name) ? $supplier_name : 'Fornecedor Diversos'
+                ]);
+                $supplierId = $db->lastInsertId();
+            }
+
+            // 2. Busca ou cria tipo 'Outros Gastos'
+            $stmtEtCheck = $db->query("SELECT id FROM `expense_types` WHERE LOWER(name) LIKE '%outro%' LIMIT 1");
+            $etRow = $stmtEtCheck->fetch();
+            if ($etRow) {
+                $expense_type_id = $etRow['id'];
+            } else {
+                $stmtInsEt = $db->prepare("INSERT INTO `expense_types` (name, category, description) VALUES ('Outros Gastos', 'CAMPO', 'Outros gastos de campo e despesas gerais')");
+                $stmtInsEt->execute();
+                $expense_type_id = $db->lastInsertId();
+            }
+
+            // 3. Cadastra o gasto em despesas (status = PENDENTE para ir direto para a Fila de Aprovações)
+            $stmtExpense = $db->prepare(
+                "INSERT INTO `despesas` (description, supplier_id, bank_account_id, value, date_incurred, payment_method, status, spce_category_id, user_id, expense_type_id, notes, created_at) 
+                 VALUES (:description, :supplier_id, NULL, :value, :date_incurred, 'Outros', 'PENDENTE', :spce_category_id, :user_id, :expense_type_id, :notes, NOW())"
+            );
+            $stmtExpense->execute([
+                'description' => $description,
+                'supplier_id' => $supplierId,
+                'value' => $value,
+                'date_incurred' => $date_incurred,
+                'spce_category_id' => $spce_category_id > 0 ? $spce_category_id : null,
+                'user_id' => $user['id'],
+                'expense_type_id' => $expense_type_id,
+                'notes' => !empty($notes) ? $notes : null
+            ]);
+            $expenseId = $db->lastInsertId();
+
+            // 4. Salva e criptografa os arquivos do comprovante
+            $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
+            $stmtCrypto = $db->prepare(
+                "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
+                 VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
+            );
+
+            foreach ($allFiles as $file) {
+                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($file, $storageDir);
+                $stmtCrypto->execute([
+                    'expense_id' => $expenseId,
+                    'encrypted_file_path' => $cryptoData['encrypted_file_path'],
+                    'original_name' => $cryptoData['original_name'],
+                    'iv' => $cryptoData['iv'],
+                    'mime_type' => $cryptoData['mime_type']
+                ]);
+            }
+
+            // 5. Registra na auditoria
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, new_values, ip_address, user_agent) 
+                 VALUES (:user_id, 'FIELD_OUTROS_EXPENSE_CREATE', 'despesas', :record_id, :new_values, :ip_address, :user_agent)"
+            );
+            $stmtLog->execute([
+                'user_id' => $user['id'],
+                'record_id' => $expenseId,
+                'new_values' => json_encode([
+                    'description' => $description,
+                    'value' => $value,
+                    'supplier_cnpj_cpf' => $supplier_cnpj_cpf
+                ], JSON_UNESCAPED_UNICODE),
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+
+            $db->commit();
+            Session::setFlash('success', 'Gasto cadastrado e encaminhado para a fila de aprovações com sucesso!');
+            $this->redirect('/portal/outros?envio_sucesso=1');
+            return;
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            Session::setFlash('error', 'Erro ao cadastrar gasto: ' . $e->getMessage());
+        }
+
+        $this->redirect('/portal/outros');
+    }
+
+    /**
      * Endpoint API JSON para consulta pública de CNPJ.
      */
     public function consultarCnpj(): void {

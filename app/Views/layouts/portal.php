@@ -121,6 +121,10 @@
                 <span class="top-nav-icon">📢</span>
                 <span>Militância</span>
             </a>
+            <a href="<?= $this->baseUrl('portal/outros') ?>" class="top-nav-item" id="nav-outros">
+                <span class="top-nav-icon">📦</span>
+                <span>Outros</span>
+            </a>
             <a href="<?= $this->baseUrl('portal/despesas') ?>" class="top-nav-item" id="nav-despesas">
                 <span class="top-nav-icon">💸</span>
                 <span>Gastos</span>
@@ -168,6 +172,8 @@
                 document.getElementById('nav-viagem').classList.add('active');
             } else if (path.includes('portal/militancia')) {
                 document.getElementById('nav-militancia').classList.add('active');
+            } else if (path.includes('portal/outros')) {
+                document.getElementById('nav-outros').classList.add('active');
             } else if (path.includes('portal/despesas')) {
                 document.getElementById('nav-despesas').classList.add('active');
             }
