@@ -54,7 +54,9 @@ class Colaborador extends Model {
                 FROM `{$this->table}` c
                 LEFT JOIN `usuarios` u ON c.usuario_id = u.id
                 LEFT JOIN `roles` r ON u.role_id = r.id
-                LEFT JOIN `contratos_colaboradores` cc ON cc.colaborador_id = c.id";
+                LEFT JOIN `contratos_colaboradores` cc ON cc.id = (
+                    SELECT MAX(id) FROM `contratos_colaboradores` WHERE colaborador_id = c.id
+                )";
 
         $where = [];
         $params = [];
