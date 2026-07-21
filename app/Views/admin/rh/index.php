@@ -14,7 +14,7 @@
 
     <!-- Barra de Filtros -->
     <div class="panel-card filters-card">
-        <form method="GET" action="<?= $this->baseUrl('admin/rh') ?>" class="filters-form">
+        <form method="GET" action="<?= $this->baseUrl('admin/rh') ?>" class="filters-form" id="filters-form">
             <div class="form-group mb-0">
                 <label for="filter-nome">Buscar por Nome</label>
                 <input type="text" id="filter-nome" name="nome" value="<?= htmlspecialchars($filters['nome'] ?? '') ?>" placeholder="Ex: João da Silva">
@@ -45,7 +45,7 @@
     </div>
 
     <!-- Tabela de Colaboradores -->
-    <div class="panel-card">
+    <div class="panel-card" id="table-container">
         <div class="table-responsive">
             <table class="table table-striped table-colaboradores">
                 <thead>
@@ -879,6 +879,60 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         // Aplica no carregamento inicial caso já tenha valor preenchido pelo filtro
         aplicarMascaraCpf(filterCpf);
+    }
+
+    // Busca/Filtro Dinâmico via AJAX
+    let searchTimeout = null;
+    const filtersForm = document.getElementById('filters-form');
+    const tableContainer = document.getElementById('table-container');
+
+    function performSearch() {
+        if (!filtersForm || !tableContainer) return;
+        
+        const formData = new FormData(filtersForm);
+        const params = new URLSearchParams(formData);
+        
+        const newUrl = window.location.pathname + '?' + params.toString();
+        window.history.pushState({ path: newUrl }, '', newUrl);
+
+        tableContainer.style.opacity = '0.5';
+        tableContainer.style.transition = 'opacity 0.15s ease';
+
+        fetch(newUrl)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTableContainer = doc.getElementById('table-container');
+                if (newTableContainer) {
+                    tableContainer.innerHTML = newTableContainer.innerHTML;
+                }
+                tableContainer.style.opacity = '1';
+            })
+            .catch(error => {
+                console.error('Erro na pesquisa:', error);
+                tableContainer.style.opacity = '1';
+            });
+    }
+
+    if (filtersForm) {
+        filtersForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (searchTimeout) clearTimeout(searchTimeout);
+            performSearch();
+        });
+
+        const inputs = filtersForm.querySelectorAll('input[type="text"], select');
+        inputs.forEach(input => {
+            if (input.tagName.toLowerCase() === 'select') {
+                input.addEventListener('change', performSearch);
+            } else {
+                input.addEventListener('input', function() {
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(performSearch, 300);
+                });
+            }
+        });
     }
 });
 </script>

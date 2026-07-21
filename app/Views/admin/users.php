@@ -24,7 +24,7 @@
 
     <!-- Barra de Filtros -->
     <div class="panel-card filters-card">
-        <form method="GET" action="<?= $this->baseUrl('admin/users') ?>" class="filters-form">
+        <form method="GET" action="<?= $this->baseUrl('admin/users') ?>" class="filters-form" id="filters-form">
             <div class="form-group mb-0">
                 <label for="filter-name">Buscar por Nome</label>
                 <input type="text" id="filter-name" name="name" value="<?= htmlspecialchars($filters['name']) ?>" placeholder="Ex: Márcio">
@@ -60,7 +60,7 @@
     </div>
 
     <!-- Tabela de Listagem -->
-    <div class="panel-card">
+    <div class="panel-card" id="table-container">
         <div class="table-responsive">
             <table class="table table-striped table-users">
                 <thead>
@@ -296,12 +296,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetUserIdInput = document.getElementById('reset_user_id');
     const resetUserNameInput = document.getElementById('reset_user_name');
 
-    document.querySelectorAll('.btn-open-reset-pwd').forEach(btn => {
-        btn.addEventListener('click', () => {
+    // Usando Event Delegation para botões de senha que podem ser recriados via AJAX
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-open-reset-pwd');
+        if (btn) {
             resetUserIdInput.value = btn.dataset.id;
             resetUserNameInput.value = btn.dataset.name;
             resetPwdModal.classList.remove('hidden');
-        });
+        }
     });
 
     window.closeResetPwdModal = function() {
@@ -327,54 +329,117 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Lógica para exclusão em dois passos (Two-Step Verification)
-    const deleteButtons = document.querySelectorAll('.btn-delete-confirm');
-    deleteButtons.forEach(btn => {
-        let isConfirmState = false;
-        let timeoutId = null;
-
-        btn.addEventListener('click', (e) => {
-            const form = btn.closest('form');
-            
-            if (!isConfirmState) {
-                // Primeiro clique: muda o estado para confirmação
-                e.preventDefault();
-                isConfirmState = true;
-                btn.textContent = 'Confirmar?';
-                btn.style.backgroundColor = 'var(--error-color)';
-                btn.style.color = '#ffffff';
-                btn.style.borderColor = 'var(--error-color)';
-                
-                // Reseta após 4 segundos de inatividade
-                timeoutId = setTimeout(() => {
-                    resetButton();
-                }, 4000);
-            } else {
-                // Segundo clique: envia o formulário
-                form.submit();
-            }
-        });
-
-        function resetButton() {
-            isConfirmState = false;
-            btn.textContent = 'Excluir';
-            btn.style.color = 'var(--error-color)';
-            btn.style.borderColor = 'rgba(239, 68, 68, 0.2)';
-            btn.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
+    // Lógica para exclusão em dois passos usando Event Delegation
+    function resetDeleteButton(btn) {
+        btn.isConfirmState = false;
+        btn.textContent = 'Excluir';
+        btn.style.color = 'var(--error-color)';
+        btn.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+        btn.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+        if (btn.timeoutId) {
+            clearTimeout(btn.timeoutId);
+            btn.timeoutId = null;
         }
+    }
 
-        // Reseta também se o mouse sair do botão por mais de 2 segundos
-        btn.addEventListener('mouseleave', () => {
-            if (isConfirmState) {
-                timeoutId = setTimeout(() => {
-                    resetButton();
-                }, 2000);
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-delete-confirm');
+        if (!btn) return;
+
+        const form = btn.closest('form');
+        if (!btn.isConfirmState) {
+            e.preventDefault();
+            btn.isConfirmState = true;
+            btn.textContent = 'Confirmar?';
+            btn.style.backgroundColor = 'var(--error-color)';
+            btn.style.color = '#ffffff';
+            btn.style.borderColor = 'var(--error-color)';
+
+            btn.timeoutId = setTimeout(() => {
+                resetDeleteButton(btn);
+            }, 4000);
+        } else {
+            form.submit();
+        }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+        const btn = e.target.closest('.btn-delete-confirm');
+        if (!btn) return;
+
+        const related = e.relatedTarget;
+        if (related && btn.contains(related)) return;
+
+        if (btn.isConfirmState && !btn.mouseleaveTimeoutId) {
+            btn.mouseleaveTimeoutId = setTimeout(() => {
+                resetDeleteButton(btn);
+                btn.mouseleaveTimeoutId = null;
+            }, 2000);
+        }
+    });
+
+    document.addEventListener('mouseover', (e) => {
+        const btn = e.target.closest('.btn-delete-confirm');
+        if (!btn) return;
+        if (btn.mouseleaveTimeoutId) {
+            clearTimeout(btn.mouseleaveTimeoutId);
+            btn.mouseleaveTimeoutId = null;
+        }
+    });
+
+    // Busca/Filtro Dinâmico via AJAX
+    let searchTimeout = null;
+    const filtersForm = document.getElementById('filters-form');
+    const tableContainer = document.getElementById('table-container');
+
+    function performSearch() {
+        if (!filtersForm || !tableContainer) return;
+
+        const formData = new FormData(filtersForm);
+        const params = new URLSearchParams(formData);
+
+        const newUrl = window.location.pathname + '?' + params.toString();
+        window.history.pushState({ path: newUrl }, '', newUrl);
+
+        tableContainer.style.opacity = '0.5';
+        tableContainer.style.transition = 'opacity 0.15s ease';
+
+        fetch(newUrl)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTableContainer = doc.getElementById('table-container');
+                if (newTableContainer) {
+                    tableContainer.innerHTML = newTableContainer.innerHTML;
+                }
+                tableContainer.style.opacity = '1';
+            })
+            .catch(error => {
+                console.error('Erro na pesquisa:', error);
+                tableContainer.style.opacity = '1';
+            });
+    }
+
+    if (filtersForm) {
+        filtersForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (searchTimeout) clearTimeout(searchTimeout);
+            performSearch();
+        });
+
+        const inputs = filtersForm.querySelectorAll('input[type="text"], select');
+        inputs.forEach(input => {
+            if (input.tagName.toLowerCase() === 'select') {
+                input.addEventListener('change', performSearch);
+            } else {
+                input.addEventListener('input', function() {
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(performSearch, 300);
+                });
             }
         });
-    });
+    }
 });
 
 function copyActivationLink() {
