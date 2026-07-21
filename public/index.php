@@ -180,6 +180,8 @@ $router->post('/portal/despesas', 'PortalController@addExpense');
 $router->post('/portal/despesas/corrigir', 'PortalController@updateExpense');
 $router->get('/portal/outros', 'PortalController@outros');
 $router->post('/portal/outros', 'PortalController@addOutroGasto');
+$router->get('/portal/perfil', 'PortalController@profile');
+$router->post('/portal/perfil', 'PortalController@updateProfile');
 
 // API de Consulta Cadastral de CNPJ / OCR
 $router->get('/api/cnpj/consultar', 'PortalController@consultarCnpj');

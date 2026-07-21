@@ -978,4 +978,184 @@ class PortalController extends Controller {
         echo json_encode($result, JSON_UNESCAPED_UNICODE);
         exit;
     }
+
+    /**
+     * Tela de Perfil do Colaborador (Mobile)
+     */
+    public function profile(): void {
+        $db = Database::getInstance();
+        $user = $this->requireAuth();
+
+        // Busca dados completos do usuário
+        $stmtUser = $db->prepare("SELECT * FROM `usuarios` WHERE id = :id LIMIT 1");
+        $stmtUser->execute(['id' => $user['id']]);
+        $userFull = $stmtUser->fetch();
+
+        // Busca dados de colaborador vinculados a este usuário
+        $stmtColab = $db->prepare("SELECT * FROM `colaboradores` WHERE usuario_id = :usuario_id LIMIT 1");
+        $stmtColab->execute(['usuario_id' => $user['id']]);
+        $colaborador = $stmtColab->fetch();
+
+        $this->render('portal/perfil', [
+            'user' => $user,
+            'userFull' => $userFull,
+            'colaborador' => $colaborador,
+            'csrf_token' => Session::csrfToken()
+        ], 'portal');
+    }
+
+    /**
+     * Atualização do Perfil do Colaborador (POST)
+     */
+    public function updateProfile(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->requireAuth();
+
+        try {
+            $db->beginTransaction();
+
+            // Busca os dados atuais do usuário no banco
+            $stmtUser = $db->prepare("SELECT * FROM `usuarios` WHERE id = :id LIMIT 1");
+            $stmtUser->execute(['id' => $user['id']]);
+            $userDb = $stmtUser->fetch();
+
+            if (!$userDb) {
+                throw new Exception("Usuário não encontrado.");
+            }
+
+            $celular = preg_replace('/\D/', '', $_POST['celular'] ?? '');
+            if (empty($celular)) {
+                throw new Exception("O número de Celular/WhatsApp é obrigatório.");
+            }
+
+            // 1. Processa upload da nova foto do rosto (avatar)
+            $photoPath = null;
+            if (isset($_FILES['foto_rosto']) && $_FILES['foto_rosto']['error'] === UPLOAD_ERR_OK) {
+                $photoPath = $this->handleAvatarUpload($_FILES['foto_rosto']);
+            }
+
+            // 2. Atualiza a tabela `usuarios`
+            if ($photoPath) {
+                $stmtUpdateUser = $db->prepare(
+                    "UPDATE `usuarios` SET celular = :celular, profile_photo_path = :photo WHERE id = :id"
+                );
+                $stmtUpdateUser->execute([
+                    'celular' => $celular,
+                    'photo' => $photoPath,
+                    'id' => $user['id']
+                ]);
+
+                // Sincroniza na sessão
+                $userSession = Session::get('user');
+                $userSession['profile_photo'] = $photoPath;
+                $userSession['profile_photo_path'] = $photoPath;
+                $userSession['celular'] = $celular;
+                Session::set('user', $userSession);
+            } else {
+                $stmtUpdateUser = $db->prepare(
+                    "UPDATE `usuarios` SET celular = :celular WHERE id = :id"
+                );
+                $stmtUpdateUser->execute([
+                    'celular' => $celular,
+                    'id' => $user['id']
+                ]);
+
+                // Sincroniza na sessão
+                $userSession = Session::get('user');
+                $userSession['celular'] = $celular;
+                Session::set('user', $userSession);
+            }
+
+            // 3. Atualiza a tabela `colaboradores` se houver vínculo
+            if ($photoPath) {
+                $stmtUpdateColab = $db->prepare(
+                    "UPDATE `colaboradores` SET celular_whatsapp = :celular, foto_rosto_path = :photo WHERE usuario_id = :usuario_id"
+                );
+                $stmtUpdateColab->execute([
+                    'celular' => $celular,
+                    'photo' => $photoPath,
+                    'usuario_id' => $user['id']
+                ]);
+            } else {
+                $stmtUpdateColab = $db->prepare(
+                    "UPDATE `colaboradores` SET celular_whatsapp = :celular WHERE usuario_id = :usuario_id"
+                );
+                $stmtUpdateColab->execute([
+                    'celular' => $celular,
+                    'usuario_id' => $user['id']
+                ]);
+            }
+
+            // 4. Alteração de Senha Segura
+            $novaSenha = $_POST['nova_senha'] ?? '';
+            if (!empty($novaSenha)) {
+                $senhaAtual = $_POST['senha_atual'] ?? '';
+                if (empty($senhaAtual)) {
+                    throw new Exception("Para alterar a senha, você deve informar a senha atual.");
+                }
+
+                if (!password_verify($senhaAtual, $userDb['password_hash'])) {
+                    throw new Exception("A senha atual informada está incorreta.");
+                }
+
+                if (strlen($novaSenha) < 6) {
+                    throw new Exception("A nova senha deve possuir no mínimo 6 caracteres.");
+                }
+
+                $confirmarSenha = $_POST['confirmar_senha'] ?? '';
+                if ($novaSenha !== $confirmarSenha) {
+                    throw new Exception("A confirmação da nova senha não confere.");
+                }
+
+                $newHash = password_hash($novaSenha, PASSWORD_DEFAULT);
+                $stmtPass = $db->prepare("UPDATE `usuarios` SET password_hash = :hash WHERE id = :id");
+                $stmtPass->execute(['hash' => $newHash, 'id' => $user['id']]);
+            }
+
+            $db->commit();
+            Session::setFlash('success', 'Perfil e foto do rosto atualizados com sucesso!');
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            Session::setFlash('error', $e->getMessage());
+        }
+
+        $this->redirect('/portal/perfil');
+    }
+
+    /**
+     * Processa e valida o upload da foto do rosto do colaborador
+     */
+    private function handleAvatarUpload(array $file): string {
+        if (empty($file['tmp_name']) || $file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Nenhum arquivo enviado ou erro no upload.");
+        }
+
+        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+        if (!in_array($ext, $allowed)) {
+            throw new Exception("Formato de imagem inválido. Utilize apenas JPG, PNG ou WEBP.");
+        }
+
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new Exception("A imagem do perfil não pode exceder o limite de 10MB.");
+        }
+
+        $targetDir = dirname(__DIR__, 2) . '/storage/avatares';
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $filename = 'avatar_colab_' . uniqid() . '.' . $ext;
+        $targetPath = $targetDir . '/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            throw new Exception("Falha ao salvar o arquivo de foto do rosto no servidor.");
+        }
+
+        return 'storage/avatares/' . $filename;
+    }
 }

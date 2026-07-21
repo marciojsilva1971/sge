@@ -54,3 +54,13 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - Atualizado o método `homologarEAtribuirPerfil()` no `Colaborador.php` para sincronizar automaticamente a foto do rosto com o campo `profile_photo_path` na tabela `usuarios`, garantindo avatar em todas as telas acessíveis do SGE.
   - Atualizada a listagem de colaboradores (`/admin/rh`) com coluna dedicada para exibição do avatar redondo com iniciais como fallback e links nos modais de conferência.
   - Atualizado o cabeçalho global (`app/Views/layouts/main.php`) e regras CSS (`public/css/style.css`).
+
+---
+
+## 📅 Sessão 7: Página de Perfil do Colaborador no Portal (/portal/perfil)
+* **Ações:**
+  - Mapeadas as rotas `GET /portal/perfil` e `POST /portal/perfil` no `public/index.php`.
+  - Criada a visão `app/Views/portal/perfil.php` em estilo mobile glassmorphism, permitindo ao colaborador visualizar seus dados cadastrais do RH (Nome, CPF, RG, E-mail, Papel e PIX).
+  - Implementada funcionalidade para inclusão/alteração da foto do perfil (rosto/avatar) diretamente pelo portal com preview instantâneo via JS, sincronizando os dados simultaneamente em `usuarios.profile_photo_path` e `colaboradores.foto_rosto_path`.
+  - Adicionada a opção para atualização de celular/WhatsApp e alteração segura de senha de acesso com validação da senha atual.
+  - Atualizado o layout do portal (`app/Views/layouts/portal.php`) para exibir o avatar do colaborador no topo superior direito e incluir o item **👤 Perfil** na barra de navegação principal.

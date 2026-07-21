@@ -101,9 +101,20 @@
     <header class="portal-header">
         <div class="portal-header-top">
             <div class="portal-title">SGE Colaborador</div>
-            <div class="portal-user">
-                <span style="color: #fff; font-weight: 600;"><?= htmlspecialchars(explode(' ', $user['name'])[0]) ?></span>
-                <div style="font-size: 10px; color: var(--accent-teal-hover);"><?= htmlspecialchars($user['role_name']) ?></div>
+            <div class="portal-user" style="display: flex; align-items: center; gap: 10px;">
+                <div style="text-align: right;">
+                    <span style="color: #fff; font-weight: 600;"><?= htmlspecialchars(explode(' ', $user['name'])[0]) ?></span>
+                    <div style="font-size: 10px; color: var(--accent-teal-hover);"><?= htmlspecialchars($user['role_name']) ?></div>
+                </div>
+                <a href="<?= $this->baseUrl('portal/perfil') ?>" class="avatar-wrapper" style="text-decoration: none;">
+                    <?php if (!empty($user['profile_photo_path'])): ?>
+                        <img src="<?= $this->baseUrl($user['profile_photo_path']) ?>" alt="Avatar" class="avatar-img-sm" style="width: 34px; height: 34px; border: 2px solid var(--accent-teal-hover);">
+                    <?php elseif (!empty($user['profile_photo'])): ?>
+                        <img src="<?= $this->baseUrl($user['profile_photo']) ?>" alt="Avatar" class="avatar-img-sm" style="width: 34px; height: 34px; border: 2px solid var(--accent-teal-hover);">
+                    <?php else: ?>
+                        <div class="avatar-placeholder-sm" style="width: 34px; height: 34px; font-size: 14px; background: rgba(16, 185, 129, 0.2); border: 2px solid var(--accent-teal-hover); color: var(--accent-teal-hover);"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                    <?php endif; ?>
+                </a>
             </div>
         </div>
 
@@ -128,6 +139,10 @@
             <a href="<?= $this->baseUrl('portal/despesas') ?>" class="top-nav-item" id="nav-despesas">
                 <span class="top-nav-icon">💸</span>
                 <span>Gastos</span>
+            </a>
+            <a href="<?= $this->baseUrl('portal/perfil') ?>" class="top-nav-item" id="nav-perfil">
+                <span class="top-nav-icon">👤</span>
+                <span>Perfil</span>
             </a>
             <a href="<?= $this->baseUrl('logout') ?>" class="top-nav-item" style="color: var(--error-color);">
                 <span class="top-nav-icon">🚪</span>
@@ -176,6 +191,8 @@
                 document.getElementById('nav-outros').classList.add('active');
             } else if (path.includes('portal/despesas')) {
                 document.getElementById('nav-despesas').classList.add('active');
+            } else if (path.includes('portal/perfil')) {
+                document.getElementById('nav-perfil').classList.add('active');
             }
         });
     </script>
