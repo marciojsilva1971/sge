@@ -49,8 +49,19 @@ Este documento mantém o registro permanente de todas as implementações do **M
 ## 📅 Sessão 6: Dinamização Total dos KPIs Financeiros do Dashboard Principal
 * **Ações:**
   - **Substituição de Valores Estáticos por Consultas SQL:** Refatorado o método `AdminController::dashboard()` para buscar em tempo real os saldos totais das contas bancárias ativas (`bank_accounts`), detalhados por FEFC, Fundo Partidário e Outros Recursos (Doações Privadas).
-  - **Cômputo Real de Gastos Aprovados:** O indicador de "Limite de Gastos Consumidos" agora é calculado dinamicamente somando todas as despesas aprovadas/pagas (`despesas`) e comprovantes de viagens aprovados (`travel_receipts`).
+  - **Cômputo Real de Gastos Aprovados:** O indicador de "Limite de Gastos Consumidos" agora é calculated dinamicamente somando todas as despesas aprovadas/pagas (`despesas`) e comprovantes de viagens aprovados (`travel_receipts`).
   - **Ajuste de Chaves na View:** Corrigida a chave na view `app/Views/admin/dashboard.php` garantindo paridade imediata com as atualizações realizadas no banco de dados.
+
+---
+
+## 📅 Sessão 7: Parametrização de Cargo Eleitoral, UF e Limite de Gastos TSE Customizável
+* **Ações:**
+  - **Schema:** Criada a tabela `campaign_settings` (`update_campaign_settings_schema.sql`) para armazenar o nome do candidato/campanha, cargo eleitoral pretendido (ex: Deputado Federal, Estadual, Senador, Governador, Presidente), UF e o Limite Máximo de Gastos TSE em R$.
+  - **Rota & Controlador:** Adicionada a rota `POST /admin/campanha/configuracoes` -> `AdminController::updateCampaignSettings()`, que valida os dados, persiste as alterações e grava registros na trilha de auditoria.
+  - **Interface & Modal no Dashboard:** Adicionado o botão *"⚙️ Ajustar"* e um Modal completo no Dashboard (`dashboard.php`) permitindo a troca rápida de cargo, UF e a digitação customizada do teto legal de gastos com sugestões automáticas por cargo.
+  - **Dinamização do Painel Financeiro:** O painel financeiro principal (`admin/financeiro/index.php`) passou a exibir o cargo e a UF do candidato na régua de consumo do limite de gastos.
+
+
 
 
 

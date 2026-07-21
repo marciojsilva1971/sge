@@ -56,7 +56,18 @@ class AdminController extends Controller {
         $pendingMilitancy = (int)$db->query("SELECT COUNT(*) FROM `militancy_activities` WHERE `status` = 'PENDENTE'")->fetchColumn();
         $totalPending = $pendingDespesas + $pendingMilitancy;
 
-        // 4. KPIs Financeiros Calculados Dinamicamente do Banco de Dados
+        // 4. Buscar Configurações da Campanha (Cargo, UF, Limite de Gastos)
+        $campaignSettings = $db->query("SELECT * FROM `campaign_settings` WHERE id = 1")->fetch();
+        if (!$campaignSettings) {
+            $campaignSettings = [
+                'candidate_name' => 'Candidato SGE',
+                'electoral_role' => 'Deputado Federal',
+                'uf'             => 'DF',
+                'spending_limit' => 3168878.60
+            ];
+        }
+
+        // 5. KPIs Financeiros Calculados Dinamicamente do Banco de Dados
         $caixaTotal = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE status = 'ATIVA'")->fetchColumn());
         $fefc       = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'FEFC' AND status = 'ATIVA'")->fetchColumn());
         $fundoPart  = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'FUNDO_PARTIDARIO' AND status = 'ATIVA'")->fetchColumn());
@@ -67,7 +78,7 @@ class AdminController extends Controller {
         $totalTravel   = floatval($db->query("SELECT COALESCE(SUM(value), 0) FROM `travel_receipts` WHERE status = 'APROVADO'")->fetchColumn());
         $gastoAtual    = $totalDespesas + $totalTravel;
 
-        $limiteGastos  = 5000000.00;
+        $limiteGastos  = floatval($campaignSettings['spending_limit']);
         $gastoPercent  = ($limiteGastos > 0) ? min(100, round(($gastoAtual / $limiteGastos) * 100, 2)) : 0;
 
         $kpiFinances = [
@@ -78,16 +89,81 @@ class AdminController extends Controller {
             'limite_gastos'      => $limiteGastos,
             'gasto_atual'        => $gastoAtual,
             'gasto_percent'      => $gastoPercent,
-            'pendente_aprovacao' => $totalPending
+            'pendente_aprovacao' => $totalPending,
+            'electoral_role'     => $campaignSettings['electoral_role'],
+            'uf'                 => $campaignSettings['uf'],
+            'candidate_name'     => $campaignSettings['candidate_name']
         ];
 
         $this->render('admin/dashboard', [
-            'user'        => $user,
-            'stats'       => $stats,
-            'recentLogs'  => $recentLogs,
-            'kpis'        => $kpiFinances,
-            'csrf_token'  => Session::csrfToken()
+            'user'             => $user,
+            'stats'            => $stats,
+            'recentLogs'       => $recentLogs,
+            'kpis'             => $kpiFinances,
+            'campaignSettings' => $campaignSettings,
+            'csrf_token'       => Session::csrfToken()
         ]);
+    }
+
+    /**
+     * Atualiza as configurações de Cargo Eleitoral, UF e Limite de Gastos da Campanha.
+     */
+    public function updateCampaignSettings(): void {
+        $user = $this->requireAuth();
+        $this->validatePostCsrf();
+
+        if ($user['role_name'] !== 'ADMINISTRADOR' && $user['role_name'] !== 'FINANCEIRO') {
+            Session::setFlash('error', 'Apenas Administradores ou Financeiro podem alterar as configurações da campanha.');
+            $this->redirect('/admin/dashboard');
+        }
+
+        try {
+            $electoral_role = trim($_POST['electoral_role'] ?? '');
+            $uf = strtoupper(trim($_POST['uf'] ?? 'DF'));
+            $spending_limit = $this->parseBrlCurrency($_POST['spending_limit'] ?? '0');
+            $candidate_name = trim($_POST['candidate_name'] ?? '');
+
+            if (empty($electoral_role) || empty($uf) || $spending_limit <= 0) {
+                throw new \Exception("Cargo Eleitoral, UF e Limite de Gastos válido são obrigatórios.");
+            }
+
+            $db = Database::getInstance();
+            $stmt = $db->prepare(
+                "INSERT INTO `campaign_settings` (id, candidate_name, electoral_role, uf, spending_limit) 
+                 VALUES (1, :candidate_name, :electoral_role, :uf, :spending_limit)
+                 ON DUPLICATE KEY UPDATE 
+                 candidate_name = VALUES(candidate_name),
+                 electoral_role = VALUES(electoral_role),
+                 uf = VALUES(uf),
+                 spending_limit = VALUES(spending_limit)"
+            );
+            $stmt->execute([
+                'candidate_name' => !empty($candidate_name) ? $candidate_name : 'Candidato SGE',
+                'electoral_role' => $electoral_role,
+                'uf' => $uf,
+                'spending_limit' => $spending_limit
+            ]);
+
+            // Registra log de auditoria
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, new_values, ip_address, user_agent) 
+                 VALUES (:user_id, 'UPDATE_CAMPAIGN_SETTINGS', 'campaign_settings', 1, :new_values, :ip_address, :user_agent)"
+            );
+            $stmtLog->execute([
+                'user_id' => $user['id'],
+                'new_values' => json_encode($_POST, JSON_UNESCAPED_UNICODE),
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+
+            Session::setFlash('success', 'Configurações de Cargo Eleitoral e Limite de Gastos atualizadas com sucesso!');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Erro ao atualizar configurações: ' . $e->getMessage());
+        }
+
+        $referer = $_SERVER['HTTP_REFERER'] ?? $this->baseUrl('admin/dashboard');
+        header('Location: ' . $referer);
+        exit;
     }
 
     /**

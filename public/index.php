@@ -102,6 +102,7 @@ $router->get('/admin/rbac', 'AdminController@rbac');
 $router->post('/admin/rbac', 'AdminController@updateRbac');
 $router->get('/admin/profile', 'AdminController@profile');
 $router->post('/admin/profile', 'AdminController@updateProfile');
+$router->post('/admin/campanha/configuracoes', 'AdminController@updateCampaignSettings');
 
 // Módulo Financeiro Administrativo
 $router->get('/admin/financeiro', 'FinanceController@index');

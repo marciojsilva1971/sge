@@ -57,7 +57,12 @@
 <!-- Progresso do Limite de Gastos -->
 <div class="panel-card" style="margin-bottom: 24px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <span style="font-weight: 600; font-size: 14px;">Limite Máximo de Gastos da Campanha (TSE)</span>
+        <span style="font-weight: 600; font-size: 14px;">
+            Limite Máximo de Gastos da Campanha 
+            <span style="font-size: 12px; color: var(--accent-teal-hover); font-weight: 600; margin-left: 6px;">
+                🎯 <?= htmlspecialchars($campaignSettings['electoral_role'] ?? 'Deputado Federal') ?> (<?= htmlspecialchars($campaignSettings['uf'] ?? 'DF') ?>)
+            </span>
+        </span>
         <span style="font-weight: 700; color: var(--accent-teal-hover); font-size: 15px;">
             R$ <?= number_format($totalSpentCombined, 2, ',', '.') ?> / R$ <?= number_format($spendingLimit, 2, ',', '.') ?> (<?= number_format($limitPercentage, 1) ?>%)
         </span>

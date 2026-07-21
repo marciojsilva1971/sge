@@ -102,8 +102,12 @@ class FinanceController extends Controller {
         $partidarioBalance = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'FUNDO_PARTIDARIO' AND status = 'ATIVA'")->fetchColumn());
         $outrosBalance = floatval($db->query("SELECT COALESCE(SUM(balance), 0) FROM `bank_accounts` WHERE fund_type = 'OUTROS_RECURSOS' AND status = 'ATIVA'")->fetchColumn());
 
-        // 3. Limite de gastos da campanha (R$ 5.000.000,00)
-        $spendingLimit = 5000000.00;
+        // 3. Busca Configurações da Campanha (Cargo, UF, Limite de Gastos)
+        $campaignSettings = $db->query("SELECT * FROM `campaign_settings` WHERE id = 1")->fetch();
+        $spendingLimit = floatval($campaignSettings['spending_limit'] ?? 3168878.60);
+        $electoralRole = $campaignSettings['electoral_role'] ?? 'Deputado Federal';
+        $uf = $campaignSettings['uf'] ?? 'DF';
+
         // Total gasto (soma de despesas aprovadas ou pagas)
         $totalSpent = floatval($db->query("SELECT COALESCE(SUM(value), 0) FROM `despesas` WHERE status IN ('APROVADO', 'PAGO')")->fetchColumn());
         // Soma os recibos de viagens aprovados também
@@ -139,6 +143,7 @@ class FinanceController extends Controller {
             'bankAccounts' => $bankAccounts,
             'receitaCategories' => $receitaCategories,
             'recentRevenues' => $recentRevenues,
+            'campaignSettings' => $campaignSettings,
             'csrf_token' => Session::csrfToken()
         ]);
     }
