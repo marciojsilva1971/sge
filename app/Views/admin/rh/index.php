@@ -110,6 +110,7 @@
                                         <span class="badge badge-warning" style="font-size: 10px;" title="Menor de idade: Restrições legais de campanha aplicáveis">⚠ Menor</span>
                                     <?php endif; ?>
                                 </td>
+                                <td>
                                     <div style="display:flex; align-items:center; gap:4px;">
                                         <span>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></span>
                                         <button onclick="openEditarTelefoneModal(<?= $c['id'] ?>, '<?= htmlspecialchars($c['nome_completo'], ENT_QUOTES) ?>', '<?= htmlspecialchars($c['celular_whatsapp'], ENT_QUOTES) ?>')" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:12px; padding:0 2px;" title="Editar Telefone / WhatsApp">✏️</button>
