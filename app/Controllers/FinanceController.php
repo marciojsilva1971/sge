@@ -1837,5 +1837,196 @@ class FinanceController extends Controller {
         readfile($fullPath);
         exit;
     }
+
+    /**
+     * Tela de Listagem e Gestão de Contas Bancárias da Campanha.
+     */
+    public function bankAccounts(): void {
+        $user = $this->requireAuth();
+        $db = Database::getInstance();
+
+        // Lista todas as contas bancárias com totais por tipo de recurso
+        $accounts = $db->query("SELECT * FROM `bank_accounts` ORDER BY id DESC")->fetchAll();
+
+        $totals = [
+            'FEFC'             => 0.00,
+            'FUNDO_PARTIDARIO' => 0.00,
+            'OUTROS_RECURSOS'  => 0.00,
+            'TOTAL_CAIXA'      => 0.00
+        ];
+
+        foreach ($accounts as $acc) {
+            if ($acc['status'] === 'ATIVA') {
+                $bal = floatval($acc['balance']);
+                $totals[$acc['fund_type']] = ($totals[$acc['fund_type']] ?? 0) + $bal;
+                $totals['TOTAL_CAIXA'] += $bal;
+            }
+        }
+
+        $this->render('admin/financeiro/contas', [
+            'user'       => $user,
+            'accounts'   => $accounts,
+            'totals'     => $totals,
+            'csrf_token' => Session::csrfToken()
+        ]);
+    }
+
+    /**
+     * Cadastro de Nova Conta Bancária.
+     */
+    public function storeBankAccount(): void {
+        $user = $this->requireAuth();
+        $this->validatePostCsrf();
+
+        if ($user['role_name'] !== 'ADMINISTRADOR' && $user['role_name'] !== 'FINANCEIRO') {
+            Session::setFlash('error', 'Sem permissão para cadastrar contas bancárias.');
+            $this->redirect('/admin/financeiro/contas');
+        }
+
+        try {
+            $name          = trim($_POST['name'] ?? '');
+            $bank_name     = trim($_POST['bank_name'] ?? '');
+            $agency        = trim($_POST['agency'] ?? '');
+            $account_number= trim($_POST['account_number'] ?? '');
+            $pix_key       = trim($_POST['pix_key'] ?? '');
+            $fund_type     = trim($_POST['fund_type'] ?? '');
+            $initial_balance = $this->parseBrlCurrency($_POST['balance'] ?? '0');
+
+            if (empty($name) || empty($bank_name) || empty($agency) || empty($account_number) || empty($fund_type)) {
+                throw new \Exception("Preencha todos os campos obrigatórios (Nome, Banco, Agência, Conta e Tipo de Fundo).");
+            }
+
+            if (!in_array($fund_type, ['FEFC', 'FUNDO_PARTIDARIO', 'OUTROS_RECURSOS'])) {
+                throw new \Exception("Tipo de fundo eleitoral inválido.");
+            }
+
+            $db = Database::getInstance();
+            $stmt = $db->prepare(
+                "INSERT INTO `bank_accounts` (name, bank_name, agency, account_number, pix_key, fund_type, balance, status) 
+                 VALUES (:name, :bank_name, :agency, :account_number, :pix_key, :fund_type, :balance, 'ATIVA')"
+            );
+            $stmt->execute([
+                'name'           => $name,
+                'bank_name'      => $bank_name,
+                'agency'         => $agency,
+                'account_number' => $account_number,
+                'pix_key'        => !empty($pix_key) ? $pix_key : null,
+                'fund_type'      => $fund_type,
+                'balance'        => $initial_balance
+            ]);
+
+            $accId = $db->lastInsertId();
+
+            AuditLogger::log($user['id'], 'CREATE_BANK_ACCOUNT', 'bank_accounts', $accId, null, [
+                'name' => $name, 'bank_name' => $bank_name, 'fund_type' => $fund_type, 'balance' => $initial_balance
+            ]);
+
+            Session::setFlash('success', 'Conta Bancária cadastrada com sucesso!');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Erro ao cadastrar conta: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/contas');
+    }
+
+    /**
+     * Edição de Conta Bancária Existente.
+     */
+    public function updateBankAccount(): void {
+        $user = $this->requireAuth();
+        $this->validatePostCsrf();
+
+        if ($user['role_name'] !== 'ADMINISTRADOR' && $user['role_name'] !== 'FINANCEIRO') {
+            Session::setFlash('error', 'Sem permissão para alterar contas bancárias.');
+            $this->redirect('/admin/financeiro/contas');
+        }
+
+        try {
+            $id            = intval($_POST['id'] ?? 0);
+            $name          = trim($_POST['name'] ?? '');
+            $bank_name     = trim($_POST['bank_name'] ?? '');
+            $agency        = trim($_POST['agency'] ?? '');
+            $account_number= trim($_POST['account_number'] ?? '');
+            $pix_key       = trim($_POST['pix_key'] ?? '');
+            $fund_type     = trim($_POST['fund_type'] ?? '');
+
+            if ($id <= 0 || empty($name) || empty($bank_name) || empty($agency) || empty($account_number) || empty($fund_type)) {
+                throw new \Exception("Dados inválidos para alteração da conta bancária.");
+            }
+
+            if (!in_array($fund_type, ['FEFC', 'FUNDO_PARTIDARIO', 'OUTROS_RECURSOS'])) {
+                throw new \Exception("Tipo de recurso eleitoral inválido.");
+            }
+
+            $db = Database::getInstance();
+            $stmt = $db->prepare(
+                "UPDATE `bank_accounts` 
+                 SET name = :name, bank_name = :bank_name, agency = :agency, 
+                     account_number = :account_number, pix_key = :pix_key, fund_type = :fund_type 
+                 WHERE id = :id"
+            );
+            $stmt->execute([
+                'id'             => $id,
+                'name'           => $name,
+                'bank_name'      => $bank_name,
+                'agency'         => $agency,
+                'account_number' => $account_number,
+                'pix_key'        => !empty($pix_key) ? $pix_key : null,
+                'fund_type'      => $fund_type
+            ]);
+
+            AuditLogger::log($user['id'], 'UPDATE_BANK_ACCOUNT', 'bank_accounts', $id, null, [
+                'name' => $name, 'bank_name' => $bank_name, 'fund_type' => $fund_type
+            ]);
+
+            Session::setFlash('success', 'Conta bancária atualizada com sucesso!');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Erro ao atualizar conta: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/contas');
+    }
+
+    /**
+     * Alternar Status da Conta Bancária (ATIVA / ENCERRADA).
+     */
+    public function toggleBankAccountStatus(): void {
+        $user = $this->requireAuth();
+        $this->validatePostCsrf();
+
+        if ($user['role_name'] !== 'ADMINISTRADOR' && $user['role_name'] !== 'FINANCEIRO') {
+            Session::setFlash('error', 'Sem permissão para alterar o status de contas bancárias.');
+            $this->redirect('/admin/financeiro/contas');
+        }
+
+        try {
+            $id = intval($_POST['id'] ?? 0);
+            if ($id <= 0) {
+                throw new \Exception("Conta bancária não identificada.");
+            }
+
+            $db = Database::getInstance();
+            $stmt = $db->prepare("SELECT * FROM `bank_accounts` WHERE id = :id");
+            $stmt->execute(['id' => $id]);
+            $acc = $stmt->fetch();
+
+            if (!$acc) {
+                throw new \Exception("Conta não localizada.");
+            }
+
+            $newStatus = ($acc['status'] === 'ATIVA') ? 'ENCERRADA' : 'ATIVA';
+
+            $stmtUpdate = $db->prepare("UPDATE `bank_accounts` SET status = :status WHERE id = :id");
+            $stmtUpdate->execute(['status' => $newStatus, 'id' => $id]);
+
+            AuditLogger::log($user['id'], 'TOGGLE_BANK_ACCOUNT_STATUS', 'bank_accounts', $id, ['status' => $acc['status']], ['status' => $newStatus]);
+
+            Session::setFlash('success', 'Status da conta bancária alterado para ' . $newStatus . '!');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Erro ao alterar status da conta: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/contas');
+    }
 }
 

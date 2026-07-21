@@ -61,6 +61,18 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - **Interface & Modal no Dashboard:** Adicionado o botão *"⚙️ Ajustar"* e um Modal completo no Dashboard (`dashboard.php`) permitindo a troca rápida de cargo, UF e a digitação customizada do teto legal de gastos com sugestões automáticas por cargo.
   - **Dinamização do Painel Financeiro:** O painel financeiro principal (`admin/financeiro/index.php`) passou a exibir o cargo e a UF do candidato na régua de consumo do limite de gastos.
 
+---
+
+## 📅 Sessão 8: Módulo de Cadastro, Edição e Vinculação de Contas Bancárias (SPCE/TSE)
+* **Ações:**
+  - **Schema:** Adicionada a coluna `pix_key` na tabela `bank_accounts` (`update_bank_accounts_pix_schema.sql`).
+  - **Novas Rotas HTTP:** Mapeadas as rotas `/admin/financeiro/contas`, `/admin/financeiro/contas/update` e `/admin/financeiro/contas/toggle-status`.
+  - **Controlador Financeiro:** Implementados os métodos `bankAccounts()`, `storeBankAccount()`, `updateBankAccount()` e `toggleBankAccountStatus()` com auditoria e controle de permissões em `FinanceController.php`.
+  - **Interface Completa:** Criada a view `app/Views/admin/financeiro/contas.php` com KPIs por tipo de recurso (FEFC, Fundo Partidário, Outros Recursos), tabela interativa de contas ativas/encerradas, modais de cadastro e edição e diálogo `confirm()` para encerramento ou reativação de contas.
+  - **Subnavegação:** Adicionada a aba *"💳 Contas Bancárias & Recursos"* na barra de navegação financeira (`_nav_tabs.php`).
+
+
+
 
 
 

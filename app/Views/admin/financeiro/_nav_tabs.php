@@ -7,11 +7,15 @@ $isFornecedores = strpos($currentUri, '/fornecedores') !== false;
 $isContratos = strpos($currentUri, '/contratos') !== false;
 $isSpce = strpos($currentUri, '/spce') !== false;
 $isConciliacao = strpos($currentUri, '/conciliacao') !== false;
-$isGeral = !$isFila && !$isTipos && !$isDespesas && !$isFornecedores && !$isContratos && !$isSpce && !$isConciliacao;
+$isContas = strpos($currentUri, '/contas') !== false && strpos($currentUri, '/contratos') === false;
+$isGeral = !$isFila && !$isTipos && !$isDespesas && !$isFornecedores && !$isContratos && !$isSpce && !$isConciliacao && !$isContas;
 ?>
 <div class="fin-subnav-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; background: #0f172a; padding: 8px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); flex-wrap: wrap;">
     <a href="<?= $this->baseUrl('admin/financeiro') ?>" class="btn btn-sm <?= $isGeral ? 'btn-teal' : 'btn-secondary' ?>" style="font-size: 12px; font-weight: bold; border-radius: 6px; padding: 6px 12px;">
         📊 Visão Geral & Receitas
+    </a>
+    <a href="<?= $this->baseUrl('admin/financeiro/contas') ?>" class="btn btn-sm <?= $isContas ? 'btn-teal' : 'btn-secondary' ?>" style="font-size: 12px; font-weight: bold; border-radius: 6px; padding: 6px 12px;">
+        💳 Contas Bancárias & Recursos
     </a>
     <a href="<?= $this->baseUrl('admin/financeiro/conciliacao') ?>" class="btn btn-sm <?= $isConciliacao ? 'btn-teal' : 'btn-secondary' ?>" style="font-size: 12px; font-weight: bold; border-radius: 6px; padding: 6px 12px;">
         🏦 Carga & Conciliação Bancária

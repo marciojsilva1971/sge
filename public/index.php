@@ -107,6 +107,10 @@ $router->post('/admin/campanha/configuracoes', 'AdminController@updateCampaignSe
 // Módulo Financeiro Administrativo
 $router->get('/admin/financeiro', 'FinanceController@index');
 $router->post('/admin/financeiro', 'FinanceController@index');
+$router->get('/admin/financeiro/contas', 'FinanceController@bankAccounts');
+$router->post('/admin/financeiro/contas', 'FinanceController@storeBankAccount');
+$router->post('/admin/financeiro/contas/update', 'FinanceController@updateBankAccount');
+$router->post('/admin/financeiro/contas/toggle-status', 'FinanceController@toggleBankAccountStatus');
 $router->get('/admin/financeiro/fornecedores', 'FinanceController@suppliers');
 $router->post('/admin/financeiro/fornecedores', 'FinanceController@addSupplier');
 $router->get('/admin/financeiro/despesas', 'FinanceController@expenses');

@@ -4,6 +4,9 @@
         <p class="subtitle">Visão geral do fluxo de caixa, receitas e limite de gastos eleitorais.</p>
     </div>
     <div>
+        <a href="<?= $this->baseUrl('admin/financeiro/contas') ?>" class="btn btn-secondary" style="margin-right: 10px;">
+            💳 Contas Bancárias
+        </a>
         <a href="<?= $this->baseUrl('admin/financeiro/despesas') ?>" class="btn btn-secondary" style="margin-right: 10px;">
             💸 Lançar Despesa
         </a>

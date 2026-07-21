@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS `bank_accounts` (
     `bank_name` VARCHAR(100) NOT NULL,
     `agency` VARCHAR(20) NOT NULL,
     `account_number` VARCHAR(30) NOT NULL,
+    `pix_key` VARCHAR(100) NULL,
     `fund_type` ENUM('FEFC', 'FUNDO_PARTIDARIO', 'OUTROS_RECURSOS') NOT NULL,
     `balance` DECIMAL(15,2) DEFAULT 0.00,
     `status` ENUM('ATIVA', 'ENCERRADA') DEFAULT 'ATIVA',
