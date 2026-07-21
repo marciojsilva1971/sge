@@ -58,50 +58,53 @@
             </div>
         </div>
 
-        <!-- DADOS DO FORNECEDOR (CNPJ + NOME) -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-                <label for="supplier_cnpj_cpf">CPF ou CNPJ do Fornecedor</label>
-                <input type="text" id="supplier_cnpj_cpf" name="supplier_cnpj_cpf" placeholder="00.000.000/0001-00 ou 000.000.000-00" required>
-                <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
+        <!-- CONTAINER REVELADO APÓS UPLOAD / DIGITALIZAÇÃO -->
+        <div id="dados-despesa-container" style="display: none !important; margin-top: 16px; transition: all 0.3s ease;">
+            <!-- DADOS DO FORNECEDOR (CNPJ + NOME) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label for="supplier_cnpj_cpf">CPF ou CNPJ do Fornecedor</label>
+                    <input type="text" id="supplier_cnpj_cpf" name="supplier_cnpj_cpf" placeholder="00.000.000/0001-00 ou 000.000.000-00" required>
+                    <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="supplier_name">Razão Social / Nome do Fornecedor</label>
+                    <input type="text" id="supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Silva Ltda" required style="font-weight: 500;">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="supplier_name">Razão Social / Nome do Fornecedor</label>
-                <input type="text" id="supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Silva Ltda" required style="font-weight: 500;">
-            </div>
-        </div>
 
-        <!-- DEMAIS DADOS DA DESPESA -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
-                <label for="expense_type_id">Tipo de Gasto</label>
-                <select id="expense_type_id" name="expense_type_id" required style="width: 100%; border-radius: 6px; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; box-sizing: border-box; font-family: inherit; font-size: 13px;">
-                    <option value="">-- Selecione o Tipo de Gasto --</option>
-                    <?php foreach ($expenseTypes as $type): ?>
-                        <option value="<?= $type['id'] ?>"><?= htmlspecialchars($type['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
+            <!-- DEMAIS DADOS DA DESPESA -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label for="expense_type_id">Tipo de Gasto</label>
+                    <select id="expense_type_id" name="expense_type_id" required style="width: 100%; border-radius: 6px; padding: 10px; background: #0f172a; border: 1px solid #334155; color: #fff; box-sizing: border-box; font-family: inherit; font-size: 13px;">
+                        <option value="">-- Selecione o Tipo de Gasto --</option>
+                        <?php foreach ($expenseTypes as $type): ?>
+                            <option value="<?= $type['id'] ?>"><?= htmlspecialchars($type['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="value">Valor (R$)</label>
+                    <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-weight: 600; color: var(--warning-color);">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="value">Valor (R$)</label>
-                <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-weight: 600; color: var(--warning-color);">
-            </div>
-        </div>
 
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
-            <div class="form-group">
-                <label for="description">Finalidade do Gasto / Descrição</label>
-                <input type="text" id="description" name="description" placeholder="Ex: Alimentação da equipe de panfletagem" required>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label for="description">Finalidade do Gasto / Descrição</label>
+                    <input type="text" id="description" name="description" placeholder="Ex: Alimentação da equipe de panfletagem" required>
+                </div>
+                <div class="form-group">
+                    <label for="date_incurred">Data do Gasto</label>
+                    <input type="date" id="date_incurred" name="date_incurred" value="<?= date('Y-m-d') ?>" required>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="date_incurred">Data do Gasto</label>
-                <input type="date" id="date_incurred" name="date_incurred" value="<?= date('Y-m-d') ?>" required>
-            </div>
-        </div>
 
-        <button type="submit" id="submitBtn" class="btn btn-teal btn-block" style="margin-top: 10px;">
-            Confirmar e Enviar Despesa
-        </button>
+            <button type="submit" id="submitBtn" class="btn btn-teal btn-block" style="margin-top: 10px;">
+                Confirmar e Enviar Despesa
+            </button>
+        </div>
     </form>
 </div>
 
@@ -342,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const btnScanOcr = document.getElementById('btn-scan-ocr');
+    const dadosContainer = document.getElementById('dados-despesa-container');
 
     function executarDigitalizacaoOCR() {
         const file = inputComprovante ? inputComprovante.files[0] : null;
@@ -358,6 +362,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
+
+        // Exibir formulário de despesa
+        if (dadosContainer) dadosContainer.style.display = 'block';
 
         if (ocrStatusBadge) {
             ocrStatusBadge.style.display = 'block';
@@ -441,6 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exibirAvisoManual() {
+        if (dadosContainer) dadosContainer.style.display = 'block';
         if (ocrStatusBadge) {
             ocrStatusBadge.innerHTML = `
                 <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
@@ -462,9 +470,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!file) {
             previewContainer.style.display = 'none';
             if (ocrStatusBadge) ocrStatusBadge.style.display = 'none';
+            if (dadosContainer) dadosContainer.style.display = 'none';
             return;
         }
 
+        if (dadosContainer) dadosContainer.style.display = 'block';
         previewContainer.style.display = 'block';
         fileNamePreview.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
 

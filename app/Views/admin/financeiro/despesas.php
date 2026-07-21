@@ -49,81 +49,84 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="description">Descrição do Pagamento / Finalidade</label>
-                <input type="text" id="description" name="description" placeholder="Ex: Impressão de 10.000 Santinhos de Militância" required>
-            </div>
-
-            <div style="display: flex; gap: 16px;">
-                <div class="form-group flex-1">
-                    <label for="supplier_id">Fornecedor / Credor</label>
-                    <select id="supplier_id" name="supplier_id" required>
-                        <option value="">Selecione o fornecedor...</option>
-                        <?php foreach ($suppliers as $sup): ?>
-                            <option value="<?= $sup['id'] ?>"><?= htmlspecialchars($sup['corporate_name']) ?> (CNPJ/CPF: <?= htmlspecialchars($sup['cnpj_cpf']) ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
+            <!-- CONTAINER REVELADO APÓS UPLOAD / DIGITALIZAÇÃO -->
+            <div id="dados-despesa-container" style="display: none !important; margin-top: 16px; transition: all 0.3s ease;">
+                <div class="form-group">
+                    <label for="description">Descrição do Pagamento / Finalidade</label>
+                    <input type="text" id="description" name="description" placeholder="Ex: Impressão de 10.000 Santinhos de Militância" required>
                 </div>
-                <div class="form-group flex-1">
-                    <label for="bank_account_id">Conta Bancária Origem</label>
-                    <select id="bank_account_id" name="bank_account_id" required>
-                        <option value="">Selecione a conta...</option>
-                        <?php foreach ($bankAccounts as $acc): ?>
-                            <option value="<?= $acc['id'] ?>"><?= htmlspecialchars($acc['name']) ?> (Saldo: R$ <?= number_format($acc['balance'], 2, ',', '.') ?>)</option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            </div>
 
-            <div style="display: flex; gap: 16px;">
-                <div class="form-group flex-1">
-                    <label for="value">Valor da Despesa (R$)</label>
-                    <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 600; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
+                <div style="display: flex; gap: 16px;">
+                    <div class="form-group flex-1">
+                        <label for="supplier_id">Fornecedor / Credor</label>
+                        <select id="supplier_id" name="supplier_id" required>
+                            <option value="">Selecione o fornecedor...</option>
+                            <?php foreach ($suppliers as $sup): ?>
+                                <option value="<?= $sup['id'] ?>"><?= htmlspecialchars($sup['corporate_name']) ?> (CNPJ/CPF: <?= htmlspecialchars($sup['cnpj_cpf']) ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="bank_account_id">Conta Bancária Origem</label>
+                        <select id="bank_account_id" name="bank_account_id" required>
+                            <option value="">Selecione a conta...</option>
+                            <?php foreach ($bankAccounts as $acc): ?>
+                                <option value="<?= $acc['id'] ?>"><?= htmlspecialchars($acc['name']) ?> (Saldo: R$ <?= number_format($acc['balance'], 2, ',', '.') ?>)</option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group flex-1">
-                    <label for="date_incurred">Data da Despesa</label>
-                    <input type="date" id="date_incurred" name="date_incurred" value="<?= date('Y-m-d') ?>" required>
+
+                <div style="display: flex; gap: 16px;">
+                    <div class="form-group flex-1">
+                        <label for="value">Valor da Despesa (R$)</label>
+                        <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 600; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="date_incurred">Data da Despesa</label>
+                        <input type="date" id="date_incurred" name="date_incurred" value="<?= date('Y-m-d') ?>" required>
+                    </div>
                 </div>
-            </div>
 
-            <div style="display: flex; gap: 16px;">
-                <div class="form-group flex-1">
-                    <label for="payment_method">Forma de Pagamento</label>
-                    <select id="payment_method" name="payment_method" required>
-                        <option value="">Selecione...</option>
-                        <option value="PIX">PIX</option>
-                        <option value="Transferência Bancária">Transferência Bancária</option>
-                        <option value="Boleto Bancário">Boleto Bancário</option>
-                        <option value="Débito em Conta">Débito em Conta</option>
-                        <option value="Outros">Outros</option>
-                    </select>
+                <div style="display: flex; gap: 16px;">
+                    <div class="form-group flex-1">
+                        <label for="payment_method">Forma de Pagamento</label>
+                        <select id="payment_method" name="payment_method" required>
+                            <option value="">Selecione...</option>
+                            <option value="PIX">PIX</option>
+                            <option value="Transferência Bancária">Transferência Bancária</option>
+                            <option value="Boleto Bancário">Boleto Bancário</option>
+                            <option value="Débito em Conta">Débito em Conta</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="spce_category_id">Categoria SPCE/TSE</label>
+                        <select id="spce_category_id" name="spce_category_id" required>
+                            <option value="">Selecione a categoria...</option>
+                            <?php foreach ($spceCategories as $cat): ?>
+                                <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group flex-1">
-                    <label for="spce_category_id">Categoria SPCE/TSE</label>
-                    <select id="spce_category_id" name="spce_category_id" required>
-                        <option value="">Selecione a categoria...</option>
-                        <?php foreach ($spceCategories as $cat): ?>
-                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+
+                <div class="form-group">
+                    <label for="notes">Observações Internas (Opcional)</label>
+                    <textarea id="notes" name="notes" rows="2" placeholder="Informações adicionais ou notas de auditoria..."></textarea>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label for="notes">Observações Internas (Opcional)</label>
-                <textarea id="notes" name="notes" rows="2" placeholder="Informações adicionais ou notas de auditoria..."></textarea>
-            </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+                    <input type="checkbox" id="mark_as_paid" name="mark_as_paid" value="1" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="mark_as_paid" style="margin-bottom: 0; font-weight: 500; cursor: pointer;">
+                        Efetivar despesa como <strong>PAGO</strong> (Descontar saldo da conta bancária imediatamente)
+                    </label>
+                </div>
 
-            <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
-                <input type="checkbox" id="mark_as_paid" name="mark_as_paid" value="1" checked style="width: 18px; height: 18px; cursor: pointer;">
-                <label for="mark_as_paid" style="margin-bottom: 0; font-weight: 500; cursor: pointer;">
-                    Efetivar despesa como <strong>PAGO</strong> (Descontar saldo da conta bancária imediatamente)
-                </label>
+                <button type="submit" class="btn btn-teal btn-block">
+                    💾 Confirmar e Enviar Despesa
+                </button>
             </div>
-
-            <button type="submit" class="btn btn-teal btn-block">
-                💾 Confirmar e Enviar Despesa
-            </button>
         </form>
     </div>
 
@@ -337,6 +340,7 @@
     const compInputAdmin = document.getElementById('comprovante');
     const btnScanOcrAdmin = document.getElementById('btn-scan-ocr');
     const ocrStatusBadgeAdmin = document.getElementById('ocr_status_badge');
+    const dadosContainerAdmin = document.getElementById('dados-despesa-container');
 
     function executarOCRAdmin() {
         const file = compInputAdmin ? compInputAdmin.files[0] : null;
@@ -354,6 +358,9 @@
             }
             return;
         }
+
+        // Revelar formulário de despesa
+        if (dadosContainerAdmin) dadosContainerAdmin.style.display = 'block';
 
         if (ocrStatusBadgeAdmin) {
             ocrStatusBadgeAdmin.style.display = 'block';
@@ -467,8 +474,11 @@
             if (!file) {
                 if (container) container.style.display = 'none';
                 if (ocrStatusBadgeAdmin) ocrStatusBadgeAdmin.style.display = 'none';
+                if (dadosContainerAdmin) dadosContainerAdmin.style.display = 'none';
                 return;
             }
+
+            if (dadosContainerAdmin) dadosContainerAdmin.style.display = 'block';
 
             if (container) {
                 container.style.display = 'flex';

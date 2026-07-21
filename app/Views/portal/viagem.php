@@ -59,50 +59,53 @@ foreach ($travelReports as $report) {
                 </div>
             </div>
 
-            <!-- DADOS DO FORNECEDOR (CNPJ + RAZÃO SOCIAL) -->
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group flex-1">
-                    <label for="supplier_cnpj" style="font-size: 12px;">CNPJ do Posto de Combustível</label>
-                    <input type="text" id="supplier_cnpj" name="supplier_cnpj" placeholder="00.000.000/0001-00" required>
-                    <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
+            <!-- CONTAINER REVELADO APÓS UPLOAD / DIGITALIZAÇÃO -->
+            <div id="dados-despesa-container" style="display: none !important; margin-top: 16px; transition: all 0.3s ease;">
+                <!-- DADOS DO FORNECEDOR (CNPJ + RAZÃO SOCIAL) -->
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group flex-1">
+                        <label for="supplier_cnpj" style="font-size: 12px;">CNPJ do Posto de Combustível</label>
+                        <input type="text" id="supplier_cnpj" name="supplier_cnpj" placeholder="00.000.000/0001-00" required>
+                        <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="supplier_name" style="font-size: 12px;">Nome / Razão Social da Empresa</label>
+                        <input type="text" id="supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Alvorada Ltda" style="font-weight: 500;">
+                    </div>
                 </div>
-                <div class="form-group flex-1">
-                    <label for="supplier_name" style="font-size: 12px;">Nome / Razão Social da Empresa</label>
-                    <input type="text" id="supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Alvorada Ltda" style="font-weight: 500;">
+
+                <!-- VALOR E DATA -->
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group flex-1">
+                        <label for="value" style="font-size: 12px;">Valor do Cupom (R$)</label>
+                        <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 600; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
+                    </div>
+                    <div class="form-group flex-1">
+                        <label for="receipt_date" style="font-size: 12px;">Data do Recibo</label>
+                        <input type="date" id="receipt_date" name="receipt_date" value="<?= date('Y-m-d') ?>" required>
+                    </div>
                 </div>
-            </div>
 
-            <!-- VALOR E DATA -->
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group flex-1">
-                    <label for="value" style="font-size: 12px;">Valor do Cupom (R$)</label>
-                    <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 600; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
+                <div class="form-group">
+                    <label for="spce_category_id" style="font-size: 12px;">Categoria SPCE</label>
+                    <select id="spce_category_id" name="spce_category_id" required style="font-size: 13px;">
+                        <?php foreach ($spceCategories as $cat): ?>
+                            <option value="<?= $cat['id'] ?>" <?= strpos($cat['code'], '44') !== false ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-                <div class="form-group flex-1">
-                    <label for="receipt_date" style="font-size: 12px;">Data do Recibo</label>
-                    <input type="date" id="receipt_date" name="receipt_date" value="<?= date('Y-m-d') ?>" required>
+
+                <div class="form-group">
+                    <label for="notes" style="font-size: 12px;">Notas / Observações (Opcional)</label>
+                    <input type="text" id="notes" name="notes" placeholder="Ex: Abastecimento equipe de campo">
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label for="spce_category_id" style="font-size: 12px;">Categoria SPCE</label>
-                <select id="spce_category_id" name="spce_category_id" required style="font-size: 13px;">
-                    <?php foreach ($spceCategories as $cat): ?>
-                        <option value="<?= $cat['id'] ?>" <?= strpos($cat['code'], '44') !== false ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <button type="submit" class="btn btn-teal btn-block btn-sm">
+                    ➕ Confirmar e Enviar Cupom
+                </button>
             </div>
-
-            <div class="form-group">
-                <label for="notes" style="font-size: 12px;">Notas / Observações (Opcional)</label>
-                <input type="text" id="notes" name="notes" placeholder="Ex: Abastecimento equipe de campo">
-            </div>
-
-            <button type="submit" class="btn btn-teal btn-block btn-sm">
-                ➕ Adicionar Cupom
-            </button>
         </form>
 
         <!-- Cupons já adicionados nesta viagem -->
@@ -318,6 +321,7 @@ foreach ($travelReports as $report) {
     const thumb = document.getElementById('comprovante-preview-thumb');
     const namePreview = document.getElementById('comprovante-preview-name');
     const sizePreview = document.getElementById('comprovante-preview-size');
+    const dadosContainer = document.getElementById('dados-despesa-container');
 
     // Validador matemático oficial do Digito Verificador de CNPJ (Módulo 11)
     function validarCNPJ(cnpj) {
@@ -456,6 +460,9 @@ foreach ($travelReports as $report) {
             return;
         }
 
+        // Exibir formulário de despesa
+        if (dadosContainer) dadosContainer.style.display = 'block';
+
         if (statusBadge) {
             statusBadge.style.display = 'block';
             statusBadge.innerHTML = `
@@ -538,6 +545,7 @@ foreach ($travelReports as $report) {
     }
 
     function exibirAvisoManual() {
+        if (dadosContainer) dadosContainer.style.display = 'block';
         if (statusBadge) {
             statusBadge.innerHTML = `
                 <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
@@ -559,8 +567,11 @@ foreach ($travelReports as $report) {
             if (!file) {
                 if (container) container.style.display = 'none';
                 if (statusBadge) statusBadge.style.display = 'none';
+                if (dadosContainer) dadosContainer.style.display = 'none';
                 return;
             }
+
+            if (dadosContainer) dadosContainer.style.display = 'block';
 
             if (container) {
                 container.style.display = 'flex';

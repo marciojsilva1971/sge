@@ -253,7 +253,14 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 50: Motor de OCR de Alta Precisão (Validador Módulo 11 de CNPJ + Filtro Canvas Grayscale/Contraste)
+* **Ações Implementadas:** Validador Módulo 11 de CNPJ, substituição de ruídos de leitura de cupons térmicos (O->0, I->1, S->5) e filtro HTML5 Canvas.
+
+---
+
+## 📅 Sessão 51: Revelação Progressiva do Formulário (Progressive Form Disclosure)
 * **Ações Implementadas:**
-  1. **Algoritmo Validador de CNPJ (Módulo 11):** Criada a função `validarCNPJ()` que calcula a matemática exata dos dois dígitos verificadores de CNPJ. Com isso, o leitor não confunde mais números de telefone, inscrições estaduais ou chaves NFe de 44 dígitos com o CNPJ do estabelecimento!
-  2. **Substituição de Erros Comuns do OCR:** A função `extrairCNPJDoTexto()` corrige automaticamente confusões clássicas de leitura em impressões térmicas, tais como transformar `O` e `o` em `0`, `I` e `l` e `|` em `1`, e `S` e `s` em `5`.
-  3. **Pré-Processador de Nitidez em Canvas HTML5 (`otimizarImagemParaOCR`):** Antes de enviar a foto para o Tesseract, a imagem passa por um Canvas invisível que aplica conversão Grayscale (escala de cinza) e binarização adaptativa de contraste. Isso aumenta em mais de 300% a taxa de acerto em papéis térmicos amarelos, cinzas ou com pouca iluminação.
+  1. **Ocultação Inicial:** Ao abrir a tela de cadastro de despesas/viagens, apenas a caixa de upload da foto (`📸 1º PASSO`) é exibida ao usuário.
+  2. **Revelação Automática:** Assim que o usuário escolhe a foto ou clica em **"🔍 Digitalizar e Ler Comprovante (OCR)"**, o container com os demais campos (`#dados-despesa-container`) é revelado com transição suave.
+  3. **Preenchimento Automático x Manual:**
+     * Se o OCR ler o CNPJ com sucesso, preenche automaticamente os campos de CNPJ e Nome do Fornecedor via Receita Federal.
+     * Se o OCR falhar ou o arquivo for PDF, os campos são exibidos em branco para digitação manual amigável.
