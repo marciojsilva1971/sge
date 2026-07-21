@@ -279,15 +279,15 @@
                 <label for="aval_funcao_campanha">Função na Campanha *</label>
                 <select id="aval_funcao_campanha" name="funcao_campanha" required>
                     <option value="">Selecione a função...</option>
-                    <option value="Cabo Eleitoral">Cabo Eleitoral</option>
-                    <option value="Coordenador de Bairro / Região">Coordenador de Bairro / Região</option>
-                    <option value="Coordenador Geral de Campanha">Coordenador Geral de Campanha</option>
-                    <option value="Panfletista / Ativista">Panfletista / Ativista</option>
-                    <option value="Motorista de Campanha">Motorista de Campanha</option>
-                    <option value="Mobilizador de Rua">Mobilizador de Rua</option>
-                    <option value="Assessor de Comunicação / Mídias">Assessor de Comunicação / Mídias</option>
-                    <option value="Segurança / Apoio Logístico">Segurança / Apoio Logístico</option>
-                    <option value="Outras Funções de Campanha">Outras Funções de Campanha</option>
+                    <option value="Cabo Eleitoral (Militância - Sujeito a Limite)">Cabo Eleitoral (Militância - Sujeito a Limite)</option>
+                    <option value="Panfletista / Ativista (Militância - Sujeito a Limite)">Panfletista / Ativista (Militância - Sujeito a Limite)</option>
+                    <option value="Mobilizador de Rua (Militância - Sujeito a Limite)">Mobilizador de Rua (Militância - Sujeito a Limite)</option>
+                    <option value="Coordenador Geral de Campanha (Operacional - Sem Limite)">Coordenador Geral de Campanha (Operacional - Sem Limite)</option>
+                    <option value="Coordenador de Bairro / Região (Operacional - Sem Limite)">Coordenador de Bairro / Região (Operacional - Sem Limite)</option>
+                    <option value="Motorista de Campanha (Operacional - Sem Limite)">Motorista de Campanha (Operacional - Sem Limite)</option>
+                    <option value="Segurança / Apoio Logístico (Operacional - Sem Limite)">Segurança / Apoio Logístico (Operacional - Sem Limite)</option>
+                    <option value="Assessor de Comunicação / Mídias (Serviços de Terceiros)">Assessor de Comunicação / Mídias (Serviços de Terceiros)</option>
+                    <option value="Outras Funções (Operacional - Sem Limite)">Outras Funções (Operacional - Sem Limite)</option>
                 </select>
             </div>
 
@@ -370,15 +370,15 @@
                 <label for="conf_funcao_campanha">Função na Campanha contratada: *</label>
                 <select id="conf_funcao_campanha" name="funcao_campanha" required>
                     <option value="">Selecione a função...</option>
-                    <option value="Cabo Eleitoral">Cabo Eleitoral</option>
-                    <option value="Coordenador de Bairro / Região">Coordenador de Bairro / Região</option>
-                    <option value="Coordenador Geral de Campanha">Coordenador Geral de Campanha</option>
-                    <option value="Panfletista / Ativista">Panfletista / Ativista</option>
-                    <option value="Motorista de Campanha">Motorista de Campanha</option>
-                    <option value="Mobilizador de Rua">Mobilizador de Rua</option>
-                    <option value="Assessor de Comunicação / Mídias">Assessor de Comunicação / Mídias</option>
-                    <option value="Segurança / Apoio Logístico">Segurança / Apoio Logístico</option>
-                    <option value="Outras Funções de Campanha">Outras Funções de Campanha</option>
+                    <option value="Cabo Eleitoral (Militância - Sujeito a Limite)">Cabo Eleitoral (Militância - Sujeito a Limite)</option>
+                    <option value="Panfletista / Ativista (Militância - Sujeito a Limite)">Panfletista / Ativista (Militância - Sujeito a Limite)</option>
+                    <option value="Mobilizador de Rua (Militância - Sujeito a Limite)">Mobilizador de Rua (Militância - Sujeito a Limite)</option>
+                    <option value="Coordenador Geral de Campanha (Operacional - Sem Limite)">Coordenador Geral de Campanha (Operacional - Sem Limite)</option>
+                    <option value="Coordenador de Bairro / Região (Operacional - Sem Limite)">Coordenador de Bairro / Região (Operacional - Sem Limite)</option>
+                    <option value="Motorista de Campanha (Operacional - Sem Limite)">Motorista de Campanha (Operacional - Sem Limite)</option>
+                    <option value="Segurança / Apoio Logístico (Operacional - Sem Limite)">Segurança / Apoio Logístico (Operacional - Sem Limite)</option>
+                    <option value="Assessor de Comunicação / Mídias (Serviços de Terceiros)">Assessor de Comunicação / Mídias (Serviços de Terceiros)</option>
+                    <option value="Outras Funções (Operacional - Sem Limite)">Outras Funções (Operacional - Sem Limite)</option>
                 </select>
                 <small class="form-help">Caso a função de campanha seja alterada, o sistema gerará um novo contrato e enviará para assinatura do colaborador, arquivando o histórico.</small>
             </div>
