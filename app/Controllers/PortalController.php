@@ -322,39 +322,73 @@ class PortalController extends Controller {
                 throw new Exception("As coordenadas GPS são obrigatórias, ou marque a opção de enviar sem GPS.");
             }
 
-            $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
-            $cryptoData = null;
+            // Auto-cria a tabela de fotos adicionais de militância se não existir
+            $db->exec("CREATE TABLE IF NOT EXISTS `militancy_photos` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `militancy_id` INT NOT NULL,
+                `encrypted_photo_path` VARCHAR(255) NOT NULL,
+                `original_name` VARCHAR(255) NOT NULL,
+                `iv` VARCHAR(64) NOT NULL,
+                `mime_type` VARCHAR(100) NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`militancy_id`) REFERENCES `militancy_activities` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-            // Se a imagem foi compactada no canvas e enviada em base64
+            $allFiles = [];
+
+            // 1. Processa arquivos enviados por $_FILES (múltiplos ou simples)
+            foreach ($_FILES as $key => $fileInfo) {
+                if (empty($fileInfo['name'])) continue;
+
+                if (is_array($fileInfo['name'])) {
+                    foreach ($fileInfo['name'] as $idx => $fname) {
+                        if (!empty($fname) && isset($fileInfo['error'][$idx]) && $fileInfo['error'][$idx] === UPLOAD_ERR_OK) {
+                            $allFiles[] = [
+                                'name' => $fname,
+                                'type' => $fileInfo['type'][$idx],
+                                'tmp_name' => $fileInfo['tmp_name'][$idx],
+                                'error' => $fileInfo['error'][$idx],
+                                'size' => $fileInfo['size'][$idx]
+                            ];
+                        }
+                    }
+                } elseif ($fileInfo['error'] === UPLOAD_ERR_OK && !empty($fileInfo['tmp_name'])) {
+                    $allFiles[] = $fileInfo;
+                }
+            }
+
+            // 2. Se também houver foto compactada via canvas base64
             if (!empty($_POST['foto_base64'])) {
                 $base64Data = $_POST['foto_base64'];
                 if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $matches)) {
                     $type = strtolower($matches[1]);
                     $data = base64_decode(substr($base64Data, strpos($base64Data, ',') + 1));
-                    if ($data === false) {
-                        throw new Exception("Falha ao descriptografar dados da imagem compactada.");
+                    if ($data !== false) {
+                        $tmpFile = tempnam(sys_get_temp_dir(), 'militancy_');
+                        file_put_contents($tmpFile, $data);
+                        array_unshift($allFiles, [
+                            'tmp_name' => $tmpFile,
+                            'name' => 'militancia_foto_' . time() . '.' . $type,
+                            'type' => 'image/' . $type,
+                            'error' => UPLOAD_ERR_OK,
+                            'size' => strlen($data),
+                            'is_tmp' => true
+                        ]);
                     }
-                    
-                    // Salva temporariamente para processar no EncryptionService
-                    $tmpFile = tempnam(sys_get_temp_dir(), 'militancy_');
-                    file_put_contents($tmpFile, $data);
-                    
-                    $fileData = [
-                        'tmp_name' => $tmpFile,
-                        'name' => 'militancia_foto_' . time() . '.' . $type,
-                        'type' => 'image/' . $type
-                    ];
-                    $cryptoData = EncryptionService::encryptAndSaveUploadedFile($fileData, $storageDir);
-                    unlink($tmpFile);
-                } else {
-                    throw new Exception("Formato da imagem compactada inválido.");
                 }
-            } else {
-                // Trata como upload normal
-                if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {
-                    throw new Exception("A foto de comprovação da panfletagem é obrigatória.");
-                }
-                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($_FILES['foto'], $storageDir);
+            }
+
+            if (empty($allFiles)) {
+                throw new Exception("O envio de pelo menos uma foto de comprovação é obrigatório.");
+            }
+
+            $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
+
+            // Primeira foto é salva em militancy_activities
+            $mainFile = $allFiles[0];
+            $mainCryptoData = EncryptionService::encryptAndSaveUploadedFile($mainFile, $storageDir);
+            if (!empty($mainFile['is_tmp'])) {
+                @unlink($mainFile['tmp_name']);
             }
 
             // Insere no banco
@@ -366,13 +400,39 @@ class PortalController extends Controller {
                 'user_id' => $user['id'],
                 'activity_date' => $activity_date,
                 'description' => $description,
-                'encrypted_photo_path' => $cryptoData['encrypted_file_path'],
-                'iv' => $cryptoData['iv'],
+                'encrypted_photo_path' => $mainCryptoData['encrypted_file_path'],
+                'iv' => $mainCryptoData['iv'],
                 'latitude' => $latitude,
                 'longitude' => $longitude
             ]);
+            $militancyId = $db->lastInsertId();
 
-            $msgSucesso = $permitirSemGps ? 'Atividade de panfletagem registrada com sucesso para validação manual (sem GPS)!' : 'Atividade de panfletagem registrada com sucesso com foto criptografada e GPS!';
+            // Grava demais fotos em militancy_photos se houver mais de 1 arquivo
+            if (count($allFiles) > 1) {
+                $stmtExtra = $db->prepare(
+                    "INSERT INTO `militancy_photos` (militancy_id, encrypted_photo_path, original_name, iv, mime_type) 
+                     VALUES (:militancy_id, :encrypted_photo_path, :original_name, :iv, :mime_type)"
+                );
+                for ($i = 1; $i < count($allFiles); $i++) {
+                    $extraFile = $allFiles[$i];
+                    $extraCrypto = EncryptionService::encryptAndSaveUploadedFile($extraFile, $storageDir);
+                    if (!empty($extraFile['is_tmp'])) {
+                        @unlink($extraFile['tmp_name']);
+                    }
+                    $stmtExtra->execute([
+                        'militancy_id' => $militancyId,
+                        'encrypted_photo_path' => $extraCrypto['encrypted_file_path'],
+                        'original_name' => $extraCrypto['original_name'],
+                        'iv' => $extraCrypto['iv'],
+                        'mime_type' => $extraCrypto['mime_type']
+                    ]);
+                }
+            }
+
+            $countArquivos = count($allFiles);
+            $msgSucesso = $permitirSemGps 
+                ? "Atividade de panfletagem ({$countArquivos} foto(s)) registrada com sucesso para validação manual (sem GPS)!" 
+                : "Atividade de panfletagem ({$countArquivos} foto(s)) registrada com sucesso com foto criptografada e GPS!";
             Session::setFlash('success', $msgSucesso);
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao salvar atividade: ' . $e->getMessage());

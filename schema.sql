@@ -173,7 +173,19 @@ CREATE TABLE IF NOT EXISTS `militancy_activities` (
     FOREIGN KEY (`user_id`) REFERENCES `usuarios` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 13. Tabela de Receitas/Doações da Campanha
+-- 13. Tabela de Fotos Adicionais de Militância
+CREATE TABLE IF NOT EXISTS `militancy_photos` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `militancy_id` INT NOT NULL,
+    `encrypted_photo_path` VARCHAR(255) NOT NULL,
+    `original_name` VARCHAR(255) NOT NULL,
+    `iv` VARCHAR(64) NOT NULL,
+    `mime_type` VARCHAR(100) NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`militancy_id`) REFERENCES `militancy_activities` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 14. Tabela de Receitas/Doações da Campanha
 CREATE TABLE IF NOT EXISTS `receitas` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `description` VARCHAR(255) NOT NULL,

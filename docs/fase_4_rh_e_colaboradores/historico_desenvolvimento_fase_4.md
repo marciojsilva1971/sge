@@ -307,6 +307,15 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   2. **Abertura Automática & Reativa:** O modal é disparado automaticamente quando o navegador bloqueia/falha na obtenção do GPS, e pode ser reaberto via link ou botão *"❓ Como ativar o GPS?"*.
   3. **Checkbox de Envio Sem GPS (`permitir_sem_gps`):** Adicionada a opção manual no formulário e dentro do modal (`☑️ Ativar Envio Sem GPS`). Quando ativada, a validação libera o botão de submissão mesmo sem coordenadas, registrando a atividade no banco (`PortalController.php`) como pendente de análise manual.
 
+---
+
+## 📅 Sessão 58: Múltiplos Uploads e Acumulador de Fotos em Comprovação de Militância
+* **Ações Implementadas:**
+  1. **Acumulador de Fotos (`DataTransfer API`):** Implementado no formulário de militância (`portal/militancia.php`) o mesmo padrão de seleção cumulativa utilizado nos módulos financeiro e de viagens. O militante pode selecionar ou fotografar múltiplos comprovantes sucessivos sem perder os anteriores.
+  2. **Galeria de Miniaturas Visuais (`#galeria-miniaturas-container`):** Exibição em tempo real de cards com imagem do comprovante, nome do arquivo e botão de exclusão individual (`✖`).
+  3. **Persistência Multi-Anexo Backend (`militancy_photos`):** Refatorado `PortalController::addMilitancy()` para auto-criar a tabela de suporte `militancy_photos` e processar e criptografar individualmente com AES-256 todas as fotos enviadas pelo colaborador.
+
+
 
 
 

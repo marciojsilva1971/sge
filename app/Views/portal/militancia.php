@@ -60,11 +60,17 @@
             </div>
         </div>
 
-        <!-- Upload de Foto e Compactação -->
+        <!-- Upload de Foto(s) e Compactação -->
         <div class="form-group">
-            <label for="foto-input">Tirar/Selecionar Foto de Comprovação</label>
-            <input type="file" id="foto-input" accept="image/*" required style="padding: 4px; font-size: 12px; margin-bottom: 10px;">
+            <label for="foto-input">Tirar/Selecionar Foto(s) de Comprovação</label>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 2px; margin-bottom: 6px;">
+                Você pode selecionar ou tirar foto de mais de um comprovante para esta mesma atividade.
+            </p>
+            <input type="file" id="foto-input" name="fotos[]" multiple accept="image/*" style="padding: 4px; font-size: 12px; margin-bottom: 8px;">
             
+            <!-- Galeria de Miniaturas Visuais (Thumbnails) -->
+            <div id="galeria-miniaturas-container" style="display: none; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 8px; margin-bottom: 12px;"></div>
+
             <!-- Preview da foto compactada -->
             <div id="preview-container" style="display: none; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background-color: #000; text-align: center; position: relative;">
                 <img id="preview-image" src="" alt="Preview da Imagem" style="max-width: 100%; max-height: 250px; object-fit: contain; display: block; margin: 0 auto;">
@@ -354,54 +360,136 @@
         iniciarCapturaGps();
     });
 
-    // Compressão de Imagens no Cliente usando Canvas
+    // Acumulador de Múltiplos Arquivos usando DataTransfer API
     const fotoInput = document.getElementById('foto-input');
+    const galeriaContainer = document.getElementById('galeria-miniaturas-container');
+    const arquivosAcumulados = new DataTransfer();
+
     if (fotoInput) {
         fotoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+            const newFiles = Array.from(e.target.files);
+            if (newFiles.length === 0) return;
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.getElementById('compressCanvas');
-                    const ctx = canvas.getContext('2d');
+            newFiles.forEach(file => {
+                arquivosAcumulados.items.add(file);
+            });
 
-                    const MAX_WIDTH = 1000;
-                    const MAX_HEIGHT = 1000;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
-                        }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-                    
-                    document.getElementById('foto_base64').value = dataUrl;
-                    
-                    document.getElementById('preview-image').src = dataUrl;
-                    document.getElementById('preview-container').style.display = 'block';
-                    
-                    checarHabilitacaoForm();
-                };
-                img.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
+            fotoInput.files = arquivosAcumulados.files;
+            atualizarGaleriaMiniaturas();
+            processarFotoBase64(arquivosAcumulados.files[0]);
+            checarHabilitacaoForm();
         });
+    }
+
+    function atualizarGaleriaMiniaturas() {
+        if (!galeriaContainer) return;
+        galeriaContainer.innerHTML = '';
+
+        if (arquivosAcumulados.files.length === 0) {
+            galeriaContainer.style.display = 'none';
+            document.getElementById('foto_base64').value = '';
+            document.getElementById('preview-container').style.display = 'none';
+            return;
+        }
+
+        galeriaContainer.style.display = 'grid';
+
+        Array.from(arquivosAcumulados.files).forEach((file, index) => {
+            const card = document.createElement('div');
+            card.style.cssText = 'position: relative; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 4px; text-align: center; overflow: hidden;';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.innerHTML = '✖';
+            removeBtn.style.cssText = 'position: absolute; top: 2px; right: 2px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; font-weight: bold;';
+            removeBtn.onclick = (event) => {
+                event.stopPropagation();
+                removerArquivoGaleria(index);
+            };
+            card.appendChild(removeBtn);
+
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.style.cssText = 'width: 100%; height: 70px; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 4px;';
+                const reader = new FileReader();
+                reader.onload = (e) => { img.src = e.target.result; };
+                reader.readAsDataURL(file);
+                card.appendChild(img);
+            } else {
+                const icon = document.createElement('div');
+                icon.style.cssText = 'height: 70px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #38bdf8; background: #1e293b; border-radius: 4px; margin-bottom: 4px;';
+                icon.innerText = '📄';
+                card.appendChild(icon);
+            }
+
+            const nameLabel = document.createElement('div');
+            nameLabel.style.cssText = 'font-size: 9px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;';
+            nameLabel.innerText = file.name;
+            card.appendChild(nameLabel);
+
+            galeriaContainer.appendChild(card);
+        });
+    }
+
+    function removerArquivoGaleria(index) {
+        const dt = new DataTransfer();
+        const files = Array.from(arquivosAcumulados.files);
+        files.forEach((file, idx) => {
+            if (idx !== index) {
+                dt.items.add(file);
+            }
+        });
+
+        arquivosAcumulados.items.clear();
+        Array.from(dt.files).forEach(f => arquivosAcumulados.items.add(f));
+        fotoInput.files = arquivosAcumulados.files;
+
+        atualizarGaleriaMiniaturas();
+        if (arquivosAcumulados.files.length > 0) {
+            processarFotoBase64(arquivosAcumulados.files[0]);
+        }
+        checarHabilitacaoForm();
+    }
+
+    function processarFotoBase64(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.getElementById('compressCanvas');
+                const ctx = canvas.getContext('2d');
+
+                const MAX_WIDTH = 1000;
+                const MAX_HEIGHT = 1000;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+                document.getElementById('foto_base64').value = dataUrl;
+                document.getElementById('preview-image').src = dataUrl;
+                document.getElementById('preview-container').style.display = 'block';
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 
     function checarHabilitacaoForm() {
@@ -413,7 +501,7 @@
 
         const temGps = (lat !== '' && lon !== '' && lat !== '0' && lon !== '0');
         const permiteSemGps = (chkSemGps && chkSemGps.checked);
-        const temFoto = (base64 !== '');
+        const temFoto = (arquivosAcumulados.files.length > 0 || base64 !== '');
 
         if ((temGps || permiteSemGps) && temFoto) {
             submitBtn.disabled = false;
@@ -434,13 +522,14 @@
 
         const temGps = (lat !== '' && lon !== '' && lat !== '0' && lon !== '0');
         const permiteSemGps = (chkSemGps && chkSemGps.checked);
+        const temFoto = (arquivosAcumulados.files.length > 0 || base64 !== '');
 
         if (!temGps && !permiteSemGps) {
             alert("Aguarde a obtenção do GPS ou marque a opção 'Enviar comprovação sem coordenadas de GPS'.");
             return false;
         }
-        if (base64 === '') {
-            alert("Por favor, selecione ou tire uma foto de comprovação.");
+        if (!temFoto) {
+            alert("Por favor, selecione ou tire pelo menos uma foto de comprovação.");
             return false;
         }
         return true;
