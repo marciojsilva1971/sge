@@ -1,127 +1,138 @@
-<div class="profile-page-container">
-    
-    <div class="page-header">
-        <h2>Meu Perfil de Usuário</h2>
-        <p class="subtitle">Mantenha seus dados e credenciais atualizados para garantir a segurança de acesso.</p>
+<?php
+/**
+ * View: Perfil do Administrador / Usuário do Painel
+ */
+?>
+
+<div class="panel-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 28px; color: #fff; max-width: 650px; margin: 0 auto;">
+
+    <!-- Cabeçalho do Perfil -->
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--accent-indigo-hover), var(--accent-teal-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px;">
+            Meu Perfil Administrativo
+        </h2>
+        <p style="font-size: 14px; color: var(--text-secondary);">
+            Gerencie suas informações pessoais, avatar e altere sua senha de acesso
+        </p>
     </div>
 
-    <!-- Alertas Visuais de Sucesso ou Erro -->
-    <?php if (!empty($success)): ?>
-        <div class="alert alert-success" style="padding: 14px 18px; background-color: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4); border-radius: 8px; color: #15803d; font-weight: 600; font-size: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">✅</span>
-            <span><?= htmlspecialchars($success) ?></span>
-        </div>
-    <?php endif; ?>
+    <form action="<?= $this->baseUrl('admin/profile') ?>" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
-    <?php if (!empty($error)): ?>
-        <div class="alert alert-error" style="padding: 14px 18px; background-color: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; color: #b91c1c; font-weight: 600; font-size: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">⚠️</span>
-            <span><?= htmlspecialchars($error) ?></span>
-        </div>
-    <?php endif; ?>
-
-    <div class="panel-card profile-card">
-        <form action="<?= $this->baseUrl('admin/profile') ?>" method="POST" enctype="multipart/form-data" class="profile-form">
-            <!-- Token CSRF -->
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-
-            <div class="profile-layout-grid">
-                
-                <!-- Coluna da Foto de Perfil -->
-                <div class="profile-photo-col text-center">
-                    <div class="avatar-upload-container">
-                        <div class="avatar-preview-wrapper">
-                            <?php if (!empty($details['profile_photo_path'])): ?>
-                                <div id="avatarPreview" class="avatar-preview" style="background-image: url('<?= $this->baseUrl($details['profile_photo_path']) ?>'); background-size: cover; background-position: center;"></div>
-                            <?php else: ?>
-                                <div id="avatarPreview" class="avatar-preview-placeholder"><?= strtoupper(substr($details['name'], 0, 1)) ?></div>
-                            <?php endif; ?>
+        <!-- Foto do Perfil com Pré-Visualização -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 28px;">
+            <div style="position: relative; width: 110px; height: 110px; margin-bottom: 12px;">
+                <div id="avatarPreviewContainer" style="width: 110px; height: 110px; border-radius: 50%; overflow: hidden; border: 3px solid var(--accent-teal-hover); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; background: #0f172a;">
+                    <?php if (!empty($userFull['profile_photo_path'])): ?>
+                        <img id="avatarImagePreview" src="<?= $this->baseUrl($userFull['profile_photo_path']) ?>" alt="Foto de Perfil" style="width: 100%; height: 100%; object-fit: cover;">
+                    <?php else: ?>
+                        <div id="avatarPlaceholder" style="font-size: 38px; font-weight: 700; color: var(--accent-teal-hover);">
+                            <?= strtoupper(substr($user['name'], 0, 1)) ?>
                         </div>
-                        <input type="file" id="profile_photo" name="profile_photo" accept="image/png, image/jpeg, image/webp" class="file-input-hidden">
-                        <label for="profile_photo" class="btn btn-secondary btn-sm">Alterar Foto de Perfil</label>
-                        <div class="file-info-text">Tamanho máximo: 2MB. Apenas JPG, PNG ou WEBP.</div>
-                    </div>
-
-                    <div class="user-meta-info">
-                        <h3><?= htmlspecialchars($details['name']) ?></h3>
-                        <span class="badge badge-info"><?= htmlspecialchars($details['role_name']) ?></span>
-                        <div class="meta-date">Cadastrado em: <?= date('d/m/Y', strtotime($details['created_at'])) ?></div>
-                    </div>
+                        <img id="avatarImagePreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                    <?php endif; ?>
                 </div>
-
-                <!-- Coluna de Formulário de Dados -->
-                <div class="profile-fields-col">
-                    <div class="fields-section">
-                        <h4>Informações de Contato</h4>
-                        
-                        <div class="form-group">
-                            <label for="email">E-mail de Acesso (Não alterável)</label>
-                            <input type="email" id="email" value="<?= htmlspecialchars($details['email']) ?>" disabled class="input-disabled">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="name">Nome Completo</label>
-                            <input type="text" id="name" name="name" value="<?= htmlspecialchars($details['name']) ?>" required placeholder="Digite seu nome completo">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="celular">Celular (WhatsApp)</label>
-                            <input type="text" id="celular" name="celular" value="<?= htmlspecialchars($details['celular']) ?>" required placeholder="Ex: 41999999999">
-                        </div>
-                    </div>
-
-                    <div class="fields-section mt-4">
-                        <h4>Alterar Senha de Acesso</h4>
-                        <p class="section-notice">Preencha os campos abaixo apenas se desejar modificar sua senha atual.</p>
-
-                        <div class="form-group">
-                            <label for="password">Nova Senha Forte</label>
-                            <input type="password" id="password" name="password" placeholder="Digite uma nova senha forte" autocomplete="new-password">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirm_password">Confirmar Nova Senha</label>
-                            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirme a nova senha" autocomplete="new-password">
-                        </div>
-                    </div>
-
-                    <div class="profile-actions text-right">
-                        <button type="submit" class="btn btn-primary">
-                            Salvar Alterações
-                        </button>
-                    </div>
-                </div>
-
+                <!-- Botão Sobreposto de Câmera -->
+                <label for="foto_rosto" style="position: absolute; bottom: 0; right: 0; background: var(--accent-teal-hover); color: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5); font-size: 16px; border: 2px solid #0f172a;" title="Alterar Foto">
+                    📷
+                </label>
             </div>
-        </form>
-    </div>
 
+            <input type="file" id="foto_rosto" name="foto_rosto" accept="image/jpeg,image/png,image/webp" style="display: none;" onchange="previewAvatarImage(this)">
+            <label for="foto_rosto" class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px; border-radius: 20px; cursor: pointer; border: 1px solid var(--accent-teal-hover); color: var(--accent-teal-hover);">
+                📷 Selecionar Foto de Perfil
+            </label>
+            <span style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">JPG, PNG ou WEBP (máx. 10MB)</span>
+        </div>
+
+        <!-- Seção 1: Dados Pessoais -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <div style="font-size: 15px; font-weight: 600; color: var(--accent-teal-hover); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span>👤</span> Dados Pessoais
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label for="name" style="font-size: 13px; color: #fff; display: block; margin-bottom: 6px;">Nome Completo <span style="color: var(--error-color);">*</span></label>
+                <input type="text" id="name" name="name" class="form-control" value="<?= htmlspecialchars($userFull['name'] ?? $user['name']) ?>" required style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label for="celular" style="font-size: 13px; color: #fff; display: block; margin-bottom: 6px;">Celular / WhatsApp</label>
+                <input type="text" id="celular" name="celular" class="form-control" value="<?= htmlspecialchars($userFull['celular'] ?? '') ?>" placeholder="(00) 90000-0000" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; width: 100%;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">E-mail (Login)</label>
+                    <input type="email" class="form-control" value="<?= htmlspecialchars($userFull['email']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border: 1px solid rgba(255, 255, 255, 0.08); padding: 10px 14px; border-radius: 8px; width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px;">Nível de Acesso (Papel)</label>
+                    <input type="text" class="form-control" value="<?= htmlspecialchars($user['role_name']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border: 1px solid rgba(255, 255, 255, 0.08); padding: 10px 14px; border-radius: 8px; width: 100%;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção 2: Alteração de Senha -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; margin-bottom: 28px;">
+            <div style="font-size: 15px; font-weight: 600; color: var(--accent-teal-hover); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <span>🔒</span> Segurança e Alteração de Senha
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label for="senha_atual" style="font-size: 13px; color: #fff; display: block; margin-bottom: 6px;">Senha Atual</label>
+                <input type="password" id="senha_atual" name="senha_atual" class="form-control" placeholder="Informe se for alterar a senha" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; width: 100%;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="form-group">
+                    <label for="nova_senha" style="font-size: 13px; color: #fff; display: block; margin-bottom: 6px;">Nova Senha</label>
+                    <input type="password" id="nova_senha" name="nova_senha" class="form-control" placeholder="Mínimo 8 caracteres" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; width: 100%;">
+                </div>
+                <div class="form-group">
+                    <label for="confirmar_senha" style="font-size: 13px; color: #fff; display: block; margin-bottom: 6px;">Confirmar Nova Senha</label>
+                    <input type="password" id="confirmar_senha" name="confirmar_senha" class="form-control" placeholder="Repita a nova senha" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 10px 14px; border-radius: 8px; width: 100%;">
+                </div>
+            </div>
+            <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-top: 8px;">
+                Requisitos: Mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.
+            </span>
+        </div>
+
+        <!-- Botão de Ação -->
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 10px; background: linear-gradient(135deg, var(--accent-teal-hover), #0d9488); border: none; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.4); cursor: pointer; transition: all 0.2s ease;">
+            💾 Salvar Alterações do Perfil
+        </button>
+
+    </form>
 </div>
 
-<!-- JavaScript para Preview Instantâneo de Foto -->
+<!-- Script de Pré-Visualização de Imagem JS -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const photoInput = document.getElementById('profile_photo');
-    const avatarPreview = document.getElementById('avatarPreview');
-
-    photoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                alert('A foto de perfil excede o tamanho máximo de 2MB.');
-                photoInput.value = '';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                // Remove placeholder text se existir
-                avatarPreview.innerText = '';
-                avatarPreview.style.backgroundImage = `url('${event.target.result}')`;
-                avatarPreview.style.backgroundSize = 'cover';
-                avatarPreview.style.backgroundPosition = 'center';
-            };
-            reader.readAsDataURL(file);
+function previewAvatarImage(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        if (file.size > 10 * 1024 * 1024) {
+            alert('A foto selecionada excede o limite de 10MB.');
+            input.value = '';
+            return;
         }
-    });
-});
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewImg = document.getElementById('avatarImagePreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
+
+            if (previewImg) {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+            }
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+}
 </script>

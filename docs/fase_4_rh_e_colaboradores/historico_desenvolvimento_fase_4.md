@@ -64,3 +64,12 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - Implementada funcionalidade para inclusão/alteração da foto do perfil (rosto/avatar) diretamente pelo portal com preview instantâneo via JS, sincronizando os dados simultaneamente em `usuarios.profile_photo_path` e `colaboradores.foto_rosto_path`.
   - Adicionada a opção para atualização de celular/WhatsApp e alteração segura de senha de acesso com validação da senha atual.
   - Atualizado o layout do portal (`app/Views/layouts/portal.php`) para exibir o avatar do colaborador no topo superior direito e incluir o item **👤 Perfil** na barra de navegação principal.
+
+---
+
+## 📅 Sessão 8: Resolução de Cache/Exibição de Avatares e Perfil Administrativo
+* **Ações:**
+  - **Correção da Exibição de Fotos (Bug 404):** Identificado que a pasta `storage/avatares` ficava fora do document root público do servidor (`public/`), gerando erros 404. O diretório de salvamento de avatares foi unificado para `public/uploads/profiles/`, permitindo o carregamento imediato e direto pelo navegador (com fallback robusto nos controladores para manter a compatibilidade).
+  - **Validação de Uploads:** Implementada checagem robusta de códigos de erro de upload no PHP (`upload_max_filesize`, `post_max_size`, etc.), impedindo que uploads que falhem no servidor passem como "sucesso" sem atualizar o banco de dados.
+  - **Perfil do Administrador (/admin/profile):** Implementados os métodos `profile()` e `updateProfile()` em `AdminController.php` e a view correspondente `app/Views/admin/profile.php`, dando aos administradores a mesma capacidade de atualizar dados pessoais, celular, foto de perfil e senha com os mesmos critérios de segurança.
+  - **Ajustes de Layout:** Tornada a área de perfil do topo do layout principal administrativa (`layouts/main.php`) clicável para direcionar ao perfil administrativo, e simplificada a lógica de renderização do avatar no layout do portal do colaborador.

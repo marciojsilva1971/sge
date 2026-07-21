@@ -565,7 +565,7 @@ class RhController extends Controller {
             throw new Exception("Formato da foto do rosto inválido. Permitido somente JPG, PNG ou WEBP.");
         }
 
-        $uploadDir = dirname(__DIR__, 2) . '/storage/avatares/';
+        $uploadDir = dirname(__DIR__, 2) . '/public/uploads/profiles/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
@@ -574,7 +574,7 @@ class RhController extends Controller {
         $destPath = $uploadDir . $fileName;
 
         if (move_uploaded_file($file['tmp_name'], $destPath)) {
-            return 'storage/avatares/' . $fileName;
+            return 'uploads/profiles/' . $fileName;
         }
 
         return null;
@@ -742,9 +742,14 @@ class RhController extends Controller {
         $fullPath = dirname(__DIR__, 2) . '/' . ltrim($relativePath, '/\\');
 
         if (!file_exists($fullPath)) {
-            http_response_code(404);
-            echo "Arquivo físico não encontrado em disco (" . htmlspecialchars($relativePath) . ").";
-            exit;
+            $publicFullPath = dirname(__DIR__, 2) . '/public/' . ltrim($relativePath, '/\\');
+            if (file_exists($publicFullPath)) {
+                $fullPath = $publicFullPath;
+            } else {
+                http_response_code(404);
+                echo "Arquivo físico não encontrado em disco (" . htmlspecialchars($relativePath) . ").";
+                exit;
+            }
         }
 
         $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
@@ -902,9 +907,14 @@ class RhController extends Controller {
         $fullPath = dirname(__DIR__, 2) . '/' . ltrim($relativePath, '/\\');
 
         if (!file_exists($fullPath)) {
-            http_response_code(404);
-            echo "Arquivo físico não encontrado no servidor.";
-            exit;
+            $publicFullPath = dirname(__DIR__, 2) . '/public/' . ltrim($relativePath, '/\\');
+            if (file_exists($publicFullPath)) {
+                $fullPath = $publicFullPath;
+            } else {
+                http_response_code(404);
+                echo "Arquivo físico não encontrado no servidor.";
+                exit;
+            }
         }
 
         $ext = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));

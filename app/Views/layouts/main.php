@@ -82,10 +82,10 @@
                     Painel SGE
                 </div>
                 
-                <div class="user-profile-menu">
+                <a href="<?= $this->baseUrl('admin/profile') ?>" class="user-profile-menu" style="text-decoration: none; display: flex; align-items: center; gap: 12px; cursor: pointer;">
                     <div class="user-info text-right">
-                        <div class="user-name"><?= htmlspecialchars($user['name']) ?></div>
-                        <div class="user-role"><?= htmlspecialchars($user['role_name']) ?></div>
+                        <div class="user-name" style="color: #fff; font-weight: 600;"><?= htmlspecialchars($user['name']) ?></div>
+                        <div class="user-role" style="font-size: 11px; color: var(--accent-teal-hover);"><?= htmlspecialchars($user['role_name']) ?></div>
                     </div>
                     <div class="avatar-wrapper">
                         <?php 
@@ -94,10 +94,10 @@
                         <?php if ($userAvatar): ?>
                             <img src="<?= $this->baseUrl($userAvatar) ?>" alt="Avatar" class="avatar-img" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #0d9488;">
                         <?php else: ?>
-                            <div class="avatar-placeholder"><?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?></div>
+                            <div class="avatar-placeholder" style="width: 40px; height: 40px; border-radius: 50%; background: rgba(13, 148, 136, 0.2); border: 2px solid #0d9488; color: #0d9488; display: flex; align-items: center; justify-content: center; font-weight: bold;"><?= strtoupper(substr($user['name'] ?? 'U', 0, 1)) ?></div>
                         <?php endif; ?>
                     </div>
-                </div>
+                </a>
             </header>
 
             <!-- Conteúdo da Página -->

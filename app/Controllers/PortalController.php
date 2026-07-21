@@ -1031,7 +1031,20 @@ class PortalController extends Controller {
 
             // 1. Processa upload da nova foto do rosto (avatar)
             $photoPath = null;
-            if (isset($_FILES['foto_rosto']) && $_FILES['foto_rosto']['error'] === UPLOAD_ERR_OK) {
+            if (isset($_FILES['foto_rosto']) && $_FILES['foto_rosto']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $uploadError = $_FILES['foto_rosto']['error'];
+                if ($uploadError !== UPLOAD_ERR_OK) {
+                    $errorsList = [
+                        UPLOAD_ERR_INI_SIZE   => 'O arquivo enviado excede o limite máximo permitido pelo servidor (php.ini).',
+                        UPLOAD_ERR_FORM_SIZE  => 'O arquivo excede o limite máximo do formulário.',
+                        UPLOAD_ERR_PARTIAL    => 'O upload foi concluído apenas parcialmente.',
+                        UPLOAD_ERR_NO_TMP_DIR => 'Diretório temporário ausente no servidor.',
+                        UPLOAD_ERR_CANT_WRITE => 'Falha ao gravar arquivo em disco no servidor.',
+                        UPLOAD_ERR_EXTENSION  => 'O upload foi interrompido por uma extensão do PHP.'
+                    ];
+                    $errorMsg = $errorsList[$uploadError] ?? 'Erro desconhecido (' . $uploadError . ').';
+                    throw new Exception("Erro no upload da foto de perfil: " . $errorMsg);
+                }
                 $photoPath = $this->handleAvatarUpload($_FILES['foto_rosto']);
             }
 
@@ -1144,7 +1157,7 @@ class PortalController extends Controller {
             throw new Exception("A imagem do perfil não pode exceder o limite de 10MB.");
         }
 
-        $targetDir = dirname(__DIR__, 2) . '/storage/avatares';
+        $targetDir = dirname(__DIR__, 2) . '/public/uploads/profiles';
         if (!is_dir($targetDir)) {
             mkdir($targetDir, 0755, true);
         }
@@ -1156,6 +1169,6 @@ class PortalController extends Controller {
             throw new Exception("Falha ao salvar o arquivo de foto do rosto no servidor.");
         }
 
-        return 'storage/avatares/' . $filename;
+        return 'uploads/profiles/' . $filename;
     }
 }

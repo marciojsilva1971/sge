@@ -107,12 +107,13 @@
                     <div style="font-size: 10px; color: var(--accent-teal-hover);"><?= htmlspecialchars($user['role_name']) ?></div>
                 </div>
                 <a href="<?= $this->baseUrl('portal/perfil') ?>" class="avatar-wrapper" style="text-decoration: none;">
-                    <?php if (!empty($user['profile_photo_path'])): ?>
-                        <img src="<?= $this->baseUrl($user['profile_photo_path']) ?>" alt="Avatar" class="avatar-img-sm" style="width: 34px; height: 34px; border: 2px solid var(--accent-teal-hover);">
-                    <?php elseif (!empty($user['profile_photo'])): ?>
-                        <img src="<?= $this->baseUrl($user['profile_photo']) ?>" alt="Avatar" class="avatar-img-sm" style="width: 34px; height: 34px; border: 2px solid var(--accent-teal-hover);">
+                    <?php 
+                    $photoPath = !empty($user['profile_photo_path']) ? $user['profile_photo_path'] : (!empty($user['profile_photo']) ? $user['profile_photo'] : null);
+                    ?>
+                    <?php if ($photoPath): ?>
+                        <img src="<?= $this->baseUrl($photoPath) ?>" alt="Avatar" class="avatar-img-sm" style="width: 34px; height: 34px; border: 2px solid var(--accent-teal-hover); border-radius: 50%; object-fit: cover;">
                     <?php else: ?>
-                        <div class="avatar-placeholder-sm" style="width: 34px; height: 34px; font-size: 14px; background: rgba(16, 185, 129, 0.2); border: 2px solid var(--accent-teal-hover); color: var(--accent-teal-hover);"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
+                        <div class="avatar-placeholder-sm" style="width: 34px; height: 34px; font-size: 14px; background: rgba(16, 185, 129, 0.2); border: 2px solid var(--accent-teal-hover); color: var(--accent-teal-hover); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;"><?= strtoupper(substr($user['name'], 0, 1)) ?></div>
                     <?php endif; ?>
                 </a>
             </div>

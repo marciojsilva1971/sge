@@ -24,16 +24,13 @@
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 28px;">
             <div style="position: relative; width: 110px; height: 110px; margin-bottom: 12px;">
                 <div id="avatarPreviewContainer" style="width: 110px; height: 110px; border-radius: 50%; overflow: hidden; border: 3px solid var(--accent-teal-hover); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; background: #0f172a;">
-                    <?php if (!empty($userFull['profile_photo_path'])): ?>
-                        <img id="avatarImagePreview" src="<?= $this->baseUrl($userFull['profile_photo_path']) ?>" alt="Foto de Perfil" style="width: 100%; height: 100%; object-fit: cover;">
-                    <?php elseif (!empty($colaborador['foto_rosto_path'])): ?>
-                        <img id="avatarImagePreview" src="<?= $this->baseUrl($colaborador['foto_rosto_path']) ?>" alt="Foto de Perfil" style="width: 100%; height: 100%; object-fit: cover;">
-                    <?php else: ?>
-                        <div id="avatarPlaceholder" style="font-size: 38px; font-weight: 700; color: var(--accent-teal-hover);">
-                            <?= strtoupper(substr($user['name'], 0, 1)) ?>
-                        </div>
-                        <img id="avatarImagePreview" src="" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-                    <?php endif; ?>
+                    <?php 
+                    $photoPath = !empty($userFull['profile_photo_path']) ? $userFull['profile_photo_path'] : (!empty($colaborador['foto_rosto_path']) ? $colaborador['foto_rosto_path'] : null);
+                    ?>
+                    <div id="avatarPlaceholder" style="font-size: 38px; font-weight: 700; color: var(--accent-teal-hover); display: <?= $photoPath ? 'none' : 'block' ?>;">
+                        <?= strtoupper(substr($user['name'], 0, 1)) ?>
+                    </div>
+                    <img id="avatarImagePreview" src="<?= $photoPath ? $this->baseUrl($photoPath) : '' ?>" alt="Foto de Perfil" style="width: 100%; height: 100%; object-fit: cover; display: <?= $photoPath ? 'block' : 'none' ?>;">
                 </div>
                 <!-- Botão Sobreposto de Câmera -->
                 <label for="foto_rosto" style="position: absolute; bottom: 0; right: 0; background: var(--accent-teal-hover); color: #fff; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.5); font-size: 16px; border: 2px solid #0f172a;" title="Alterar Foto">
