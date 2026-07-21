@@ -25,12 +25,12 @@
             <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (OCR) -->
             <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
                 <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
-                    📸 1º PASSO: Anexar / Digitalizar Comprovante Fiscal (PDF, PNG, JPG)
+                    📸 1º PASSO: Anexar / Digitalizar Comprovante(s) Fiscal(is) (PDF, PNG, JPG)
                 </label>
                 <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                    Anexe o comprovante primeiro. O sistema fará o escaneamento OCR para identificar o CNPJ e selecionar automaticamente o fornecedor!
+                    Tire uma ou mais fotos legíveis do comprovante onde estejam discriminadas todas as despesas e seus valores!
                 </p>
-                <input type="file" id="comprovante" name="comprovante" accept="application/pdf, image/*" required style="padding: 6px; width: 100%;">
+                <input type="file" id="comprovante" name="comprovante[]" accept="application/pdf, image/*" multiple required style="padding: 6px; width: 100%;">
                 
                 <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
                     🔍 Digitalizar e Ler Comprovante (OCR)
@@ -413,8 +413,14 @@
                             .then(data => {
                                 if (data.success && ocrStatusBadgeAdmin) {
                                     ocrStatusBadgeAdmin.innerHTML = `
-                                        <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px;">
-                                            ✅ CNPJ Lido e Validado: ${data.cnpj} - ${data.razao_social}
+                                        <div style="padding: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 10px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-size: 18px;">✅</span>
+                                                <span>CNPJ Lido e Validado: <strong>${data.razao_social}</strong> (${data.cnpj})</span>
+                                            </div>
+                                            <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
+                                                📸 <strong>Atenção:</strong> Certifique-se de anexar uma ou mais fotos nítidas do comprovante onde estejam discriminadas todas as despesas e valores.
+                                            </div>
                                         </div>
                                     `;
                                     let found = false;
@@ -433,7 +439,17 @@
                                         `;
                                     }
                                 } else if (ocrStatusBadgeAdmin) {
-                                    ocrStatusBadgeAdmin.innerHTML = `<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ Lido (${cleanCnpj}), selecione o fornecedor manualmente.</div>`;
+                                    ocrStatusBadgeAdmin.innerHTML = `
+                                        <div style="padding: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 10px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-size: 18px;">⚠️</span>
+                                                <span>CNPJ Lido (${cleanCnpj}), selecione o fornecedor manualmente.</span>
+                                            </div>
+                                            <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
+                                                📸 <strong>Atenção:</strong> Anexe uma ou mais fotos do comprovante discriminando todas as despesas e valores.
+                                            </div>
+                                        </div>
+                                    `;
                                 }
                             });
                     } else if (ocrStatusBadgeAdmin) {

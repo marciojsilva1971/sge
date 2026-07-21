@@ -289,9 +289,28 @@ class FinanceController extends Controller {
                 throw new Exception("Todos os campos principais da despesa são obrigatórios.");
             }
 
-            // Exige upload do comprovante
-            if (!isset($_FILES['comprovante']) || $_FILES['comprovante']['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception("O upload de um comprovante fiscal é obrigatório.");
+            // Normaliza upload de comprovante(s) fiscal(is) (1 ou mais arquivos)
+            $filesList = [];
+            if (isset($_FILES['comprovante'])) {
+                if (is_array($_FILES['comprovante']['name'])) {
+                    foreach ($_FILES['comprovante']['name'] as $idx => $fname) {
+                        if ($_FILES['comprovante']['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES['comprovante']['tmp_name'][$idx])) {
+                            $filesList[] = [
+                                'name' => $fname,
+                                'type' => $_FILES['comprovante']['type'][$idx],
+                                'tmp_name' => $_FILES['comprovante']['tmp_name'][$idx],
+                                'error' => $_FILES['comprovante']['error'][$idx],
+                                'size' => $_FILES['comprovante']['size'][$idx]
+                            ];
+                        }
+                    }
+                } elseif ($_FILES['comprovante']['error'] === UPLOAD_ERR_OK) {
+                    $filesList[] = $_FILES['comprovante'];
+                }
+            }
+
+            if (empty($filesList)) {
+                throw new Exception("O upload de pelo menos um comprovante fiscal é obrigatório.");
             }
 
             $db->beginTransaction();
@@ -317,22 +336,23 @@ class FinanceController extends Controller {
             ]);
             $expenseId = $db->lastInsertId();
 
-            // 2. Criptografa e salva o comprovante físico
+            // 2. Criptografa e salva todas as fotos dos comprovantes físicos
             $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
-            $cryptoData = EncryptionService::encryptAndSaveUploadedFile($_FILES['comprovante'], $storageDir);
+            foreach ($filesList as $singleFile) {
+                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($singleFile, $storageDir);
 
-            // Grava metadados cripto no banco
-            $stmtCripto = $db->prepare(
-                "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
-                 VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
-            );
-            $stmtCripto->execute([
-                'expense_id' => $expenseId,
-                'encrypted_file_path' => $cryptoData['encrypted_file_path'],
-                'original_name' => $cryptoData['original_name'],
-                'iv' => $cryptoData['iv'],
-                'mime_type' => $cryptoData['mime_type']
-            ]);
+                $stmtCripto = $db->prepare(
+                    "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
+                     VALUES (:expense_id, :encrypted_file_path, :original_name, :iv, :mime_type)"
+                );
+                $stmtCripto->execute([
+                    'expense_id' => $expenseId,
+                    'encrypted_file_path' => $cryptoData['encrypted_file_path'],
+                    'original_name' => $cryptoData['original_name'],
+                    'iv' => $cryptoData['iv'],
+                    'mime_type' => $cryptoData['mime_type']
+                ]);
+            }
 
             // 3. Se foi marcado como Pago, atualiza saldo da conta correspondente
             if ($status === 'PAGO') {

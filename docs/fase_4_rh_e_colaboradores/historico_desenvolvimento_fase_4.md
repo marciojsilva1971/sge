@@ -258,9 +258,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 51: Revelação Progressiva do Formulário (Progressive Form Disclosure)
+* **Ações Implementadas:** Ocultação inicial dos campos de formulário e revelação automática pós-leitura/upload.
+
+---
+
+## 📅 Sessão 52: Solicitação Explícita de Fotos Discriminadas e Suporte a Múltiplos Arquivos
 * **Ações Implementadas:**
-  1. **Ocultação Inicial:** Ao abrir a tela de cadastro de despesas/viagens, apenas a caixa de upload da foto (`📸 1º PASSO`) é exibida ao usuário.
-  2. **Revelação Automática:** Assim que o usuário escolhe a foto ou clica em **"🔍 Digitalizar e Ler Comprovante (OCR)"**, o container com os demais campos (`#dados-despesa-container`) é revelado com transição suave.
-  3. **Preenchimento Automático x Manual:**
-     * Se o OCR ler o CNPJ com sucesso, preenche automaticamente os campos de CNPJ e Nome do Fornecedor via Receita Federal.
-     * Se o OCR falhar ou o arquivo for PDF, os campos são exibidos em branco para digitação manual amigável.
+  1. **Solicitação em Banner Pós-CNPJ:** Exibição de um banner destacado solicitarando expressamente o envio de 1 ou mais fotos nítidas do comprovante fiscal discriminando os itens/despesas e seus respectivos valores assim que o CNPJ é completado (por OCR ou digitação manual).
+  2. **Upload Múltiplo (`multiple`):** Adicionada a propriedade `multiple` aos inputs de comprovante (`comprovante[]`), permitindo anexar múltiplos arquivos/fotos simultaneamente para cupons longos.
+  3. **Suporte no Backend:** Atualizados `PortalController` e `FinanceController` para processar e criptografar todos os arquivos da lista enviada.

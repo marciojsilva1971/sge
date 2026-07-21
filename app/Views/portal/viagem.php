@@ -35,12 +35,12 @@ foreach ($travelReports as $report) {
             <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE -->
             <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
                 <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
-                    📸 1º PASSO: Anexar / Fotografar Comprovante Fiscal (JPEG, PNG ou PDF)
+                    📸 1º PASSO: Anexar / Fotografar Comprovante(s) Fiscal(is) (JPEG, PNG ou PDF)
                 </label>
                 <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                    Tire uma foto legível da nota/cupom fiscal. O sistema lerá a imagem via OCR para autocompletar o CNPJ e o nome do posto!
+                    Tire uma ou mais fotos legíveis da nota/cupom fiscal onde estejam discriminadas as despesas e seus valores!
                 </p>
-                <input type="file" id="comprovante" name="comprovante" accept="image/*, application/pdf" required style="padding: 6px; font-size: 12px; width: 100%;">
+                <input type="file" id="comprovante" name="comprovante[]" accept="image/*, application/pdf" multiple required style="padding: 6px; font-size: 12px; width: 100%;">
                 
                 <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
                     🔍 Digitalizar e Ler Comprovante (OCR)
@@ -286,9 +286,14 @@ foreach ($travelReports as $report) {
                     }
                     if (statusBadge) {
                         statusBadge.innerHTML = `
-                            <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 16px;">✅</span>
-                                <span>Empresa Identificada: <strong>${data.razao_social}</strong> (CNPJ: ${data.cnpj})</span>
+                            <div style="padding: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 10px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 18px;">✅</span>
+                                    <span>Empresa Identificada: <strong>${data.razao_social}</strong> (${data.cnpj})</span>
+                                </div>
+                                <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
+                                    📸 <strong>Atenção:</strong> Certifique-se de anexar uma ou mais fotos nítidas do comprovante fiscal onde estejam perfeitamente discriminadas todas as despesas e seus respectivos valores.
+                                </div>
                             </div>
                         `;
                     }
@@ -298,13 +303,13 @@ foreach ($travelReports as $report) {
                     }
                     if (statusBadge) {
                         statusBadge.innerHTML = `
-                            <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+                            <div style="padding: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 10px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 16px;">⚠️</span>
+                                    <span style="font-size: 18px;">⚠️</span>
                                     <span>CNPJ Lido (${clean}), mas empresa não localizada na Receita Federal.</span>
                                 </div>
-                                <div style="font-size: 11px; font-weight: normal; color: #fef08a; margin-left: 24px;">
-                                    Por favor, informe o Nome da Empresa nos campos abaixo.
+                                <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
+                                    📸 <strong>Atenção:</strong> Preencha o nome da empresa abaixo e certifique-se de anexar uma ou mais fotos do comprovante discriminando todas as despesas e valores.
                                 </div>
                             </div>
                         `;
