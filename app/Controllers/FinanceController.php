@@ -244,15 +244,23 @@ class FinanceController extends Controller {
 
         // Listagem de despesas gerais
         $stmtExpenses = $db->query(
-            "SELECT d.*, s.corporate_name AS supplier_name, b.name AS bank_name, c.code AS spce_code, 
-                    c.description AS spce_desc, u.name AS creator_name, cc.id AS doc_id
+            "SELECT d.*, 
+                    COALESCE(s.corporate_name, 'Fornecedor Desconhecido') AS supplier_name, 
+                    s.cnpj_cpf AS supplier_cnpj_cpf, 
+                    COALESCE(b.name, 'Não informada') AS bank_name, 
+                    c.code AS spce_code, 
+                    c.description AS spce_desc, 
+                    COALESCE(u.name, 'Colaborador de Campo') AS creator_name, 
+                    cc.id AS doc_id, 
+                    et.name AS expense_type_name
              FROM `despesas` d
-             JOIN `suppliers` s ON d.supplier_id = s.id
-             JOIN `bank_accounts` b ON d.bank_account_id = b.id
-             JOIN `spce_categories` c ON d.spce_category_id = c.id
-             JOIN `usuarios` u ON d.user_id = u.id
-             LEFT JOIN `comprovantes_cripto` cc ON d.id = cc.expense_id
-             ORDER BY d.date_incurred DESC, d.id DESC LIMIT 100"
+             LEFT JOIN `suppliers` s ON d.supplier_id = s.id
+             LEFT JOIN `bank_accounts` b ON d.bank_account_id = b.id
+             LEFT JOIN `spce_categories` c ON d.spce_category_id = c.id
+             LEFT JOIN `usuarios` u ON d.user_id = u.id
+             LEFT JOIN (SELECT expense_id, MIN(id) AS id FROM `comprovantes_cripto` GROUP BY expense_id) cc ON d.id = cc.expense_id
+             LEFT JOIN `expense_types` et ON d.expense_type_id = et.id
+             ORDER BY d.date_incurred DESC, d.id DESC LIMIT 150"
         );
         $expenses = $stmtExpenses->fetchAll();
 

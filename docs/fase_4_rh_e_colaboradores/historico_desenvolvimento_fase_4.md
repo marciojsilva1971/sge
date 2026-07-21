@@ -348,6 +348,10 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   7. **Máscara de CNPJ/CPF e Correção de Exibição na Fila de Aprovação:**
      - Adicionada a função `formatarCnpjCpf(input)` para aplicação dinâmica de máscara de CNPJ (`00.000.000/0001-00`) ou CPF (`000.000.000-00`) durante a digitação e no carregamento dos modais de edição.
      - Ajustada a consulta SQL `FinanceController::queue()` para incluir `s.cnpj_cpf AS supplier_cnpj_cpf`, garantindo que o CNPJ/CPF do fornecedor seja exibido na Fila de Aprovações do Administrador e pré-preenchido corretamente.
+  8. **Reformulação da Tela de Despesas Cadastradas do Administrador:**
+     - Separado o Lançamento de Despesas do Acompanhamento através de sub-abas limpas e de largura total (`📋 Acompanhamento de Despesas Cadastradas` e `➕ Lançar Nova Despesa Geral`), eliminando o estrangulamento da tela anterior.
+     - Criado o modal de detalhes completos `modalVerDespesaAdmin` acionado pelo botão **"👁️ Ver Detalhes"**, exibindo todas as informações financeiras da despesa (Data, Status, Valor, Fornecedor/CNPJ, Descrição, Forma de Pagamento, Conta Origem, Categoria SPCE, Registrado por, Observações) e botão direto para **"📄 Ver Comprovante / Anexos"**.
+     - Resolvido warning de `htmlspecialchars` em valores nulos.
 
 
 
