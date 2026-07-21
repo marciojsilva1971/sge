@@ -352,6 +352,19 @@ class RhController extends Controller {
                 'json' => json_encode($resultado, JSON_UNESCAPED_UNICODE),
                 'id'   => $colaborador['id']
             ]);
+
+            // Grava no histórico de auditoria/consultas para manter versões antigas
+            $stmtHist = $db->prepare(
+                "INSERT INTO `colaboradores_regularidade_historico` (colaborador_id, valido, status_cpf, status_tse, tse_regularidade_json, created_at)
+                 VALUES (:colaborador_id, :valido, :status_cpf, :status_tse, :json, NOW())"
+            );
+            $stmtHist->execute([
+                'colaborador_id' => $colaborador['id'],
+                'valido'         => ($resultado['valido'] ? 1 : 0),
+                'status_cpf'     => $resultado['status_cpf'],
+                'status_tse'     => $resultado['status_tse'],
+                'json'           => json_encode($resultado, JSON_UNESCAPED_UNICODE)
+            ]);
         } catch (Exception $e) {
             // Log do erro se necessário, mas não impede o fluxo da consulta em tempo real
         }
@@ -1004,6 +1017,19 @@ class RhController extends Controller {
                     'id'   => $colaborador['id']
                 ]);
 
+                // Grava no histórico de auditoria
+                $stmtHist = $db->prepare(
+                    "INSERT INTO `colaboradores_regularidade_historico` (colaborador_id, valido, status_cpf, status_tse, tse_regularidade_json, created_at)
+                     VALUES (:colaborador_id, :valido, :status_cpf, :status_tse, :json, NOW())"
+                );
+                $stmtHist->execute([
+                    'colaborador_id' => $colaborador['id'],
+                    'valido'         => ($resultado['valido'] ? 1 : 0),
+                    'status_cpf'     => $resultado['status_cpf'],
+                    'status_tse'     => $resultado['status_tse'],
+                    'json'           => json_encode($resultado, JSON_UNESCAPED_UNICODE)
+                ]);
+
                 // Atualiza o array local para exibição imediata
                 $colaborador['tse_regularidade_json'] = json_encode($resultado, JSON_UNESCAPED_UNICODE);
                 $colaborador['tse_regularidade_data'] = date('Y-m-d H:i:s');
@@ -1013,6 +1039,16 @@ class RhController extends Controller {
         }
 
         $regularidade = json_decode($colaborador['tse_regularidade_json'], true);
+
+        // Busca todo o histórico de consultas desse colaborador para exibir na certidão
+        try {
+            $db = \App\Core\Database::getInstance();
+            $stmtHistory = $db->prepare("SELECT * FROM `colaboradores_regularidade_historico` WHERE colaborador_id = :colaborador_id ORDER BY created_at DESC");
+            $stmtHistory->execute(['colaborador_id' => $colaborador['id']]);
+            $historicoConsultas = $stmtHistory->fetchAll();
+        } catch (Exception $e) {
+            $historicoConsultas = [];
+        }
 
         require dirname(__DIR__, 2) . '/app/Views/admin/rh/regularidade_pdf.php';
         exit;

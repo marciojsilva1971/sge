@@ -391,6 +391,34 @@
             <?= htmlspecialchars($regularidade['detalhes']) ?>
         </div>
 
+        <?php if (!empty($historicoConsultas) && count($historicoConsultas) > 0): ?>
+            <div class="section-title">Histórico de Verificações de Compliance (Trilha de Auditoria)</div>
+            <table class="info-table" style="margin-bottom: 20px;">
+                <thead>
+                    <tr>
+                        <th style="padding: 6px 12px; font-size: 10px;">Data/Hora da Consulta</th>
+                        <th style="padding: 6px 12px; font-size: 10px;">Situação do CPF</th>
+                        <th style="padding: 6px 12px; font-size: 10px;">Elegibilidade (TSE)</th>
+                        <th style="padding: 6px 12px; font-size: 10px;">Status Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($historicoConsultas as $h): ?>
+                        <tr>
+                            <td style="padding: 8px 12px; font-size: 11px;"><?= date('d/m/Y H:i:s', strtotime($h['created_at'])) ?></td>
+                            <td style="padding: 8px 12px; font-size: 11px;">
+                                <span class="badge-inline <?= $h['valido'] ? 'success' : 'danger' ?>"><?= htmlspecialchars($h['status_cpf']) ?></span>
+                            </td>
+                            <td style="padding: 8px 12px; font-size: 11px;"><?= htmlspecialchars($h['status_tse']) ?></td>
+                            <td style="padding: 8px 12px; font-size: 11px;">
+                                <span class="badge-inline <?= $h['valido'] ? 'success' : 'danger' ?>"><?= $h['valido'] ? 'Apto' : 'Inapto' ?></span>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+
         <p style="margin-top: 30px;">
             A presente certidão é emitida com base nos dados públicos disponibilizados pela Receita Federal do Brasil e pelas bases de candidaturas e contas eleitorais da Justiça Eleitoral, em conformidade com as diretrizes da LGPD (Lei Geral de Proteção de Dados) para fins exclusivos de auditoria administrativa de campanha.
         </p>

@@ -87,10 +87,11 @@ Este documento mantém o registro permanente de todas as implementações do **M
 
 ---
 
-## 📅 Sessão 10: Certidão de Regularidade Cadastral (Receita/TSE)
+## 📅 Sessão 10: Certidão de Regularidade Cadastral & Trilha de Auditoria (Receita/TSE)
 * **Ações:**
-  - **Modelagem do Banco de Dados:** Criado script SQL `update_colaboradores_regularidade_schema.sql` e adicionadas as colunas `tse_regularidade_json` (TEXT) e `tse_regularidade_data` (DATETIME) na tabela `colaboradores`.
-  - **Integração e Persistência no Fluxo:** Atualizado o método `consultarTse()` em `RhController.php` para persistir o resultado da consulta da regularidade do CPF no banco de dados toda vez que a conferência de cadastro for realizada no painel.
+  - **Modelagem do Banco de Dados:** Criado script SQL `update_colaboradores_regularidade_schema.sql` e adicionadas as colunas `tse_regularidade_json` (TEXT) e `tse_regularidade_data` (DATETIME) na tabela `colaboradores`. Adicionalmente, criada a tabela de histórico `colaboradores_regularidade_historico` (`update_colaboradores_regularidade_historico_schema.sql`) para historiar todas as consultas individuais.
+  - **Integração e Persistência no Fluxo:** Atualizado o método `consultarTse()` em `RhController.php` para atualizar o estado mais recente no registro do colaborador e fazer um `INSERT` de arquivamento no histórico sempre que a conferência de cadastro for disparada no painel.
   - **Mapeamento de Rotas:** Adicionado o endpoint `GET /admin/rh/regularidade-pdf` em `public/index.php`.
   - **Geração de Certidão PDF/Impressão:** Criada a visão `app/Views/admin/rh/regularidade_pdf.php` em estilo institucional e otimizado para folha A4 com `@media print`, exibindo o status do CPF, elegibilidade no TSE, justificativa legal (Res. TSE 23.607/2019 Art. 35) e carimbo de autenticidade (hash SHA-256).
+  - **Trilha de Auditoria Visível:** A certidão agora inclui uma seção secundária contendo a tabela de todo o histórico de consultas de compliance efetuadas para aquele colaborador, documentando as mudanças de status cadastral temporalmente para prestar contas à Justiça Eleitoral.
   - **Interface Administrativa (RH):** Incluído o botão azul **"📄 Certidão de Regularidade"** na listagem de colaboradores do painel de RH para download/emissão direta sob demanda.
