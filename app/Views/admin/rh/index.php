@@ -1,7 +1,7 @@
 <div class="rh-page-container">
     
     <div class="page-header">
-        <h2>Gestão de Colaboradores e Equipe de Campanha (RH)</h2>
+        <h2>Gestão de Colaboradores</h2>
         <div class="page-actions">
             <button type="button" onclick="openConviteAutoCadastroModal()" class="btn btn-teal" style="font-weight:bold; cursor:pointer;">
                 🔗 Link de Auto-Cadastro Público
@@ -53,11 +53,11 @@
                         <th style="width: 50px; text-align: center;">Foto</th>
                         <th>Nome Completo</th>
                         <th>CPF / Documento</th>
-                        <th>Idade</th>
                         <th>WhatsApp / E-mail</th>
                         <th>Contrato</th>
                         <th>Etapa Atual</th>
                         <th>Perfil SGE</th>
+                        <th>Função na Campanha</th>
                         <th>Ações Obrigatórias</th>
                     </tr>
                 </thead>
@@ -104,12 +104,6 @@
 
                                 </td>
 
-                                <td>
-                                    <span><?= $c['idade_calculada'] ?> anos</span>
-                                    <?php if ($c['idade_calculada'] < 18): ?>
-                                        <span class="badge badge-warning" style="font-size: 10px;" title="Menor de idade: Restrições legais de campanha aplicáveis">⚠ Menor</span>
-                                    <?php endif; ?>
-                                </td>
                                 <td>
                                     <div style="display:flex; align-items:center; gap:4px;">
                                         <span>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></span>
@@ -176,6 +170,15 @@
                                         <span class="badge badge-primary"><?= htmlspecialchars($c['role_nome']) ?></span>
                                     <?php else: ?>
                                         <span class="text-secondary" style="font-size:12px;">Pendente</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (!empty($c['funcao_campanha'])): ?>
+                                        <span class="badge" style="background:#1e293b; color:#cbd5e1; border:1px solid #475569; font-weight:bold; font-size:11px; padding:4px 8px; border-radius:4px; display:inline-block; max-width: 155px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($c['funcao_campanha']) ?>">
+                                            <?= htmlspecialchars($c['funcao_campanha']) ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="text-secondary" style="font-style:italic; font-size:12px;">Pendente</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
