@@ -342,6 +342,9 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   5. **Remoção do Formulário Genérico de Lançamento em "Meus Gastos":**
      - Removido o bloco/card "Lançar Novo Gasto" da tela `portal/despesas.php`.
      - A tela passa a servir exclusivamente para acompanhamento, filtragem e correção/reenvio de despesas. O lançamento inicial de gastos é forçado via seleção dos módulos específicos no menu do colaborador (Combustível, Viagem, Militância, etc.).
+  6. **Modal de Confirmação Pós-Envio com Opção de Novo Cadastro:**
+     - Implementado modal de sucesso em todas as telas do portal (`portal/militancia.php`, `portal/viagem.php`, `portal/despesas.php`).
+     - Ao enviar um comprovante ou salvar um gasto, é exibida a confirmação de êxito perguntando se o colaborador deseja **"➕ Cadastrar um Novo Gasto / Comprovante"** (que limpa e foca no formulário) ou **"📊 Ir para Meus Gastos (Acompanhar Status)"**.
 
 
 

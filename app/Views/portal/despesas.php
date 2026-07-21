@@ -3,6 +3,37 @@
     <p class="subtitle" style="font-size: 12px;">Lance e acompanhe suas despesas de campo pendentes de vinculação financeira/fiscal.</p>
 </div>
 
+<!-- MODAL DE CONFIRMAÇÃO PÓS-CORREÇÃO DE DESPESA -->
+<?php if (isset($_GET['envio_sucesso']) && $_GET['envio_sucesso'] == '1'): ?>
+<div id="modalSucessoEnvio" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+    <div style="background: #0f172a; border: 2px solid #22c55e; border-radius: 16px; max-width: 450px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        <div style="width: 60px; height: 60px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: #4ade80; font-size: 32px; font-weight: bold;">
+            ✓
+        </div>
+        <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Gasto / Correção Enviado com Sucesso!</h3>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5;">
+            Seu registro foi enviado com sucesso para a Fila de Aprovação. Deseja lançar um novo gasto ou acompanhar o status no histórico abaixo?
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a href="<?= $this->baseUrl('portal/militancia') ?>" style="background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border-radius: 10px; text-decoration: none; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                ➕ Cadastrar um Novo Gasto / Comprovante
+            </a>
+            <button type="button" onclick="fecharModalSucessoDespesas()" style="background: rgba(255, 255, 255, 0.08); color: #f8fafc; font-weight: 600; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); text-decoration: none; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                📊 Fechar e Acompanhar no Histórico
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    function fecharModalSucessoDespesas() {
+        const modal = document.getElementById('modalSucessoEnvio');
+        if (modal) modal.style.display = 'none';
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+    }
+</script>
+<?php endif; ?>
+
 <!-- Cards de Resumo Pessoal (4 Colunas Interativas) -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 24px;">
     <div class="panel-card card-stat-clicavel" onclick="clicarCardResumo('TODOS')" title="Clique para ver todos os gastos" style="padding: 12px; margin-bottom: 0; text-align: center; background: rgba(30, 41, 59, 0.4); cursor: pointer; transition: all 0.2s ease;">

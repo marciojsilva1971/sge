@@ -24,28 +24,38 @@ foreach ($travelReports as $report) {
             </span>
         </div>
 
-        <!-- MODAL DE CONFIRMAÇÃO PÓS-ENVIO DO COMPROVANTE -->
-        <?php if (isset($_GET['envio_sucesso']) && $_GET['envio_sucesso'] == '1'): ?>
-        <div id="modalSucessoEnvio" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
-            <div style="background: #0f172a; border: 2px solid #22c55e; border-radius: 16px; max-width: 440px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
-                <div style="width: 56px; height: 56px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; color: #4ade80; font-size: 28px; font-weight: bold;">
-                    ✓
-                </div>
-                <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Comprovante Enviado com Sucesso!</h3>
-                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.4;">
-                    O cupom fiscal foi registrado com sucesso. O que deseja fazer agora?
-                </p>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <a href="<?= $this->baseUrl('portal/viagem') ?>" style="background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 13px; display: block;">
-                        📸 Enviar Novo Comprovante / Arquivo
-                    </a>
-                    <button type="button" onclick="document.getElementById('modalSucessoEnvio').style.display='none';" style="background: rgba(255, 255, 255, 0.1); color: #f8fafc; font-weight: 600; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px; cursor: pointer; display: block; width: 100%;">
-                        ✅ Finalizar Envio
-                    </button>
-                </div>
-            </div>
+<!-- MODAL DE CONFIRMAÇÃO PÓS-ENVIO DO COMPROVANTE -->
+<?php if (isset($_GET['envio_sucesso']) && $_GET['envio_sucesso'] == '1'): ?>
+<div id="modalSucessoEnvio" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+    <div style="background: #0f172a; border: 2px solid #22c55e; border-radius: 16px; max-width: 450px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        <div style="width: 60px; height: 60px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: #4ade80; font-size: 32px; font-weight: bold;">
+            ✓
         </div>
-        <?php endif; ?>
+        <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Comprovante Cadastrado com Sucesso!</h3>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5;">
+            Seu cupom fiscal foi registrado e criptografado com sucesso no sistema. O que deseja fazer agora?
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button type="button" onclick="fecharEPrepararNovoViagem()" style="background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border-radius: 10px; border: none; text-decoration: none; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                ➕ Cadastrar um Novo Comprovante nesta Viagem
+            </button>
+            <a href="<?= $this->baseUrl('portal/despesas') ?>" style="background: rgba(255, 255, 255, 0.08); color: #f8fafc; font-weight: 600; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); text-decoration: none; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                📊 Ir para "Meus Gastos" (Acompanhar Status)
+            </a>
+        </div>
+    </div>
+</div>
+<script>
+    function fecharEPrepararNovoViagem() {
+        const modal = document.getElementById('modalSucessoEnvio');
+        if (modal) modal.style.display = 'none';
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+        const firstInput = document.querySelector('#foto_cnpj_ocr, input[name="supplier_cnpj"]');
+        if (firstInput) firstInput.focus();
+    }
+</script>
+<?php endif; ?>
 
         <!-- Formulário para Adicionar Cupom Fiscal -->
         <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Anexar Novo Cupom Fiscal / Recibo:</h4>

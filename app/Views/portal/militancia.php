@@ -3,6 +3,42 @@
     <p class="subtitle" style="font-size: 12px;">Registre e comprove suas atividades de panfletagem com foto criptografada e geolocalização por GPS.</p>
 </div>
 
+<!-- MODAL DE CONFIRMAÇÃO PÓS-ENVIO DE MILITÂNCIA -->
+<?php if (isset($_GET['envio_sucesso']) && $_GET['envio_sucesso'] == '1'): ?>
+<div id="modalSucessoEnvio" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+    <div style="background: #0f172a; border: 2px solid #22c55e; border-radius: 16px; max-width: 450px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        <div style="width: 60px; height: 60px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: #4ade80; font-size: 32px; font-weight: bold;">
+            ✓
+        </div>
+        <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Atividade Cadastrada com Sucesso!</h3>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5;">
+            Sua comprovação de militância foi gravada com foto criptografada e coordenadas GPS. O que deseja fazer agora?
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button type="button" onclick="fecharEPrepararNovoMilitancia()" style="background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border-radius: 10px; border: none; text-decoration: none; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                ➕ Cadastrar uma Nova Atividade de Militância
+            </button>
+            <a href="<?= $this->baseUrl('portal/despesas') ?>" style="background: rgba(255, 255, 255, 0.08); color: #f8fafc; font-weight: 600; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); text-decoration: none; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                📊 Ir para "Meus Gastos" (Acompanhar Status)
+            </a>
+        </div>
+    </div>
+</div>
+<script>
+    function fecharEPrepararNovoMilitancia() {
+        const modal = document.getElementById('modalSucessoEnvio');
+        if (modal) modal.style.display = 'none';
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({path: cleanUrl}, '', cleanUrl);
+        const firstInput = document.getElementById('description');
+        if (firstInput) {
+            firstInput.value = '';
+            firstInput.focus();
+        }
+    }
+</script>
+<?php endif; ?>
+
 <!-- Formulário de Registro de Atividade -->
 <div class="panel-card" style="padding: 16px; margin-bottom: 24px;">
     <div class="card-header" style="padding-bottom: 10px; margin-bottom: 12px;">

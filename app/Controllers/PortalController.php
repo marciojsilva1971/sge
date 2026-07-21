@@ -434,6 +434,8 @@ class PortalController extends Controller {
                 ? "Atividade de panfletagem ({$countArquivos} foto(s)) registrada com sucesso para validação manual (sem GPS)!" 
                 : "Atividade de panfletagem ({$countArquivos} foto(s)) registrada com sucesso com foto criptografada e GPS!";
             Session::setFlash('success', $msgSucesso);
+            $this->redirect('/portal/militancia?envio_sucesso=1');
+            return;
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao salvar atividade: ' . $e->getMessage());
         }
@@ -600,6 +602,8 @@ class PortalController extends Controller {
 
             $db->commit();
             Session::setFlash('success', 'Gasto corrigido e reenviado para a Fila de Aprovação com sucesso!');
+            $this->redirect('/portal/despesas?envio_sucesso=1');
+            return;
         } catch (Exception $e) {
             if ($db->inTransaction()) {
                 $db->rollBack();
