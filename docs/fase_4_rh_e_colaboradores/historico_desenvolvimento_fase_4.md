@@ -283,3 +283,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   2. **Escondimento/Transição de Blocos:** O bloco de captura do CNPJ (`#bloco-captura-cnpj`) é ocultado após a leitura ou ao clicar em "Pular OCR", revelando a Etapa 2 com os campos editáveis.
   3. **Modal de Confirmação Pós-Envio:** Modal interativo oferecendo opções entre enviar um novo comprovante ou finalizar a submissão.
 
+---
+
+## 📅 Sessão 55: Galeria de Miniaturas Visuais (Thumbnails) e Acumulador de Múltiplos Uploads (DataTransfer)
+* **Ações Implementadas:**
+  1. **Galeria de Miniaturas Visuais (`#galeria-miniaturas-container`):** Exibição em tempo real de cards com pré-visualização de imagem (ou ícone PDF), nome do arquivo, tamanho em KB e botão vermelho de exclusão individual (`✖`).
+  2. **Acumulador Inteligente de Arquivos (`DataTransfer API`):** Resolvido o problema nativo dos navegadores onde abrir a caixa de diálogo "Escolher arquivos" uma segunda vez substituía a seleção anterior. Agora, novos arquivos são acumulados dinamicamente na lista sem perder os anteriores.
+  3. **Resiliência Backend em Controllers:** Refatorados `PortalController.php` e `FinanceController.php` para agrupar e salvar dinamicamente todos os comprovantes enviados (sob qualquer nome de campo), mantendo a criptografia AES-256 e auditoria.
+
+

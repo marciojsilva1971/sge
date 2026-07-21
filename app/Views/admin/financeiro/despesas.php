@@ -108,8 +108,13 @@
                     <label for="comprovante" style="font-size: 12px; font-weight: 700; color: #4ade80;">
                         📁 Fotos / Comprovante(s) do Cupom Fiscal (Aceita 1 ou mais arquivos)
                     </label>
-                    <input type="file" id="comprovante" name="comprovante[]" accept="image/*, application/pdf" multiple required style="padding: 6px; font-size: 12px; width: 100%; margin-top: 6px;">
-                    <div id="comprovante-count-badge" style="font-size: 11px; color: #4ade80; margin-top: 6px; display: none;"></div>
+                    <p style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; margin-bottom: 6px;">
+                        Clique em "Escolher arquivos" quantas vezes precisar para anexar todas as fotos ou páginas do cupom fiscal.
+                    </p>
+                    <input type="file" id="comprovante" name="comprovante[]" accept="image/*, application/pdf" multiple required style="padding: 6px; font-size: 12px; width: 100%; margin-top: 4px;">
+                    <div id="comprovante-count-badge" style="font-size: 11px; font-weight: 600; color: #4ade80; margin-top: 6px; display: none;"></div>
+                    <!-- GALERIA DE MINIATURAS DOS ARQUIVOS ANEXADOS -->
+                    <div id="galeria-miniaturas-container" style="display: none; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, 0.15);"></div>
                 </div>
 
                 <div class="form-group">
@@ -401,14 +406,97 @@
         });
     }
 
-    if (inputComprovanteAdmin && badgeComprovanteAdmin) {
-        inputComprovanteAdmin.addEventListener('change', function(e) {
-            const count = e.target.files ? e.target.files.length : 0;
-            if (count > 0) {
+    // Acumulador de arquivos via DataTransfer API (evita substituição ao reabrir o seletor)
+    const dataTransferComprovantesAdmin = new DataTransfer();
+
+    function renderizarGaleriaMiniaturasAdmin() {
+        const galeriaContainer = document.getElementById('galeria-miniaturas-container');
+        if (!inputComprovanteAdmin || !galeriaContainer) return;
+
+        // Atualiza o elemento input file com os arquivos acumulados
+        inputComprovanteAdmin.files = dataTransferComprovantesAdmin.files;
+
+        const count = dataTransferComprovantesAdmin.files.length;
+        if (count > 0) {
+            if (badgeComprovanteAdmin) {
                 badgeComprovanteAdmin.style.display = 'block';
-                badgeComprovanteAdmin.textContent = `✔ ${count} arquivo(s)/comprovante(s) selecionado(s).`;
-            } else {
-                badgeComprovanteAdmin.style.display = 'none';
+                badgeComprovanteAdmin.textContent = `✔ ${count} foto(s)/comprovante(s) anexado(s) e pronto(s) para envio.`;
+            }
+            galeriaContainer.style.display = 'grid';
+            galeriaContainer.innerHTML = '';
+
+            Array.from(dataTransferComprovantesAdmin.files).forEach((file, index) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'position: relative; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 4px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);';
+
+                // Botão de remoção (X)
+                const btnRemove = document.createElement('button');
+                btnRemove.type = 'button';
+                btnRemove.innerHTML = '✖';
+                btnRemove.title = 'Remover esta foto';
+                btnRemove.style.cssText = 'position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border: none; width: 20px; height: 20px; border-radius: 50%; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.5);';
+                btnRemove.onclick = function(e) {
+                    e.stopPropagation();
+                    removerArquivoDaGaleriaAdmin(index);
+                };
+
+                // Preview Thumbnail
+                const thumbDiv = document.createElement('div');
+                thumbDiv.style.cssText = 'width: 100%; height: 70px; border-radius: 6px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; overflow: hidden; background-size: cover; background-position: center;';
+
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        thumbDiv.style.backgroundImage = "url('" + evt.target.result + "')";
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    thumbDiv.innerHTML = '<span style="font-size: 24px;">📄</span>';
+                }
+
+                // Nome e Tamanho
+                const infoDiv = document.createElement('div');
+                infoDiv.style.cssText = 'width: 100%; text-align: center; font-size: 10px; color: #cbd5e1; word-break: break-all; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-top: 2px;';
+                infoDiv.textContent = file.name;
+
+                const sizeDiv = document.createElement('div');
+                sizeDiv.style.cssText = 'font-size: 9px; color: #64748b; font-weight: 600;';
+                sizeDiv.textContent = (file.size / 1024).toFixed(1) + ' KB';
+
+                card.appendChild(btnRemove);
+                card.appendChild(thumbDiv);
+                card.appendChild(infoDiv);
+                card.appendChild(sizeDiv);
+
+                galeriaContainer.appendChild(card);
+            });
+        } else {
+            if (badgeComprovanteAdmin) badgeComprovanteAdmin.style.display = 'none';
+            galeriaContainer.style.display = 'none';
+            galeriaContainer.innerHTML = '';
+        }
+    }
+
+    function removerArquivoDaGaleriaAdmin(index) {
+        const dt = new DataTransfer();
+        Array.from(dataTransferComprovantesAdmin.files).forEach((file, i) => {
+            if (i !== index) {
+                dt.items.add(file);
+            }
+        });
+        dataTransferComprovantesAdmin.items.clear();
+        Array.from(dt.files).forEach(f => dataTransferComprovantesAdmin.items.add(f));
+
+        renderizarGaleriaMiniaturasAdmin();
+    }
+
+    if (inputComprovanteAdmin) {
+        inputComprovanteAdmin.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files.length > 0) {
+                Array.from(e.target.files).forEach(file => {
+                    dataTransferComprovantesAdmin.items.add(file);
+                });
+                renderizarGaleriaMiniaturasAdmin();
             }
         });
     }
