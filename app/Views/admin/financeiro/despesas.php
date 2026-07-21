@@ -32,6 +32,13 @@
                 </p>
                 <input type="file" id="comprovante" name="comprovante" accept="application/pdf, image/*" required style="padding: 6px; width: 100%;">
                 
+                <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
+                    🔍 Digitalizar e Ler Comprovante (OCR)
+                </button>
+
+                <!-- Status do OCR -->
+                <div id="ocr_status_badge" style="margin-top: 10px; display: none;"></div>
+
                 <!-- Preview da miniatura do arquivo -->
                 <div id="comprovante-preview-container" style="display: none; margin-top: 10px; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
                     <div id="comprovante-preview-thumb" style="width: 50px; height: 50px; border-radius: 6px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 20px; background-color: rgba(255,255,255,0.05);"></div>
@@ -206,100 +213,167 @@
 <!-- Tesseract.js OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
-    document.getElementById('comprovante').addEventListener('change', function(e) {
-        const file = e.target.files[0];
+    const compInputAdmin = document.getElementById('comprovante');
+    const btnScanOcrAdmin = document.getElementById('btn-scan-ocr');
+    const ocrStatusBadgeAdmin = document.getElementById('ocr_status_badge');
+
+    function executarOCRAdmin() {
+        const file = compInputAdmin ? compInputAdmin.files[0] : null;
         const container = document.getElementById('comprovante-preview-container');
-        const thumb = document.getElementById('comprovante-preview-thumb');
-        const name = document.getElementById('comprovante-preview-name');
-        const size = document.getElementById('comprovante-preview-size');
         const supplierSelect = document.getElementById('supplier_id');
 
         if (!file) {
-            container.style.display = 'none';
+            if (ocrStatusBadgeAdmin) {
+                ocrStatusBadgeAdmin.style.display = 'block';
+                ocrStatusBadgeAdmin.innerHTML = `
+                    <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">
+                        ⚠️ Por favor, selecione um arquivo ou tire uma foto primeiro!
+                    </div>
+                `;
+            }
             return;
         }
 
-        container.style.display = 'flex';
-        name.textContent = file.name;
-        size.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        if (ocrStatusBadgeAdmin) {
+            ocrStatusBadgeAdmin.style.display = 'block';
+            ocrStatusBadgeAdmin.innerHTML = `
+                <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">⏳</span>
+                    <span>Iniciando motor de leitura OCR... Por favor, aguarde.</span>
+                </div>
+            `;
+        }
 
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                thumb.style.backgroundImage = "url('" + evt.target.result + "')";
-                thumb.textContent = "";
-            };
-            reader.readAsDataURL(file);
+        if (file.type === 'application/pdf') {
+            if (ocrStatusBadgeAdmin) {
+                ocrStatusBadgeAdmin.innerHTML = `
+                    <div style="padding: 10px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 8px; color: #7dd3fc; font-weight: 600; font-size: 12px;">
+                        📄 Arquivo PDF anexado. Por favor, selecione o fornecedor nos campos abaixo.
+                    </div>
+                `;
+            }
+            return;
+        }
 
-            // Leitura OCR para auto-seleção de fornecedor
-            if (window.Tesseract) {
-                const infoBadge = document.createElement('div');
-                infoBadge.id = 'ocr-expense-status';
-                infoBadge.style.fontSize = '11px';
-                infoBadge.style.marginTop = '8px';
-                infoBadge.style.color = 'var(--accent-teal)';
-                infoBadge.innerHTML = '⏳ Lendo e analisando o comprovante fiscal... Por favor, aguarde um instante.';
-                
-                const oldBadge = document.getElementById('ocr-expense-status');
-                if (oldBadge) oldBadge.remove();
-                container.after(infoBadge);
-
-                Tesseract.recognize(file, 'por', {
-                    logger: m => {
-                        if (m.status === 'recognizing text' && infoBadge) {
-                            const pct = Math.round((m.progress || 0) * 100);
-                            infoBadge.innerHTML = `<span style="color: var(--accent-teal); font-weight: 600;">⏳ Analisando imagem (${pct}%)... Por favor, aguarde.</span>`;
-                        }
-                    }
-                }).then(({ data: { text } }) => {
-                    const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
-                    if (match) {
-                        const cleanCnpj = match[0].replace(/\D/g, "");
-                        fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cleanCnpj)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.success) {
-                                    infoBadge.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ CNPJ Lido no Comprovante: ${data.cnpj} - ${data.razao_social}</span>`;
-                                    
-                                    // Tenta encontrar o fornecedor na lista suspensa
-                                    let found = false;
-                                    for (let option of supplierSelect.options) {
-                                        if (option.text.replace(/\D/g, "").includes(cleanCnpj)) {
-                                            supplierSelect.value = option.value;
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!found) {
-                                        infoBadge.innerHTML += ` <br><span style="color: #eab308;">💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#eab308; text-decoration:underline;">Clique para cadastrar</a> ou selecione manualmente abaixo.</span>`;
-                                    }
-                                } else {
-                                    infoBadge.innerHTML = `<span style="color: #eab308; font-weight: 500;">⚠️ CNPJ Lido (${match[0]}), porém não encontrado na Receita Federal. Por favor, selecione ou cadastre o fornecedor manualmente.</span>`;
-                                }
-                            });
-                    } else {
-                        infoBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível identificar o CNPJ nesta foto automaticamente. Por favor, selecione o fornecedor manualmente no campo abaixo.</span>';
-                    }
-                }).catch(err => {
-                    console.error("Erro OCR:", err);
-                    infoBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível ler o arquivo via OCR. Por favor, selecione o fornecedor manualmente.</span>';
-                });
+        const rodarOCR = () => {
+            if (!window.Tesseract) {
+                if (ocrStatusBadgeAdmin) {
+                    ocrStatusBadgeAdmin.innerHTML = `<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Por favor, selecione o fornecedor manualmente.</div>`;
+                }
+                return;
             }
 
-        } else if (file.type === 'application/pdf') {
-            thumb.style.backgroundImage = 'none';
-            thumb.textContent = '📄';
-            const infoBadge = document.createElement('div');
-            infoBadge.id = 'ocr-expense-status';
-            infoBadge.style.fontSize = '11px';
-            infoBadge.style.marginTop = '8px';
-            infoBadge.innerHTML = '<span style="color: #38bdf8; font-weight: 500;">ℹ️ Arquivo PDF anexo. Por favor, selecione o fornecedor e informe o valor nos campos abaixo.</span>';
-            const oldBadge = document.getElementById('ocr-expense-status');
-            if (oldBadge) oldBadge.remove();
-            container.after(infoBadge);
+            Tesseract.recognize(file, 'por', {
+                logger: m => {
+                    if (m.status === 'recognizing text' && ocrStatusBadgeAdmin) {
+                        const pct = Math.round((m.progress || 0) * 100);
+                        ocrStatusBadgeAdmin.innerHTML = `
+                            <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 16px;">🔍</span>
+                                <span>Lendo comprovante via OCR (${pct}%)... Processando.</span>
+                            </div>
+                        `;
+                    }
+                }
+            }).then(({ data: { text } }) => {
+                const match = text.match(/(\d{2}[\.\s]?\d{3}[\.\s]?\d{3}[\/\s]?\d{4}[\-\s]?\d{2})/);
+                if (match) {
+                    const cleanCnpj = match[0].replace(/\D/g, "");
+                    fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cleanCnpj)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success && ocrStatusBadgeAdmin) {
+                                ocrStatusBadgeAdmin.innerHTML = `
+                                    <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px;">
+                                        ✅ CNPJ Lido: ${data.cnpj} - ${data.razao_social}
+                                    </div>
+                                `;
+                                let found = false;
+                                for (let option of supplierSelect.options) {
+                                    if (option.text.replace(/\D/g, "").includes(cleanCnpj)) {
+                                        supplierSelect.value = option.value;
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                                if (!found) {
+                                    ocrStatusBadgeAdmin.innerHTML += `
+                                        <div style="font-size: 11px; color: #fde047; margin-top: 4px;">
+                                            💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#fde047; text-decoration:underline;">Clique para cadastrar</a> ou selecione manualmente.
+                                        </div>
+                                    `;
+                                }
+                            } else if (ocrStatusBadgeAdmin) {
+                                ocrStatusBadgeAdmin.innerHTML = `<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ Lido (${match[0]}), selecione o fornecedor manualmente.</div>`;
+                            }
+                        });
+                } else if (ocrStatusBadgeAdmin) {
+                    ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ não identificado automaticamente. Selecione o fornecedor manualmente.</div>';
+                }
+            }).catch(err => {
+                console.error("Erro OCR:", err);
+                if (ocrStatusBadgeAdmin) {
+                    ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Erro ao ler imagem. Selecione o fornecedor manualmente.</div>';
+                }
+            });
+        };
+
+        if (typeof Tesseract === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            script.onload = rodarOCR;
+            script.onerror = () => {
+                if (ocrStatusBadgeAdmin) {
+                    ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Selecione o fornecedor manualmente.</div>';
+                }
+            };
+            document.head.appendChild(script);
         } else {
-            thumb.style.backgroundImage = 'none';
-            thumb.textContent = '📎';
+            rodarOCR();
         }
-    });
+    }
+
+    if (compInputAdmin) {
+        compInputAdmin.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const container = document.getElementById('comprovante-preview-container');
+            const thumb = document.getElementById('comprovante-preview-thumb');
+            const name = document.getElementById('comprovante-preview-name');
+            const size = document.getElementById('comprovante-preview-size');
+
+            if (!file) {
+                if (container) container.style.display = 'none';
+                if (ocrStatusBadgeAdmin) ocrStatusBadgeAdmin.style.display = 'none';
+                return;
+            }
+
+            if (container) {
+                container.style.display = 'flex';
+                if (name) name.textContent = file.name;
+                if (size) size.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            }
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    if (thumb) {
+                        thumb.style.backgroundImage = "url('" + evt.target.result + "')";
+                        thumb.textContent = "";
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else if (thumb) {
+                thumb.style.backgroundImage = 'none';
+                thumb.textContent = file.type === 'application/pdf' ? '📄' : '📎';
+            }
+
+            executarOCRAdmin();
+        });
+    }
+
+    if (btnScanOcrAdmin) {
+        btnScanOcrAdmin.addEventListener('click', function() {
+            executarOCRAdmin();
+        });
+    }
 </script>

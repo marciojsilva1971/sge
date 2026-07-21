@@ -243,6 +243,12 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 48: Notificação Síncrona Instantânea (0ms) no Upload de Arquivos
+* **Ações Implementadas:** Garantido aparecimento imediato do badge `#ocr_status_badge` assim que o arquivo é selecionado.
+
+---
+
+## 📅 Sessão 49: Botão Dedicado "🔍 Digitalizar e Ler Comprovante (OCR)" e Script Tesseract Garantido
 * **Ações Implementadas:**
-  1. **Aparecimento Imediato da Notificação:** Garantido que a div `#ocr_status_badge` apareça no topo da caixa do 1º passo no milissegundo exato em que o arquivo é selecionado ou fotografado pela câmera do celular.
-  2. **Cards de Status Visuais:** Exibição síncrona de um card destacado (`⏳ Arquivo selecionado! Lendo comprovante via OCR...`) no primeiro instante da seleção.
+  1. **Botão Dedicado de Leitura Manual:** Adicionado o botão proeminente **`🔍 Digitalizar e Ler Comprovante (OCR)`** dentro do bloco do **1º PASSO**, dando controle total e 100% de clareza ao usuário de que a leitura foi iniciada.
+  2. **Inclusão da Tag de Script Tesseract:** Adicionada a inclusão explícita da biblioteca Tesseract.js em `app/Views/portal/viagem.php` (que faltava na view de viagens).
+  3. **Injetor Dinâmico Resiliente:** Se o script CDN demorar a carregar em redes móveis de celular, a função injeta a biblioteca dinamicamente e executa o OCR sem falhar!
