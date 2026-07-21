@@ -1,13 +1,6 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Forçar redirecionamento HTTP para HTTPS em produção
-    RewriteCond %{HTTPS} !=on
-    RewriteCond %{HTTP:X-Forwarded-Proto} !https
-    RewriteCond %{HTTP_HOST} !^localhost [NC]
-    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1 [NC]
-    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
     # Redirecionar requisições da raiz para a pasta public se acessado diretamente
     RewriteCond %{REQUEST_URI} !^/public/
     RewriteRule ^(.*)$ public/$1 [L]
