@@ -1269,5 +1269,362 @@ class FinanceController extends Controller {
         readfile($fullPath);
         exit;
     }
+
+    /**
+     * Tela do Módulo de Prestação de Contas & Exportação SPCE (TSE)
+     */
+    public function spceReport(): void {
+        $user = $this->requireAuth();
+        $db = Database::getInstance();
+
+        // 1. Doações com alerta de 72h (Pendentes de envio ao TSE)
+        $revenues72h = $db->query(
+            "SELECT r.*, b.name as bank_name, s.description as spce_category 
+             FROM `receitas` r 
+             LEFT JOIN `bank_accounts` b ON r.bank_account_id = b.id 
+             LEFT JOIN `spce_categories` s ON r.spce_category_id = s.id 
+             ORDER BY r.date_received DESC, r.id DESC"
+        )->fetchAll();
+
+        // 2. Despesas com fornecedores para auditoria
+        $expenses = $db->query(
+            "SELECT d.*, s.corporate_name, s.cnpj_cpf, c.description as spce_category,
+                    (SELECT COUNT(*) FROM `comprovantes_cripto` cc WHERE cc.expense_id = d.id) as total_anexos
+             FROM `despesas` d 
+             JOIN `suppliers` s ON d.supplier_id = s.id 
+             LEFT JOIN `spce_categories` c ON d.spce_category_id = c.id 
+             ORDER BY d.date_incurred DESC"
+        )->fetchAll();
+
+        // 3. Contratos por tempo determinado
+        $contracts = $db->query(
+            "SELECT c.*, s.corporate_name, s.cnpj_cpf 
+             FROM `supplier_contracts` c 
+             JOIN `suppliers` s ON c.supplier_id = s.id 
+             ORDER BY c.start_date DESC"
+        )->fetchAll();
+
+        // 4. Auditoria de Inconsistências (Checklist de Conformidade Eleitoral)
+        $auditIssues = [];
+
+        // Inconsistência A: Despesas pagas em espécie (DINHEIRO) acima de R$ 300
+        foreach ($expenses as $exp) {
+            if (strtoupper($exp['payment_method'] ?? '') === 'ESPECIE' && $exp['value'] > 300) {
+                $auditIssues[] = [
+                    'severity' => 'DANGER',
+                    'message' => "Despesa ID #{$exp['id']} ({$exp['description']}) no valor de R$ " . number_format($exp['value'], 2, ',', '.') . " foi paga em espécie acima do limite de R$ 300,00 (Res. TSE 23.607/19)."
+                ];
+            }
+            if ($exp['status'] === 'APROVADO' && intval($exp['total_anexos']) === 0) {
+                $auditIssues[] = [
+                    'severity' => 'WARNING',
+                    'message' => "Despesa aprovada ID #{$exp['id']} ({$exp['description']}) não possui Nota Fiscal/Comprovante anexado."
+                ];
+            }
+        }
+
+        // Inconsistência B: Doações com CPF em formato suspeito/inválido
+        foreach ($revenues72h as $rev) {
+            $cleanCpf = preg_replace('/[^0-9]/', '', $rev['donor_cpf']);
+            if (strlen($cleanCpf) !== 11) {
+                $auditIssues[] = [
+                    'severity' => 'DANGER',
+                    'message' => "Doação ID #{$rev['id']} de '{$rev['donor_name']}' possui CPF inválido/incompleto ({$rev['donor_cpf']})."
+                ];
+            }
+        }
+
+        // Totais consolidados
+        $totalReceitas = array_sum(array_column($revenues72h, 'value'));
+        $totalDespesas = array_sum(array_column($expenses, 'value'));
+
+        $this->render('admin/financeiro/spce', [
+            'title'        => 'Prestação de Contas & Exportação SPCE | SGE',
+            'user'         => $user,
+            'revenues'     => $revenues72h,
+            'expenses'     => $expenses,
+            'contracts'    => $contracts,
+            'auditIssues'  => $auditIssues,
+            'totalReceitas'=> $totalReceitas,
+            'totalDespesas'=> $totalDespesas,
+            'csrf_token'   => Session::csrfToken()
+        ]);
+    }
+
+    /**
+     * Marca uma doação como enviada/reportada ao TSE no relatório de 72h (POST)
+     */
+    public function mark72hReported(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $id = intval($_POST['revenue_id'] ?? 0);
+
+        if ($id > 0) {
+            $stmt = $db->prepare("UPDATE `receitas` SET tse_status = 'ENVIADO_72H', tse_reported_at = NOW() WHERE id = :id");
+            $stmt->execute(['id' => $id]);
+            Session::setFlash('success', 'Status de envio do relatório de 72h atualizado com sucesso!');
+        }
+
+        $this->redirect('/admin/financeiro/spce');
+    }
+
+    /**
+     * Exporta os relatórios financeiros em formato CSV compatível com o SPCE / Excel (GET)
+     */
+    public function exportSpceCsv(): void {
+        $this->requireAuth();
+        $db = Database::getInstance();
+        $type = $_GET['type'] ?? 'receitas';
+
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="SPCE_TSE_' . strtoupper($type) . '_' . date('Ymd_His') . '.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputs($output, "\xEF\xBB\xBF");
+
+        if ($type === 'receitas') {
+            fputcsv($output, ['ID', 'Data Recebimento', 'Doador', 'CPF Doador', 'Valor (R$)', 'Conta Origem', 'Categoria SPCE', 'Status Envio 72h', 'Data Envio TSE'], ';');
+            $rows = $db->query(
+                "SELECT r.id, r.date_received, r.donor_name, r.donor_cpf, r.value, b.name as bank_name, s.description as spce_category, r.tse_status, r.tse_reported_at 
+                 FROM `receitas` r 
+                 LEFT JOIN `bank_accounts` b ON r.bank_account_id = b.id 
+                 LEFT JOIN `spce_categories` s ON r.spce_category_id = s.id 
+                 ORDER BY r.date_received ASC"
+            )->fetchAll();
+
+            foreach ($rows as $row) {
+                fputcsv($output, [
+                    $row['id'],
+                    date('d/m/Y', strtotime($row['date_received'])),
+                    $row['donor_name'],
+                    $row['donor_cpf'],
+                    number_format($row['value'], 2, ',', '.'),
+                    $row['bank_name'] ?? 'N/A',
+                    $row['spce_category'] ?? 'Não classificada',
+                    $row['tse_status'],
+                    $row['tse_reported_at'] ? date('d/m/Y H:i', strtotime($row['tse_reported_at'])) : 'Pendente'
+                ], ';');
+            }
+        } elseif ($type === 'despesas') {
+            fputcsv($output, ['ID', 'Data Ocorrência', 'Fornecedor / Favorecido', 'CNPJ / CPF', 'Descrição', 'Valor (R$)', 'Forma Pagamento', 'Categoria SPCE', 'Status', 'Observações'], ';');
+            $rows = $db->query(
+                "SELECT d.id, d.date_incurred, s.corporate_name, s.cnpj_cpf, d.description, d.value, d.payment_method, c.description as spce_category, d.status, d.notes 
+                 FROM `despesas` d 
+                 JOIN `suppliers` s ON d.supplier_id = s.id 
+                 LEFT JOIN `spce_categories` c ON d.spce_category_id = c.id 
+                 ORDER BY d.date_incurred ASC"
+            )->fetchAll();
+
+            foreach ($rows as $row) {
+                fputcsv($output, [
+                    $row['id'],
+                    date('d/m/Y', strtotime($row['date_incurred'])),
+                    $row['corporate_name'],
+                    $row['cnpj_cpf'],
+                    $row['description'],
+                    number_format($row['value'], 2, ',', '.'),
+                    $row['payment_method'] ?? 'N/A',
+                    $row['spce_category'] ?? 'Não classificada',
+                    $row['status'],
+                    $row['notes'] ?? ''
+                ], ';');
+            }
+        } elseif ($type === 'contratos') {
+            fputcsv($output, ['ID', 'Nº Contrato', 'Empresa / Fornecedor', 'CNPJ/CPF', 'Título / Objeto', 'Valor Total (R$)', 'Valor Mensal (R$)', 'Início Vigência', 'Término Vigência', 'Status', 'PDF Anexo'], ';');
+            $rows = $db->query(
+                "SELECT c.*, s.corporate_name, s.cnpj_cpf 
+                 FROM `supplier_contracts` c 
+                 JOIN `suppliers` s ON c.supplier_id = s.id 
+                 ORDER BY c.start_date ASC"
+            )->fetchAll();
+
+            foreach ($rows as $row) {
+                fputcsv($output, [
+                    $row['id'],
+                    $row['contract_number'] ?? 'S/N',
+                    $row['corporate_name'],
+                    $row['cnpj_cpf'],
+                    $row['title'],
+                    number_format($row['total_amount'], 2, ',', '.'),
+                    $row['monthly_amount'] ? number_format($row['monthly_amount'], 2, ',', '.') : '0,00',
+                    date('d/m/Y', strtotime($row['start_date'])),
+                    date('d/m/Y', strtotime($row['end_date'])),
+                    $row['status'],
+                    !empty($row['file_path']) ? 'SIM' : 'NÃO'
+                ], ';');
+            }
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    /**
+     * Dossiê Consolidado de Prestação de Contas para Impressão / PDF do Contador (GET)
+     */
+    public function exportSpcePdf(): void {
+        $user = $this->requireAuth();
+        $db = Database::getInstance();
+
+        $bankAccounts = $db->query("SELECT * FROM `bank_accounts` WHERE status = 'ATIVA'")->fetchAll();
+        $revenues = $db->query(
+            "SELECT r.*, b.name as bank_name, s.description as spce_category 
+             FROM `receitas` r 
+             LEFT JOIN `bank_accounts` b ON r.bank_account_id = b.id 
+             LEFT JOIN `spce_categories` s ON r.spce_category_id = s.id 
+             ORDER BY r.date_received ASC"
+        )->fetchAll();
+
+        $expenses = $db->query(
+            "SELECT d.*, s.corporate_name, s.cnpj_cpf, c.description as spce_category 
+             FROM `despesas` d 
+             JOIN `suppliers` s ON d.supplier_id = s.id 
+             LEFT JOIN `spce_categories` c ON d.spce_category_id = c.id 
+             ORDER BY d.date_incurred ASC"
+        )->fetchAll();
+
+        $contracts = $db->query(
+            "SELECT c.*, s.corporate_name, s.cnpj_cpf 
+             FROM `supplier_contracts` c 
+             JOIN `suppliers` s ON c.supplier_id = s.id 
+             ORDER BY c.start_date ASC"
+        )->fetchAll();
+
+        echo '<!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <title>Dossiê de Prestação de Contas - Eleições 2026 | SGE</title>
+            <style>
+                body { font-family: Arial, sans-serif; font-size: 12px; margin: 30px; color: #1e293b; }
+                h1, h2, h3 { margin-bottom: 5px; }
+                .header { text-align: center; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 20px; }
+                .section { margin-bottom: 25px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+                th { background-color: #f1f5f9; font-weight: bold; }
+                .text-right { text-align: right; }
+                .badge { padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
+                .badge-success { background: #dcfce7; color: #166534; }
+                .badge-danger { background: #fee2e2; color: #991b1b; }
+                @media print {
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+                <button onclick="window.print()" style="padding: 10px 20px; background: #2563eb; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">🖨️ Imprimir Dossiê / Salvar PDF</button>
+            </div>
+            <div class="header">
+                <h1>SISTEMA DE GESTÃO ELEITORAL - SGE</h1>
+                <h2>DOSSIÊ CONSOLIDADO DE PRESTAÇÃO DE CONTAS</h2>
+                <p>Gerado em: ' . date('d/m/Y H:i:s') . ' | Emitido por: ' . htmlspecialchars($user['name']) . '</p>
+            </div>
+
+            <div class="section">
+                <h3>1. Saldos e Contas Bancárias da Campanha</h3>
+                <table>
+                    <thead>
+                        <tr><th>Conta</th><th>Banco</th><th>Agência</th><th>Conta Corrente</th><th>Tipo de Fundo</th><th>Saldo Atual</th></tr>
+                    </thead>
+                    <tbody>';
+                    $totalSaldos = 0;
+                    foreach ($bankAccounts as $acc) {
+                        $totalSaldos += floatval($acc['balance']);
+                        echo '<tr>
+                            <td>' . htmlspecialchars($acc['name']) . '</td>
+                            <td>' . htmlspecialchars($acc['bank_name']) . '</td>
+                            <td>' . htmlspecialchars($acc['agency']) . '</td>
+                            <td>' . htmlspecialchars($acc['account_number']) . '</td>
+                            <td>' . htmlspecialchars($acc['fund_type']) . '</td>
+                            <td class="text-right">R$ ' . number_format($acc['balance'], 2, ',', '.') . '</td>
+                        </tr>';
+                    }
+                    echo '<tr><th colspan="5" class="text-right">Total em Caixa:</th><th class="text-right">R$ ' . number_format($totalSaldos, 2, ',', '.') . '</th></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>2. Receitas e Doações de Campanha</h3>
+                <table>
+                    <thead>
+                        <tr><th>Data</th><th>Doador</th><th>CPF</th><th>Categoria SPCE</th><th>Conta</th><th class="text-right">Valor</th></tr>
+                    </thead>
+                    <tbody>';
+                    $sumRec = 0;
+                    foreach ($revenues as $r) {
+                        $sumRec += floatval($r['value']);
+                        echo '<tr>
+                            <td>' . date('d/m/Y', strtotime($r['date_received'])) . '</td>
+                            <td>' . htmlspecialchars($r['donor_name']) . '</td>
+                            <td>' . htmlspecialchars($r['donor_cpf']) . '</td>
+                            <td>' . htmlspecialchars($r['spce_category'] ?? 'Outros') . '</td>
+                            <td>' . htmlspecialchars($r['bank_name'] ?? 'N/A') . '</td>
+                            <td class="text-right">R$ ' . number_format($r['value'], 2, ',', '.') . '</td>
+                        </tr>';
+                    }
+                    echo '<tr><th colspan="5" class="text-right">Total de Arrecadação:</th><th class="text-right">R$ ' . number_format($sumRec, 2, ',', '.') . '</th></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>3. Despesas e Gastos Eleitorais Cadastrados</h3>
+                <table>
+                    <thead>
+                        <tr><th>Data</th><th>Fornecedor</th><th>CNPJ/CPF</th><th>Descrição</th><th>Pagamento</th><th>Status</th><th class="text-right">Valor</th></tr>
+                    </thead>
+                    <tbody>';
+                    $sumDesp = 0;
+                    foreach ($expenses as $e) {
+                        $sumDesp += floatval($e['value']);
+                        echo '<tr>
+                            <td>' . date('d/m/Y', strtotime($e['date_incurred'])) . '</td>
+                            <td>' . htmlspecialchars($e['corporate_name']) . '</td>
+                            <td>' . htmlspecialchars($e['cnpj_cpf']) . '</td>
+                            <td>' . htmlspecialchars($e['description']) . '</td>
+                            <td>' . htmlspecialchars($e['payment_method'] ?? 'N/A') . '</td>
+                            <td>' . htmlspecialchars($e['status']) . '</td>
+                            <td class="text-right">R$ ' . number_format($e['value'], 2, ',', '.') . '</td>
+                        </tr>';
+                    }
+                    echo '<tr><th colspan="6" class="text-right">Total de Gastos:</th><th class="text-right">R$ ' . number_format($sumDesp, 2, ',', '.') . '</th></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>4. Contratos de Fornecedores por Tempo Determinado</h3>
+                <table>
+                    <thead>
+                        <tr><th>Nº Contrato</th><th>Fornecedor</th><th>Objeto / Título</th><th>Vigência</th><th>Status</th><th class="text-right">Valor Total</th></tr>
+                    </thead>
+                    <tbody>';
+                    $sumCont = 0;
+                    foreach ($contracts as $c) {
+                        $sumCont += floatval($c['total_amount']);
+                        echo '<tr>
+                            <td>' . htmlspecialchars($c['contract_number'] ?? 'S/N') . '</td>
+                            <td>' . htmlspecialchars($c['corporate_name']) . '</td>
+                            <td>' . htmlspecialchars($c['title']) . '</td>
+                            <td>' . date('d/m/Y', strtotime($c['start_date'])) . ' a ' . date('d/m/Y', strtotime($c['end_date'])) . '</td>
+                            <td>' . htmlspecialchars($c['status']) . '</td>
+                            <td class="text-right">R$ ' . number_format($c['total_amount'], 2, ',', '.') . '</td>
+                        </tr>';
+                    }
+                    echo '<tr><th colspan="5" class="text-right">Total de Instrumentos Contratuais:</th><th class="text-right">R$ ' . number_format($sumCont, 2, ',', '.') . '</th></tr>
+                    </tbody>
+                </table>
+            </div>
+        </body>
+        </html>';
+        exit;
+    }
 }
 

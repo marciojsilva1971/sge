@@ -370,3 +370,22 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
       - Implementado o modal de **Edição de Contrato e Substituição de PDF** (`/admin/financeiro/contratos/editar`) para alteração de vigência, status, valores ou atualização opcional do arquivo de contrato assinado em PDF.
       - Implementado o endpoint seguro `/admin/financeiro/contratos/download` para download e visualização direta do contrato PDF no navegador.
       - Registrado o evento nas tabelas de auditoria (`logs_auditoria`).
+
+---
+
+## 📅 Sessão 62: Módulo de Prestação de Contas, Exportação SPCE e Alerta de 72 Horas (TSE)
+* **Ações Implementadas:**
+  1. **Atualização do Esquema de Banco de Dados (update_spce_reports_schema.sql e schema.sql):**
+     - Adicionadas as colunas 	se_status (PENDENTE, ENVIADO_72H) e 	se_reported_at (DATETIME) na tabela 
+eceitas para auditoria do prazo legal impositivo de 72 horas para envio de doações à Justiça Eleitoral.
+  2. **Aba de Navegação & View Administrativa (/admin/financeiro/spce):**
+     - Adicionada a aba 📋 Exportação & SPCE (TSE) em _nav_tabs.php.
+     - Criada a view dedicada pp/Views/admin/financeiro/spce.php com visualização de KPIs de arrecadação, gastos acumulados, contador de doações com prazo de 72h e parecer de conformidade jurídica.
+  3. **Motor de Pré-Auditoria e Validação de Inconsistências Eleitorais:**
+     - Algoritmo de verificação que aponta inconsistências de conformidade fiscal e eleitoral (ex: despesas pagas em espécie acima de R$ 300,00 - vedadas pela Resolução TSE 23.607/19, despesas sem comprovantes/anexos fiscais e doações com CPFs em formato inválido).
+  4. **Exportação de Planilhas Formatadas para o SPCE / Excel (exportSpceCsv):**
+     - Criados geradores de arquivos CSV codificados em UTF-8 com BOM para exportação direta de **Receitas/Doações**, **Despesas/Fornecedores** e **Contratos/Militância**.
+  5. **Dossiê Consolidado de Prestação de Contas para Impressão / PDF (exportSpcePdf):**
+     - Criado o gerador do Dossiê Consolidado da Campanha formatado para o contador eleitoral, contendo visão sintética e analítica das contas bancárias, receitas, despesas e instrumentos contratuais.
+  6. **Controle de Confirmação do Envio de 72 Horas ao TSE (mark72hReported):**
+     - Endpoint e botões de ação para alterar o status da doação após transmissão do relatório financeiro ao sistema do TSE.

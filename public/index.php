@@ -125,6 +125,12 @@ $router->post('/admin/financeiro/contratos', 'FinanceController@addContrato');
 $router->post('/admin/financeiro/contratos/editar', 'FinanceController@editContrato');
 $router->get('/admin/financeiro/contratos/download', 'FinanceController@downloadContrato');
 
+// Módulo Financeiro - Prestação de Contas & Exportação SPCE (TSE)
+$router->get('/admin/financeiro/spce', 'FinanceController@spceReport');
+$router->get('/admin/financeiro/spce/export-csv', 'FinanceController@exportSpceCsv');
+$router->get('/admin/financeiro/spce/dossier', 'FinanceController@exportSpcePdf');
+$router->post('/admin/financeiro/spce/mark-72h', 'FinanceController@mark72hReported');
+
 // Módulo de RH e Gestão de Colaboradores
 $router->get('/admin/rh', 'RhController@index');
 $router->get('/admin/rh/novo', 'RhController@create');

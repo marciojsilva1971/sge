@@ -205,6 +205,20 @@ CREATE TABLE IF NOT EXISTS `supplier_contracts` (
   FOREIGN KEY (`supplier_id`) REFERENCES `suppliers`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`created_by`) REFERENCES `usuarios`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
+-- 16. Tabela de Receitas e Doações de Campanha
+CREATE TABLE IF NOT EXISTS `receitas` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `description` VARCHAR(255) NOT NULL,
+  `value` DECIMAL(15,2) NOT NULL,
+  `date_received` DATE NOT NULL,
+  `bank_account_id` INT NOT NULL,
+  `spce_category_id` INT NOT NULL,
+  `donor_name` VARCHAR(255) NOT NULL,
+  `donor_cpf` VARCHAR(20) NOT NULL,
+  `tse_status` ENUM('PENDENTE', 'ENVIADO_72H') NOT NULL DEFAULT 'PENDENTE',
+  `tse_reported_at` DATETIME NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`bank_account_id`) REFERENCES `bank_accounts`(`id`),
+  FOREIGN KEY (`spce_category_id`) REFERENCES `spce_categories`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
