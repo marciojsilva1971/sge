@@ -238,6 +238,11 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
 ---
 
 ## 📅 Sessão 47: Indicador de Progresso OCR (0-100%) e Alerta Claro de Preenchimento Manual
+* **Ações Implementadas:** Adicionada barra de progresso de leitura e instrução visual para preenchimento manual em imagens desfocadas/PDFs.
+
+---
+
+## 📅 Sessão 48: Notificação Síncrona Instantânea (0ms) no Upload de Arquivos
 * **Ações Implementadas:**
-  1. **Feedback de Progresso em Tempo Real:** Adicionado indicador de escaneamento com porcentagem contínua (`⏳ Analisando imagem (0-100%)... Por favor, aguarde.`) logo que o arquivo é selecionado.
-  2. **Alertas de Preenchimento Manual:** Caso a foto apresente desfocagem, não contenha CNPJ ou seja um arquivo PDF, o sistema exibe imediatamente um alerta destacado em amarelo/azul informando ao usuário para digitar o CNPJ/Razão Social nos campos abaixo.
+  1. **Aparecimento Imediato da Notificação:** Garantido que a div `#ocr_status_badge` apareça no topo da caixa do 1º passo no milissegundo exato em que o arquivo é selecionado ou fotografado pela câmera do celular.
+  2. **Cards de Status Visuais:** Exibição síncrona de um card destacado (`⏳ Arquivo selecionado! Lendo comprovante via OCR...`) no primeiro instante da seleção.

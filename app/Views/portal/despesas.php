@@ -219,11 +219,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const file = e.target.files[0];
         if (!file) {
             previewContainer.style.display = 'none';
+            if (ocrStatusBadge) ocrStatusBadge.style.display = 'none';
             return;
         }
 
         previewContainer.style.display = 'block';
         fileNamePreview.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+        // NOTIFICAÇÃO IMEDIATA SÍNCRONA
+        if (ocrStatusBadge) {
+            ocrStatusBadge.style.display = 'block';
+            ocrStatusBadge.innerHTML = `
+                <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">⏳</span>
+                    <span>Arquivo selecionado! Lendo comprovante via OCR... Por favor, aguarde.</span>
+                </div>
+            `;
+        }
 
         if (file.type.match('image.*')) {
             const reader = new FileReader();
@@ -236,13 +248,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Escaneamento via Tesseract.js OCR
             if (window.Tesseract) {
-                if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: var(--accent-teal); font-weight: 600;">⏳ Lendo e analisando o comprovante fiscal... Por favor, aguarde um instante.</span>';
-
                 Tesseract.recognize(file, 'por', {
                     logger: m => {
                         if (m.status === 'recognizing text' && ocrStatusBadge) {
                             const pct = Math.round((m.progress || 0) * 100);
-                            ocrStatusBadge.innerHTML = `<span style="color: var(--accent-teal); font-weight: 600;">⏳ Analisando imagem (${pct}%)... Por favor, aguarde.</span>`;
+                            ocrStatusBadge.innerHTML = `
+                                <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 16px;">🔍</span>
+                                    <span>Analisando comprovante (${pct}%)... Processando.</span>
+                                </div>
+                            `;
                         }
                     }
                 }).then(({ data: { text } }) => {
@@ -252,16 +267,59 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (detectedCnpj.length === 14) {
                             inputCnpjCpf.value = detectedCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
                             consultarCnpj(detectedCnpj);
-                            if (ocrStatusBadge) ocrStatusBadge.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✅ CNPJ detectado automaticamente pela foto: ${detectedCnpj}</span>`;
+                            if (ocrStatusBadge) {
+                                ocrStatusBadge.innerHTML = `
+                                    <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 16px;">✅</span>
+                                        <span>CNPJ (${detectedCnpj}) identificado com sucesso! Buscando dados na Receita Federal...</span>
+                                    </div>
+                                `;
+                            }
                         } else {
-                            if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível identificar o CNPJ nesta foto automaticamente. Por favor, preencha manualmente o CNPJ e o Nome do Fornecedor nos campos abaixo.</span>';
+                            if (ocrStatusBadge) {
+                                ocrStatusBadge.innerHTML = `
+                                    <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 16px;">⚠️</span>
+                                            <span>Não foi possível identificar o CNPJ nesta foto automaticamente.</span>
+                                        </div>
+                                        <div style="font-size: 11px; font-weight: normal; color: #fef08a; margin-left: 24px;">
+                                            Por favor, digite o CNPJ e o Nome do Fornecedor nos campos abaixo.
+                                        </div>
+                                    </div>
+                                `;
+                            }
                         }
                     } else {
-                        if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Nenhum CNPJ lido na foto. Por favor, preencha manualmente o CNPJ e o Nome do Fornecedor nos campos abaixo.</span>';
+                        if (ocrStatusBadge) {
+                            ocrStatusBadge.innerHTML = `
+                                <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 16px;">⚠️</span>
+                                        <span>Nenhum CNPJ detectado na foto.</span>
+                                    </div>
+                                    <div style="font-size: 11px; font-weight: normal; color: #fef08a; margin-left: 24px;">
+                                        Por favor, digite o CNPJ e o Nome do Fornecedor nos campos abaixo.
+                                    </div>
+                                </div>
+                            `;
+                        }
                     }
                 }).catch(err => {
                     console.error("Erro OCR:", err);
-                    if (ocrStatusBadge) ocrStatusBadge.innerHTML = '<span style="color: #eab308; font-weight: 500;">⚠️ Não foi possível ler o arquivo via OCR. Por favor, preencha os dados do fornecedor manualmente.</span>';
+                    if (ocrStatusBadge) {
+                        ocrStatusBadge.innerHTML = `
+                            <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 16px;">⚠️</span>
+                                    <span>Não foi possível ler a imagem com OCR.</span>
+                                </div>
+                                <div style="font-size: 11px; font-weight: normal; color: #fef08a; margin-left: 24px;">
+                                    Por favor, preencha manualmente o CNPJ e o Nome do Fornecedor nos campos abaixo.
+                                </div>
+                            </div>
+                        `;
+                    }
                 });
             }
 
@@ -269,7 +327,17 @@ document.addEventListener('DOMContentLoaded', () => {
             previewImage.style.display = 'none';
             pdfPreviewText.style.display = 'block';
             if (ocrStatusBadge) {
-                ocrStatusBadge.innerHTML = '<span style="color: #38bdf8; font-weight: 500;">ℹ️ Arquivo PDF anexo. Por favor, preencha manualmente o CNPJ e a Razão Social do Fornecedor nos campos abaixo.</span>';
+                ocrStatusBadge.innerHTML = `
+                    <div style="padding: 10px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 8px; color: #7dd3fc; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">📄</span>
+                            <span>Arquivo PDF anexado com sucesso!</span>
+                        </div>
+                        <div style="font-size: 11px; font-weight: normal; color: #bae6fd; margin-left: 24px;">
+                            Por favor, informe o CNPJ e a Razão Social do Fornecedor nos campos abaixo.
+                        </div>
+                    </div>
+                `;
             }
         } else {
             previewImage.style.display = 'none';
