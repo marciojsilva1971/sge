@@ -270,6 +270,64 @@ class AdminController extends Controller {
     }
 
     /**
+     * Processa a criação direta de um usuário do sistema (ativo).
+     */
+    public function create(): void {
+        $this->requirePermission('invite_user');
+        $this->validatePostCsrf();
+
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $celular = trim($_POST['celular'] ?? '');
+        $roleId = (int)($_POST['role_id'] ?? 0);
+        $password = $_POST['password'] ?? '';
+
+        if ($name === '' || $email === '' || $celular === '' || $roleId === 0 || $password === '') {
+            Session::setFlash('error', 'Preencha todos os campos para cadastrar o usuário.');
+            $this->redirect('/admin/users');
+        }
+
+        // Valida força da senha
+        if (strlen($password) < 8) {
+            Session::setFlash('error', 'A senha deve possuir no mínimo 8 caracteres.');
+            $this->redirect('/admin/users');
+        }
+
+        if (!preg_match('/[A-Z]/', $password) || 
+            !preg_match('/[a-z]/', $password) || 
+            !preg_match('/[0-9]/', $password) || 
+            !preg_match('/[^a-zA-Z0-9]/', $password)) {
+            Session::setFlash('error', 'A senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (ex: @, #, $, _, !).');
+            $this->redirect('/admin/users');
+        }
+
+        $userModel = new User();
+        
+        // Verifica se o e-mail já existe
+        if ($userModel->findByEmail($email) !== null) {
+            Session::setFlash('error', 'Este e-mail já está cadastrado no sistema.');
+            $this->redirect('/admin/users');
+        }
+
+        try {
+            $userModel->createDirect([
+                'name'     => $name,
+                'email'    => $email,
+                'celular'  => $celular,
+                'password' => $password,
+                'role_id'  => $roleId
+            ]);
+
+            Session::setFlash('success', "Usuário <strong>" . htmlspecialchars($name) . "</strong> cadastrado com sucesso!");
+        } catch (\Exception $e) {
+            error_log("Erro no cadastro direto de usuário: " . $e->getMessage());
+            Session::setFlash('error', 'Erro ao cadastrar usuário.');
+        }
+
+        $this->redirect('/admin/users');
+    }
+
+    /**
      * Configuração de Perfis e Permissões (RBAC).
      */
     public function rbac(): void {

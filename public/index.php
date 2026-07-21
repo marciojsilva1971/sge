@@ -95,6 +95,7 @@ $router->post('/ativar', 'ActivationController@activate');
 $router->get('/admin/dashboard', 'AdminController@dashboard');
 $router->get('/admin/users', 'AdminController@users');
 $router->post('/admin/users/invite', 'AdminController@invite');
+$router->post('/admin/users/create', 'AdminController@create');
 $router->post('/admin/users/delete', 'AdminController@delete');
 $router->post('/admin/users/activate-direct', 'AdminController@activateDirect');
 $router->post('/admin/users/reset-password', 'AdminController@resetUserPassword');

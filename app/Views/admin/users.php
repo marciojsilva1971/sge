@@ -3,7 +3,7 @@
     <div class="page-header">
         <h2>Gerenciamento de Usuários e Acessos</h2>
         <button id="btnOpenInviteModal" class="btn btn-primary">
-            + Convidar Novo Usuário
+            + Cadastrar Novo Usuário
         </button>
     </div>
 
@@ -141,14 +141,14 @@
     </div>
 </div>
 
-<!-- Modal para Criar Convite (Usuário Novo) -->
+<!-- Modal para Cadastrar Usuário Novo -->
 <div id="inviteModal" class="modal-overlay hidden">
     <div class="modal-card">
         <div class="modal-header">
-            <h3>Convidar Novo Integrante</h3>
+            <h3>Cadastrar Novo Usuário</h3>
             <button id="btnCloseInviteModal" class="btn-close-modal">&times;</button>
         </div>
-        <form action="<?= $this->baseUrl('admin/users/invite') ?>" method="POST" class="modal-form">
+        <form action="<?= $this->baseUrl('admin/users/create') ?>" method="POST" class="modal-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
             <div class="form-group">
@@ -164,7 +164,6 @@
             <div class="form-group">
                 <label for="celular">Celular (WhatsApp)</label>
                 <input type="text" id="celular" name="celular" required placeholder="DDD + Número (Ex: 41999999999)">
-                <small class="form-help">Utilizado para enviar o convite via WhatsApp.</small>
             </div>
 
             <div class="form-group">
@@ -177,9 +176,15 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="password">Senha de Acesso</label>
+                <input type="password" id="password" name="password" required placeholder="Digite a senha" autocomplete="new-password">
+                <small class="form-help">Mínimo 8 caracteres, contendo maiúscula, minúscula, número e caractere especial.</small>
+            </div>
+
             <div class="modal-footer">
                 <button type="button" id="btnCancelInvite" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Gerar Convite</button>
+                <button type="submit" class="btn btn-primary">Cadastrar Usuário</button>
             </div>
         </form>
     </div>

@@ -158,6 +158,46 @@ class User extends Model {
     }
 
     /**
+     * Cria um novo usuário diretamente com status ATIVO.
+     */
+    public function createDirect(array $userData): int {
+        $data = [
+            'name'          => $userData['name'],
+            'email'         => $userData['email'],
+            'celular'       => $userData['celular'],
+            'password_hash' => password_hash($userData['password'], PASSWORD_DEFAULT),
+            'role_id'       => $userData['role_id'],
+            'status'        => 'ATIVO'
+        ];
+
+        $this->db->beginTransaction();
+        try {
+            $userId = $this->create($data);
+
+            // Grava log de auditoria
+            AuditLogger::log(
+                'CREATE_USER_DIRECT',
+                $this->table,
+                $userId,
+                null,
+                [
+                    'name'    => $data['name'],
+                    'email'   => $data['email'],
+                    'celular' => $data['celular'],
+                    'role_id' => $data['role_id'],
+                    'status'  => 'ATIVO'
+                ]
+            );
+
+            $this->db->commit();
+            return $userId;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Ativa um usuário pendente definindo sua senha e foto.
      */
     public function activateAccount(int $userId, string $password, ?string $photoPath): bool {
