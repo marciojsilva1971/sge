@@ -76,3 +76,11 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - **Compressão Client-Side (Canvas):** Implementado redimensionamento e compressão automática de imagem via JavaScript (HTML5 Canvas) antes do envio do formulário tanto na tela do colaborador quanto na tela do administrador. Isso garante que a foto do rosto seja enviada com cerca de 30KB, contornando limitações de `upload_max_filesize` e `post_max_size` (limite do `php.ini` de 2MB no XAMPP).
   - **Correção dos Warnings do Admin Profile:** Corrigido o erro de variável indefinida `$userFull` adicionando fallback seguro para a variável de sessão `$user` em caso de dados nulos do banco e corrigindo o envio da variável no método `profile()` do `AdminController.php`.
   - **Processamento de Campos no AdminController:** Ajustada a ação `updateProfile()` do `AdminController.php` para aceitar `foto_rosto` (correspondendo ao input do formulário) e limpar caracteres especiais do número do celular, propagando as alterações na tabela `colaboradores` se houver vínculo do usuário como colaborador de campo.
+
+---
+
+## 📅 Sessão 9: Formatação e Máscaras de Entrada nos Formulários de Perfil
+* **Ações:**
+  - **Formatação de Exibição no Servidor (PHP)**: Adicionada lógica de formatação no load inicial nas views do portal do colaborador e do administrador. CPF, RG e Celular agora são exibidos formatados no padrão brasileiro (`000.000.000-00`, `00.000.000-0` ou `0.000.000-0`, e `(00) 00000-0000`) mesmo que salvos como texto cru no banco de dados.
+  - **Máscara Dinâmica Client-Side (JavaScript)**: Implementado event listener no input `#celular` em ambas as views. Conforme o usuário digita ou apaga caracteres, o valor é formatado automaticamente em tempo real para a máscara telefônica nacional `(XX) XXXXX-XXXX`, impedindo inserção de letras ou caracteres inadequados.
+  - **Compatibilidade do Backend**: O backend continua a receber e limpar os caracteres especiais via regex antes da persistência no banco de dados, garantindo integridade referencial.
