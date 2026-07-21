@@ -228,6 +228,8 @@ class PortalController extends Controller {
             }
 
             Session::setFlash('success', "Recibo registrado com sucesso! ({$totalArquivos} foto(s) anexada(s))");
+            $this->redirect('/portal/viagem?envio_sucesso=1');
+            return;
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao adicionar recibo: ' . $e->getMessage());
         }
@@ -568,6 +570,8 @@ class PortalController extends Controller {
 
             $db->commit();
             Session::setFlash('success', 'Gasto cadastrado com comprovante enviado com sucesso!');
+            $this->redirect('/portal/despesas?envio_sucesso=1');
+            return;
         } catch (Exception $e) {
             if ($db->inTransaction()) {
                 $db->rollBack();

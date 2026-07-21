@@ -400,6 +400,8 @@ class FinanceController extends Controller {
 
             $db->commit();
             Session::setFlash('success', 'Despesa lançada com comprovante criptografado com sucesso!');
+            $this->redirect('/admin/financeiro/despesas?envio_sucesso=1');
+            return;
         } catch (Exception $e) {
             if ($db->inTransaction()) {
                 $db->rollBack();

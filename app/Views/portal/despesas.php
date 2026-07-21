@@ -25,62 +25,88 @@
         <h3 style="font-size: 14px; font-weight: 600;">Lançar Novo Gasto</h3>
     </div>
 
+    <!-- MODAL DE CONFIRMAÇÃO PÓS-ENVIO DO COMPROVANTE -->
+    <?php if (isset($_GET['envio_sucesso']) && $_GET['envio_sucesso'] == '1'): ?>
+    <div id="modalSucessoEnvio" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+        <div style="background: #0f172a; border: 2px solid #22c55e; border-radius: 16px; max-width: 440px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="width: 56px; height: 56px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; color: #4ade80; font-size: 28px; font-weight: bold;">
+                ✓
+            </div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Despesa Enviada com Sucesso!</h3>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.4;">
+                O cupom fiscal foi registrado e criptografado no sistema. O que deseja fazer agora?
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="<?= $this->baseUrl('portal/despesas') ?>" style="background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 13px; display: block;">
+                    📸 Enviar Novo Comprovante / Arquivo
+                </a>
+                <button type="button" onclick="document.getElementById('modalSucessoEnvio').style.display='none';" style="background: rgba(255, 255, 255, 0.1); color: #f8fafc; font-weight: 600; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px; cursor: pointer; display: block; width: 100%;">
+                    ✅ Finalizar Envio
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <form action="<?= $this->baseUrl('portal/despesas') ?>" method="POST" enctype="multipart/form-data" id="expenseForm">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
-        <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (CNPJ NÍTIDO) -->
-        <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
-            <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
-                📸 1º PASSO: Enviar Foto do Cabeçalho com CNPJ NÍTIDO (para Leitura OCR)
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+        <!-- 1º PASSO: CAPTURA DO CNPJ (SERÁ ESCONDIDO APÓS LEITURA DO CNPJ) -->
+        <div id="bloco-captura-cnpj" class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
+            <label for="foto_cnpj_ocr" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
+                📸 1º PASSO: Fotografe ou envie um arquivo em detalhe do CNPJ da empresa impresso no cupom.
             </label>
             <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                Tire uma foto bem nítida e focada no <strong>cabeçalho/topo da nota ou cupom fiscal</strong> onde aparece o CNPJ. O sistema lerá o CNPJ via OCR!
+                Caso seja reconhecido, preencheremos o CNPJ e o nome da empresa automaticamente, mas você poderá alterar se necessário.
             </p>
-            <input type="file" id="comprovante" name="comprovante" accept="image/*,application/pdf" required style="padding: 6px; font-size: 12px; width: 100%;">
+            <input type="file" id="foto_cnpj_ocr" accept="image/*, application/pdf" style="padding: 6px; font-size: 12px; width: 100%;">
             
             <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
-                🔍 Digitalizar e Ler Comprovante (OCR)
+                🔍 Digitalizar e Ler CNPJ (OCR)
             </button>
 
             <!-- Status do OCR -->
             <div id="ocr_status_badge" style="margin-top: 10px; display: none;"></div>
 
-            <!-- Preview do Comprovante selecionado -->
-            <div id="preview-container" style="display: none; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background-color: #0c1524; text-align: center; padding: 10px; margin-top: 10px; position: relative;">
-                <img id="preview-image" src="" alt="Comprovante" style="max-width: 100%; max-height: 180px; object-fit: contain; display: none; margin: 0 auto; border-radius: 8px;">
-                <div id="pdf-preview-text" style="display: none; font-size: 12px; color: var(--text-secondary); padding: 12px 0;">
-                    <span style="font-size: 28px; display: block; margin-bottom: 4px;">📄</span>
-                    Arquivo PDF Selecionado
-                </div>
-                <div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;" id="file-name-preview"></div>
+            <div style="margin-top: 10px; text-align: center;">
+                <button type="button" id="btn-pular-ocr" style="background: transparent; border: none; color: var(--text-secondary); font-size: 11px; text-decoration: underline; cursor: pointer;">
+                    Ou clique aqui para digitar o CNPJ manualmente
+                </button>
             </div>
         </div>
 
-        <!-- CONTAINER REVELADO APÓS UPLOAD / DIGITALIZAÇÃO -->
-        <div id="dados-despesa-container" style="display: none !important; margin-top: 16px; transition: all 0.3s ease;">
-            <!-- DADOS DO FORNECEDOR (CNPJ + NOME) -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <!-- CONTAINER REVELADO APÓS LEITURA DO CNPJ -->
+        <div id="dados-despesa-container" style="display: none; margin-top: 16px; transition: all 0.3s ease;">
+            
+            <!-- MENSAGEM SOLICITADA EM DESTAQUE NO TOPO DA ETAPA 2 -->
+            <div style="background: rgba(56, 189, 248, 0.12); border-left: 4px solid #38bdf8; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px;">
+                <p style="font-size: 13px; font-weight: 700; color: #7dd3fc; margin: 0; line-height: 1.4;">
+                    📸 Envie ou fotografe o cupom fiscal de forma que seja possivel a visualização de todas as despesas e o total. Você pode enviar mais de um arquivo ou foto
+                </p>
+            </div>
+
+            <!-- DADOS DO FORNECEDOR (CNPJ + RAZÃO SOCIAL - PREENCHIDOS E EDITÁVEIS) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                 <div class="form-group">
-                    <label for="supplier_cnpj_cpf">CPF ou CNPJ do Fornecedor</label>
-                    <input type="text" id="supplier_cnpj_cpf" name="supplier_cnpj_cpf" placeholder="00.000.000/0001-00 ou 000.000.000-00" required>
+                    <label for="supplier_cnpj_cpf">CPF ou CNPJ do Fornecedor (editável)</label>
+                    <input type="text" id="supplier_cnpj_cpf" name="supplier_cnpj_cpf" placeholder="00.000.000/0001-00 ou 000.000.000-00" required style="font-weight: 600;">
                     <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
                 </div>
                 <div class="form-group">
-                    <label for="supplier_name">Razão Social / Nome Fantasia</label>
-                    <input type="text" id="supplier_name" name="supplier_name" placeholder="Nome do Fornecedor" required>
+                    <label for="supplier_name">Razão Social / Nome Fantasia (editável)</label>
+                    <input type="text" id="supplier_name" name="supplier_name" placeholder="Nome do Fornecedor" required style="font-weight: 500;">
                 </div>
             </div>
 
-            <!-- FOTOS ADICIONAIS DAS DESPESAS DISCRIMINADAS (SEM OCR) -->
-            <div class="form-group" style="background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(255, 255, 255, 0.15); padding: 12px; border-radius: 10px; margin-top: 14px; margin-bottom: 14px;">
-                <label for="fotos_adicionais" style="font-size: 12px; font-weight: 700; color: #7dd3fc; display: flex; align-items: center; gap: 6px;">
-                    📸 Fotos Adicionais do Comprovante / Itens Discriminados (Opcional - Sem OCR)
+            <!-- UPLOAD DAS FOTOS/ARQUIVOS DO COMPROVANTE FISCAL (COM DESPESAS E TOTAL) -->
+            <div class="form-group" style="background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 10px; margin-bottom: 14px;">
+                <label for="comprovante" style="font-size: 12px; font-weight: 700; color: #4ade80;">
+                    📁 Fotos / Comprovante(s) do Cupom Fiscal (Aceita 1 ou mais arquivos)
                 </label>
-                <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                    Se o comprovante tiver mais fotos, verso ou discriminação detalhada dos itens e valores, adicione as fotos extras abaixo. <strong>Estas fotos não passam por OCR.</strong>
-                </p>
-                <input type="file" id="fotos_adicionais" name="fotos_adicionais[]" accept="image/*, application/pdf" multiple style="padding: 6px; font-size: 12px; width: 100%;">
-                <div id="fotos-adicionais-preview" style="font-size: 11px; color: #4ade80; margin-top: 4px; display: none;"></div>
+                <input type="file" id="comprovante" name="comprovante[]" accept="image/*, application/pdf" multiple required style="padding: 6px; font-size: 12px; width: 100%; margin-top: 6px;">
+                <div id="comprovante-count-badge" style="font-size: 11px; color: #4ade80; margin-top: 6px; display: none;"></div>
             </div>
 
             <!-- DEMAIS DADOS DA DESPESA -->
@@ -95,7 +121,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="value">Valor (R$)</label>
+                    <label for="value">Valor Total (R$)</label>
                     <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-weight: 600; color: var(--warning-color);">
                 </div>
             </div>
@@ -161,7 +187,6 @@
     <?php endif; ?>
 </div>
 
-<!-- Tesseract.js OCR -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -170,11 +195,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const cnpjInfoDiv = document.getElementById('cnpj_supplier_info');
     const ocrStatusBadge = document.getElementById('ocr_status_badge');
     const inputValue = document.getElementById('value');
+    const fotoCnpjInput = document.getElementById('foto_cnpj_ocr');
+    const btnScanOcr = document.getElementById('btn-scan-ocr');
+    const btnPularOcr = document.getElementById('btn-pular-ocr');
+    const dadosContainer = document.getElementById('dados-despesa-container');
+    const blocoCapturaCnpj = document.getElementById('bloco-captura-cnpj');
     const inputComprovante = document.getElementById('comprovante');
-    const previewContainer = document.getElementById('preview-container');
-    const previewImage = document.getElementById('preview-image');
-    const pdfPreviewText = document.getElementById('pdf-preview-text');
-    const fileNamePreview = document.getElementById('file-name-preview');
+    const badgeComprovante = document.getElementById('comprovante-count-badge');
+
+    function revelarEtapa2() {
+        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+        if (dadosContainer) {
+            dadosContainer.style.display = 'block';
+            dadosContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    if (btnPularOcr) {
+        btnPularOcr.addEventListener('click', function() {
+            revelarEtapa2();
+        });
+    }
+
+    if (inputComprovante && badgeComprovante) {
+        inputComprovante.addEventListener('change', function(e) {
+            const count = e.target.files ? e.target.files.length : 0;
+            if (count > 0) {
+                badgeComprovante.style.display = 'block';
+                badgeComprovante.textContent = `✔ ${count} arquivo(s)/comprovante(s) selecionado(s).`;
+            } else {
+                badgeComprovante.style.display = 'none';
+            }
+        });
+    }
 
     function consultarCnpj(cleanCnpj) {
         if (cleanCnpj.length !== 14) return;
@@ -186,34 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     if (inputSupplierName) inputSupplierName.value = data.razao_social;
                     if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ ${data.razao_social}</span> <span style="color: #94a3b8;">(${data.municipio}/${data.uf})</span>`;
-                    if (ocrStatusBadge) {
-                        ocrStatusBadge.innerHTML = `
-                            <div style="padding: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 10px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 18px;">✅</span>
-                                    <span>Empresa Identificada: <strong>${data.razao_social}</strong> (${data.cnpj})</span>
-                                </div>
-                                <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
-                                    📸 <strong>Atenção:</strong> Certifique-se de anexar uma ou mais fotos nítidas do comprovante fiscal onde estejam perfeitamente discriminadas todas as despesas e seus respectivos valores.
-                                </div>
-                            </div>
-                        `;
-                    }
                 } else {
                     if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = `<span style="color: #ef4444;">⚠️ ${data.message || 'CNPJ não encontrado'}</span>`;
-                    if (ocrStatusBadge) {
-                        ocrStatusBadge.innerHTML = `
-                            <div style="padding: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 10px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 18px;">⚠️</span>
-                                    <span>CNPJ Lido (${cleanCnpj}), mas empresa não localizada na Receita Federal.</span>
-                                </div>
-                                <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
-                                    📸 <strong>Atenção:</strong> Preencha o nome da empresa abaixo e certifique-se de anexar uma ou mais fotos do comprovante discriminando todas as despesas e valores.
-                                </div>
-                            </div>
-                        `;
-                    }
                 }
             })
             .catch(err => {
@@ -223,56 +250,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Máscara dinâmica CPF / CNPJ e consulta automática
-    inputCnpjCpf.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, '');
-        if (value.length <= 11) {
-            value = value.replace(/(\d{3})(\d)/, '$1.$2');
-            value = value.replace(/(\d{3})(\d)/, '$1.$2');
-            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-        } else {
-            value = value.slice(0, 14);
-            value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-            value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-            value = value.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-        }
-        e.target.value = value;
-
-        const clean = value.replace(/\D/g, '');
-        if (clean.length === 14) {
-            consultarCnpj(clean);
-        } else {
-            if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '';
-        }
-    });
-
-    const inputFotosAdicionais = document.getElementById('fotos_adicionais');
-    const previewFotosAdicionais = document.getElementById('fotos-adicionais-preview');
-
-    if (inputFotosAdicionais && previewFotosAdicionais) {
-        inputFotosAdicionais.addEventListener('change', function(e) {
-            const count = e.target.files ? e.target.files.length : 0;
-            if (count > 0) {
-                previewFotosAdicionais.style.display = 'block';
-                previewFotosAdicionais.textContent = `✔ ${count} foto(s) adicional(is) selecionada(s) (sem OCR).`;
+    if (inputCnpjCpf) {
+        inputCnpjCpf.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
             } else {
-                previewFotosAdicionais.style.display = 'none';
+                value = value.slice(0, 14);
+                value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+                value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                value = value.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+            }
+            e.target.value = value;
+
+            const clean = value.replace(/\D/g, '');
+            if (clean.length === 14) {
+                consultarCnpj(clean);
+            } else {
+                if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '';
             }
         });
     }
 
     // Máscara dinâmica Moeda BRL
-    inputValue.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, '');
-        if (!value) {
-            e.target.value = '';
-            return;
-        }
-        value = (parseFloat(value) / 100).toFixed(2);
-        value = value.replace('.', ',');
-        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
-        e.target.value = 'R$ ' + value;
-    });
+    if (inputValue) {
+        inputValue.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (!value) {
+                e.target.value = '';
+                return;
+            }
+            value = (parseFloat(value) / 100).toFixed(2);
+            value = value.replace('.', ',');
+            value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+            e.target.value = 'R$ ' + value;
+        });
+    }
 
     // Validador matemático oficial do Digito Verificador de CNPJ (Módulo 11)
     function validarCNPJ(cnpj) {
@@ -310,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function extrairCNPJDoTexto(text) {
         if (!text) return null;
 
-        // 1. Tentar encontrar padrões numéricos próximos ao rótulo CNPJ
         const matches = text.match(/(?:CNPJ|C\.N\.P\.J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|sS\.\-\/\s]{14,25})/gi) || [];
         for (let raw of matches) {
             let clean = raw.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
@@ -320,7 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 2. Extração genérica de todas as sequências numéricas limpas
         const apenasNumeros = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, ' ');
         const tokens = apenasNumeros.split(/\s+/);
         for (let token of tokens) {
@@ -329,7 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // 3. Varredura por janela deslizante de 14 dígitos no texto acumulado
         const todosDigitos = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
         for (let i = 0; i <= todosDigitos.length - 14; i++) {
             let sub = todosDigitos.substring(i, i + 14);
@@ -395,11 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
         img.src = url;
     }
 
-    const btnScanOcr = document.getElementById('btn-scan-ocr');
-    const dadosContainer = document.getElementById('dados-despesa-container');
-
     function executarDigitalizacaoOCR() {
-        const file = inputComprovante ? inputComprovante.files[0] : null;
+        const file = fotoCnpjInput ? fotoCnpjInput.files[0] : null;
 
         if (!file) {
             if (ocrStatusBadge) {
@@ -407,40 +417,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 ocrStatusBadge.innerHTML = `
                     <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 16px;">⚠️</span>
-                        <span>Por favor, escolha um arquivo ou tire uma foto primeiro no botão acima!</span>
+                        <span>Por favor, escolha uma foto do CNPJ primeiro no campo acima!</span>
                     </div>
                 `;
             }
             return;
         }
 
-        // Exibir formulário de despesa
-        if (dadosContainer) dadosContainer.style.display = 'block';
-
         if (ocrStatusBadge) {
             ocrStatusBadge.style.display = 'block';
             ocrStatusBadge.innerHTML = `
                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 16px;">⏳</span>
-                    <span>Iniciando otimizador de imagem e motor OCR... Por favor, aguarde.</span>
+                    <span>Lendo foto do CNPJ via OCR... Por favor, aguarde.</span>
                 </div>
             `;
         }
 
         if (file.type === 'application/pdf') {
-            if (ocrStatusBadge) {
-                ocrStatusBadge.innerHTML = `
-                    <div style="padding: 10px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 8px; color: #7dd3fc; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 16px;">📄</span>
-                            <span>Arquivo PDF anexado com sucesso!</span>
-                        </div>
-                        <div style="font-size: 11px; font-weight: normal; color: #bae6fd; margin-left: 24px;">
-                            Por favor, informe o CNPJ e a Razão Social do Fornecedor nos campos abaixo.
-                        </div>
-                    </div>
-                `;
-            }
+            revelarEtapa2();
             return;
         }
 
@@ -458,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ocrStatusBadge.innerHTML = `
                                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 16px;">🔍</span>
-                                    <span>Lendo comprovante via OCR (${pct}%)... Processando nitidez.</span>
+                                    <span>Lendo foto do CNPJ via OCR (${pct}%)...</span>
                                 </div>
                             `;
                         }
@@ -469,14 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (detectedCnpj) {
                         if (inputCnpjCpf) inputCnpjCpf.value = detectedCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
                         consultarCnpj(detectedCnpj);
-                        if (ocrStatusBadge) {
-                            ocrStatusBadge.innerHTML = `
-                                <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 16px;">✅</span>
-                                    <span>CNPJ (${detectedCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}) validado e lido! Buscando dados na Receita Federal...</span>
-                                </div>
-                            `;
-                        }
+                        revelarEtapa2();
                     } else {
                         exibirAvisoManual();
                     }
@@ -499,52 +487,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function exibirAvisoManual() {
-        if (dadosContainer) dadosContainer.style.display = 'block';
-        if (ocrStatusBadge) {
-            ocrStatusBadge.innerHTML = `
-                <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 16px;">⚠️</span>
-                        <span>Não foi possível identificar o CNPJ nesta foto automaticamente.</span>
-                    </div>
-                    <div style="font-size: 11px; font-weight: normal; color: #fef08a; margin-left: 24px;">
-                        Por favor, digite o CNPJ e o Nome do Fornecedor nos campos abaixo.
-                    </div>
-                </div>
-            `;
-        }
+        revelarEtapa2();
     }
 
-    // Preview do Comprovante e Escaneamento OCR
-    inputComprovante.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) {
-            previewContainer.style.display = 'none';
-            if (ocrStatusBadge) ocrStatusBadge.style.display = 'none';
-            if (dadosContainer) dadosContainer.style.display = 'none';
-            return;
-        }
-
-        if (dadosContainer) dadosContainer.style.display = 'block';
-        previewContainer.style.display = 'block';
-        fileNamePreview.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-
-        if (file.type.match('image.*')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                previewImage.src = event.target.result;
-                previewImage.style.display = 'block';
-                pdfPreviewText.style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            previewImage.style.display = 'none';
-            pdfPreviewText.style.display = 'block';
-            pdfPreviewText.innerHTML = file.type === 'application/pdf' ? '<span style="font-size: 28px; display: block; margin-bottom: 4px;">📄</span>Arquivo PDF Selecionado' : '<span style="font-size: 28px; display: block; margin-bottom: 4px;">📄</span>Arquivo Selecionado';
-        }
-
-        executarDigitalizacaoOCR();
-    });
+    if (fotoCnpjInput) {
+        fotoCnpjInput.addEventListener('change', function(e) {
+            executarDigitalizacaoOCR();
+        });
+    }
 
     if (btnScanOcr) {
         btnScanOcr.addEventListener('click', function() {

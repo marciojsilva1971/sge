@@ -14,6 +14,29 @@
 
 <div class="dashboard-sections">
     
+    <!-- MODAL DE CONFIRMAÇÃO PÓS-ENVIO DO COMPROVANTE -->
+    <?php if (isset($_GET['envio_sucesso']) && $_GET['envio_sucesso'] == '1'): ?>
+    <div id="modalSucessoEnvio" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+        <div style="background: #0f172a; border: 2px solid #22c55e; border-radius: 16px; max-width: 440px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+            <div style="width: 56px; height: 56px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; color: #4ade80; font-size: 28px; font-weight: bold;">
+                ✓
+            </div>
+            <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Despesa Registrada com Sucesso!</h3>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.4;">
+                O comprovante e a despesa financeira foram cadastrados. O que deseja fazer agora?
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="<?= $this->baseUrl('admin/financeiro/despesas') ?>" style="background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 13px; display: block;">
+                    📸 Enviar Novo Comprovante / Arquivo
+                </a>
+                <button type="button" onclick="document.getElementById('modalSucessoEnvio').style.display='none';" style="background: rgba(255, 255, 255, 0.1); color: #f8fafc; font-weight: 600; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px; cursor: pointer; display: block; width: 100%;">
+                    ✅ Finalizar Envio
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Lançamento de Despesa -->
     <div class="panel-card flex-1">
         <div class="card-header">
@@ -22,56 +45,47 @@
         <form action="<?= $this->baseUrl('admin/financeiro/despesas') ?>" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
-            <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (CNPJ NÍTIDO) -->
-            <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
-                <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
-                    📸 1º PASSO: Enviar Foto do Cabeçalho com CNPJ NÍTIDO (para Leitura OCR)
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+            <!-- 1º PASSO: CAPTURA DO CNPJ (SERÁ ESCONDIDO APÓS LEITURA DO CNPJ) -->
+            <div id="bloco-captura-cnpj" class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
+                <label for="foto_cnpj_ocr" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
+                    📸 1º PASSO: Fotografe ou envie um arquivo em detalhe do CNPJ da empresa impresso no cupom.
                 </label>
                 <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                    Tire uma foto bem nítida e focada no <strong>cabeçalho/topo da nota ou cupom fiscal</strong> onde aparece o CNPJ. O sistema lerá o CNPJ via OCR!
+                    Caso seja reconhecido, preencheremos o CNPJ e o nome da empresa automaticamente, mas você poderá alterar se necessário.
                 </p>
-                <input type="file" id="comprovante" name="comprovante" accept="application/pdf, image/*" required style="padding: 6px; width: 100%;">
+                <input type="file" id="foto_cnpj_ocr" accept="image/*, application/pdf" style="padding: 6px; font-size: 12px; width: 100%;">
                 
                 <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
-                    🔍 Digitalizar e Ler Comprovante (OCR)
+                    🔍 Digitalizar e Ler CNPJ (OCR)
                 </button>
 
                 <!-- Status do OCR -->
                 <div id="ocr_status_badge" style="margin-top: 10px; display: none;"></div>
 
-                <!-- Preview da miniatura do arquivo -->
-                <div id="comprovante-preview-container" style="display: none; margin-top: 10px; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
-                    <div id="comprovante-preview-thumb" style="width: 50px; height: 50px; border-radius: 6px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 20px; background-color: rgba(255,255,255,0.05);"></div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div id="comprovante-preview-name" style="font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
-                        <div id="comprovante-preview-size" style="font-size: 11px; color: var(--text-secondary);"></div>
-                    </div>
+                <div style="margin-top: 10px; text-align: center;">
+                    <button type="button" id="btn-pular-ocr" style="background: transparent; border: none; color: var(--text-secondary); font-size: 11px; text-decoration: underline; cursor: pointer;">
+                        Ou clique aqui para digitar os dados manualmente
+                    </button>
                 </div>
             </div>
 
-            <!-- CONTAINER REVELADO APÓS UPLOAD / DIGITALIZAÇÃO -->
-            <div id="dados-despesa-container" style="display: none !important; margin-top: 16px; transition: all 0.3s ease;">
-                <div class="form-group">
-                    <label for="description">Descrição do Pagamento / Finalidade</label>
-                    <input type="text" id="description" name="description" placeholder="Ex: Impressão de 10.000 Santinhos de Militância" required>
-                </div>
-
-                <!-- FOTOS ADICIONAIS DAS DESPESAS DISCRIMINADAS (SEM OCR) -->
-                <div class="form-group" style="background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(255, 255, 255, 0.15); padding: 12px; border-radius: 10px; margin-top: 14px; margin-bottom: 14px;">
-                    <label for="fotos_adicionais" style="font-size: 12px; font-weight: 700; color: #7dd3fc; display: flex; align-items: center; gap: 6px;">
-                        📸 Fotos Adicionais do Comprovante / Itens Discriminados (Opcional - Sem OCR)
-                    </label>
-                    <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                        Se o comprovante tiver mais fotos, verso ou discriminação detalhada dos itens e valores, adicione as fotos extras abaixo. <strong>Estas fotos não passam por OCR.</strong>
+            <!-- CONTAINER REVELADO APÓS LEITURA DO CNPJ -->
+            <div id="dados-despesa-container" style="display: none; margin-top: 16px; transition: all 0.3s ease;">
+                
+                <!-- MENSAGEM SOLICITADA EM DESTAQUE NO TOPO DA ETAPA 2 -->
+                <div style="background: rgba(56, 189, 248, 0.12); border-left: 4px solid #38bdf8; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px;">
+                    <p style="font-size: 13px; font-weight: 700; color: #7dd3fc; margin: 0; line-height: 1.4;">
+                        📸 Envie ou fotografe o cupom fiscal de forma que seja possivel a visualização de todas as despesas e o total. Você pode enviar mais de um arquivo ou foto
                     </p>
-                    <input type="file" id="fotos_adicionais" name="fotos_adicionais[]" accept="image/*, application/pdf" multiple style="padding: 6px; font-size: 12px; width: 100%;">
-                    <div id="fotos-adicionais-preview" style="font-size: 11px; color: #4ade80; margin-top: 4px; display: none;"></div>
                 </div>
 
-                <div style="display: flex; gap: 16px;">
+                <!-- DADOS DO FORNECEDOR (SELEÇÃO OU PREENCHIMENTO EDITÁVEL) -->
+                <div style="display: flex; gap: 16px; margin-bottom: 14px;">
                     <div class="form-group flex-1">
-                        <label for="supplier_id">Fornecedor / Credor</label>
-                        <select id="supplier_id" name="supplier_id" required>
+                        <label for="supplier_id">Fornecedor / Credor (editável)</label>
+                        <select id="supplier_id" name="supplier_id" required style="font-weight: 500;">
                             <option value="">Selecione o fornecedor...</option>
                             <?php foreach ($suppliers as $sup): ?>
                                 <option value="<?= $sup['id'] ?>"><?= htmlspecialchars($sup['corporate_name']) ?> (CNPJ/CPF: <?= htmlspecialchars($sup['cnpj_cpf']) ?>)</option>
@@ -87,6 +101,20 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
+                </div>
+
+                <!-- UPLOAD DAS FOTOS/ARQUIVOS DO COMPROVANTE FISCAL (COM DESPESAS E TOTAL) -->
+                <div class="form-group" style="background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 10px; margin-bottom: 14px;">
+                    <label for="comprovante" style="font-size: 12px; font-weight: 700; color: #4ade80;">
+                        📁 Fotos / Comprovante(s) do Cupom Fiscal (Aceita 1 ou mais arquivos)
+                    </label>
+                    <input type="file" id="comprovante" name="comprovante[]" accept="image/*, application/pdf" multiple required style="padding: 6px; font-size: 12px; width: 100%; margin-top: 6px;">
+                    <div id="comprovante-count-badge" style="font-size: 11px; color: #4ade80; margin-top: 6px; display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Descrição do Pagamento / Finalidade</label>
+                    <input type="text" id="description" name="description" placeholder="Ex: Impressão de 10.000 Santinhos de Militância" required>
                 </div>
 
                 <div style="display: flex; gap: 16px;">
@@ -349,71 +377,75 @@
         img.src = url;
     }
 
-    const compInputAdmin = document.getElementById('comprovante');
+    const fotoCnpjInputAdmin = document.getElementById('foto_cnpj_ocr');
     const btnScanOcrAdmin = document.getElementById('btn-scan-ocr');
+    const btnPularOcrAdmin = document.getElementById('btn-pular-ocr');
     const ocrStatusBadgeAdmin = document.getElementById('ocr_status_badge');
     const dadosContainerAdmin = document.getElementById('dados-despesa-container');
-    const inputFotosAdicionaisAdmin = document.getElementById('fotos_adicionais');
-    const previewFotosAdicionaisAdmin = document.getElementById('fotos-adicionais-preview');
+    const blocoCapturaCnpjAdmin = document.getElementById('bloco-captura-cnpj');
+    const inputComprovanteAdmin = document.getElementById('comprovante');
+    const badgeComprovanteAdmin = document.getElementById('comprovante-count-badge');
+    const supplierSelect = document.getElementById('supplier_id');
 
-    if (inputFotosAdicionaisAdmin && previewFotosAdicionaisAdmin) {
-        inputFotosAdicionaisAdmin.addEventListener('change', function(e) {
+    function revelarEtapa2Admin() {
+        if (blocoCapturaCnpjAdmin) blocoCapturaCnpjAdmin.style.display = 'none';
+        if (dadosContainerAdmin) {
+            dadosContainerAdmin.style.display = 'block';
+            dadosContainerAdmin.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    if (btnPularOcrAdmin) {
+        btnPularOcrAdmin.addEventListener('click', function() {
+            revelarEtapa2Admin();
+        });
+    }
+
+    if (inputComprovanteAdmin && badgeComprovanteAdmin) {
+        inputComprovanteAdmin.addEventListener('change', function(e) {
             const count = e.target.files ? e.target.files.length : 0;
             if (count > 0) {
-                previewFotosAdicionaisAdmin.style.display = 'block';
-                previewFotosAdicionaisAdmin.textContent = `✔ ${count} foto(s) adicional(is) selecionada(s) (sem OCR).`;
+                badgeComprovanteAdmin.style.display = 'block';
+                badgeComprovanteAdmin.textContent = `✔ ${count} arquivo(s)/comprovante(s) selecionado(s).`;
             } else {
-                previewFotosAdicionaisAdmin.style.display = 'none';
+                badgeComprovanteAdmin.style.display = 'none';
             }
         });
     }
 
     function executarOCRAdmin() {
-        const file = compInputAdmin ? compInputAdmin.files[0] : null;
-        const container = document.getElementById('comprovante-preview-container');
-        const supplierSelect = document.getElementById('supplier_id');
+        const file = fotoCnpjInputAdmin ? fotoCnpjInputAdmin.files[0] : null;
 
         if (!file) {
             if (ocrStatusBadgeAdmin) {
                 ocrStatusBadgeAdmin.style.display = 'block';
                 ocrStatusBadgeAdmin.innerHTML = `
                     <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">
-                        ⚠️ Por favor, selecione um arquivo ou tire uma foto primeiro!
+                        ⚠️ Por favor, escolha uma foto do CNPJ primeiro no campo acima!
                     </div>
                 `;
             }
             return;
         }
-
-        // Revelar formulário de despesa
-        if (dadosContainerAdmin) dadosContainerAdmin.style.display = 'block';
 
         if (ocrStatusBadgeAdmin) {
             ocrStatusBadgeAdmin.style.display = 'block';
             ocrStatusBadgeAdmin.innerHTML = `
                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 16px;">⏳</span>
-                    <span>Iniciando otimizador de imagem e motor OCR... Por favor, aguarde.</span>
+                    <span>Lendo foto do CNPJ via OCR... Por favor, aguarde.</span>
                 </div>
             `;
         }
 
         if (file.type === 'application/pdf') {
-            if (ocrStatusBadgeAdmin) {
-                ocrStatusBadgeAdmin.innerHTML = `
-                    <div style="padding: 10px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 8px; color: #7dd3fc; font-weight: 600; font-size: 12px;">
-                        📄 Arquivo PDF anexado. Por favor, selecione o fornecedor nos campos abaixo.
-                    </div>
-                `;
-            }
+            revelarEtapa2Admin();
             return;
         }
 
         const rodarOCR = () => {
             if (!window.Tesseract) {
-                if (ocrStatusBadgeAdmin) {
-                    ocrStatusBadgeAdmin.innerHTML = `<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Por favor, selecione o fornecedor manualmente.</div>`;
-                }
+                revelarEtapa2Admin();
                 return;
             }
 
@@ -425,7 +457,7 @@
                             ocrStatusBadgeAdmin.innerHTML = `
                                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 16px;">🔍</span>
-                                    <span>Lendo comprovante via OCR (${pct}%)... Processando nitidez.</span>
+                                    <span>Lendo foto do CNPJ via OCR (${pct}%)...</span>
                                 </div>
                             `;
                         }
@@ -433,59 +465,18 @@
                 }).then(({ data: { text } }) => {
                     console.log("Texto extraído via OCR:", text);
                     const cleanCnpj = extrairCNPJDoTexto(text);
-                    if (cleanCnpj) {
-                        fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cleanCnpj)
-                            .then(res => res.json())
-                            .then(data => {
-                                if (data.success && ocrStatusBadgeAdmin) {
-                                    ocrStatusBadgeAdmin.innerHTML = `
-                                        <div style="padding: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 10px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <span style="font-size: 18px;">✅</span>
-                                                <span>CNPJ Lido e Validado: <strong>${data.razao_social}</strong> (${data.cnpj})</span>
-                                            </div>
-                                            <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
-                                                📸 <strong>Atenção:</strong> Certifique-se de anexar uma ou mais fotos nítidas do comprovante onde estejam discriminadas todas as despesas e valores.
-                                            </div>
-                                        </div>
-                                    `;
-                                    let found = false;
-                                    for (let option of supplierSelect.options) {
-                                        if (option.text.replace(/\D/g, "").includes(cleanCnpj)) {
-                                            supplierSelect.value = option.value;
-                                            found = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!found) {
-                                        ocrStatusBadgeAdmin.innerHTML += `
-                                            <div style="font-size: 11px; color: #fde047; margin-top: 4px;">
-                                                💡 Fornecedor novo. <a href="<?= $this->baseUrl('admin/financeiro/fornecedores') ?>" target="_blank" style="color:#fde047; text-decoration:underline;">Clique para cadastrar</a> ou selecione manualmente.
-                                            </div>
-                                        `;
-                                    }
-                                } else if (ocrStatusBadgeAdmin) {
-                                    ocrStatusBadgeAdmin.innerHTML = `
-                                        <div style="padding: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 10px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                            <div style="display: flex; align-items: center; gap: 8px;">
-                                                <span style="font-size: 18px;">⚠️</span>
-                                                <span>CNPJ Lido (${cleanCnpj}), selecione o fornecedor manualmente.</span>
-                                            </div>
-                                            <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
-                                                📸 <strong>Atenção:</strong> Anexe uma ou mais fotos do comprovante discriminando todas as despesas e valores.
-                                            </div>
-                                        </div>
-                                    `;
-                                }
-                            });
-                    } else if (ocrStatusBadgeAdmin) {
-                        ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ CNPJ não identificado automaticamente. Selecione o fornecedor manualmente.</div>';
+                    if (cleanCnpj && supplierSelect) {
+                        for (let option of supplierSelect.options) {
+                            if (option.text.replace(/\D/g, "").includes(cleanCnpj)) {
+                                supplierSelect.value = option.value;
+                                break;
+                            }
+                        }
                     }
+                    revelarEtapa2Admin();
                 }).catch(err => {
                     console.error("Erro OCR:", err);
-                    if (ocrStatusBadgeAdmin) {
-                        ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Erro ao ler imagem. Selecione o fornecedor manualmente.</div>';
-                    }
+                    revelarEtapa2Admin();
                 });
             });
         };
@@ -494,54 +485,15 @@
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
             script.onload = rodarOCR;
-            script.onerror = () => {
-                if (ocrStatusBadgeAdmin) {
-                    ocrStatusBadgeAdmin.innerHTML = '<div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px;">⚠️ Selecione o fornecedor manualmente.</div>';
-                }
-            };
+            script.onerror = () => revelarEtapa2Admin();
             document.head.appendChild(script);
         } else {
             rodarOCR();
         }
     }
 
-    if (compInputAdmin) {
-        compInputAdmin.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const container = document.getElementById('comprovante-preview-container');
-            const thumb = document.getElementById('comprovante-preview-thumb');
-            const name = document.getElementById('comprovante-preview-name');
-            const size = document.getElementById('comprovante-preview-size');
-
-            if (!file) {
-                if (container) container.style.display = 'none';
-                if (ocrStatusBadgeAdmin) ocrStatusBadgeAdmin.style.display = 'none';
-                if (dadosContainerAdmin) dadosContainerAdmin.style.display = 'none';
-                return;
-            }
-
-            if (dadosContainerAdmin) dadosContainerAdmin.style.display = 'block';
-
-            if (container) {
-                container.style.display = 'flex';
-                if (name) name.textContent = file.name;
-                if (size) size.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-            }
-
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    if (thumb) {
-                        thumb.style.backgroundImage = "url('" + evt.target.result + "')";
-                        thumb.textContent = "";
-                    }
-                };
-                reader.readAsDataURL(file);
-            } else if (thumb) {
-                thumb.style.backgroundImage = 'none';
-                thumb.textContent = file.type === 'application/pdf' ? '📄' : '📎';
-            }
-
+    if (fotoCnpjInputAdmin) {
+        fotoCnpjInputAdmin.addEventListener('change', function(e) {
             executarOCRAdmin();
         });
     }

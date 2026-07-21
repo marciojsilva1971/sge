@@ -272,3 +272,14 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   1. **1º Passo (Leitura de CNPJ via OCR):** Orientação clara para o usuário tirar 1 foto focada exclusivamente no cabeçalho/CNPJ nítido do comprovante fiscal (`comprovante`). O OCR é executado apenas nesta imagem, garantindo altíssima taxa de acerto.
   2. **2º Passo (Fotos Adicionais dos Itens Discriminados - Sem OCR):** Dentro do formulário revelado, criado um campo específico para inclusão de 1 ou mais fotos extras (`fotos_adicionais[]`). **Essas imagens adicionais ignoram o OCR**, evitando lentidão no navegador e garantindo que todas as evidências fiscais detalhadas sejam anexadas.
   3. **Backend Consolidado:** Controllers refatorados para salvar e criptografar (AES-256) tanto a foto principal quanto a lista de fotos adicionais para o mesmo lançamento fiscal.
+
+---
+
+## 📅 Sessão 54: Refinamento UX do Fluxo em 2 Etapas com Transição de Blocos e Modal Pós-Envio
+* **Ações Implementadas:**
+  1. **Ajuste nos Textos Orientativos:**
+     - **Etapa 1:** *"Fotografe ou envie um arquivo em detalhe do CNPJ da empresa impresso no cupom. Caso seja reconhecido, preencheremos o CNPJ e o nome da empresa automaticamente, mas você poderá alterar se necessário."*
+     - **Etapa 2:** *"Envie ou fotografe o cupom fiscal de forma que seja possivel a visualização de todas as despesas e o total. Você pode enviar mais de um arquivo ou foto"*.
+  2. **Escondimento/Transição de Blocos:** O bloco de captura do CNPJ (`#bloco-captura-cnpj`) é ocultado após a leitura ou ao clicar em "Pular OCR", revelando a Etapa 2 com os campos editáveis.
+  3. **Modal de Confirmação Pós-Envio:** Modal interativo oferecendo opções entre enviar um novo comprovante ou finalizar a submissão.
+

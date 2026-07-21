@@ -24,6 +24,29 @@ foreach ($travelReports as $report) {
             </span>
         </div>
 
+        <!-- MODAL DE CONFIRMAÇÃO PÓS-ENVIO DO COMPROVANTE -->
+        <?php if (isset($_GET['envio_sucesso']) && $_GET['envio_sucesso'] == '1'): ?>
+        <div id="modalSucessoEnvio" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+            <div style="background: #0f172a; border: 2px solid #22c55e; border-radius: 16px; max-width: 440px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+                <div style="width: 56px; height: 56px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; color: #4ade80; font-size: 28px; font-weight: bold;">
+                    ✓
+                </div>
+                <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Comprovante Enviado com Sucesso!</h3>
+                <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.4;">
+                    O cupom fiscal foi registrado com sucesso. O que deseja fazer agora?
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="<?= $this->baseUrl('portal/viagem') ?>" style="background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 13px; display: block;">
+                        📸 Enviar Novo Comprovante / Arquivo
+                    </a>
+                    <button type="button" onclick="document.getElementById('modalSucessoEnvio').style.display='none';" style="background: rgba(255, 255, 255, 0.1); color: #f8fafc; font-weight: 600; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 13px; cursor: pointer; display: block; width: 100%;">
+                        ✅ Finalizar Envio
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Formulário para Adicionar Cupom Fiscal -->
         <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Anexar Novo Cupom Fiscal / Recibo:</h4>
         <form action="<?= $this->baseUrl('portal/viagem/receipt') ?>" method="POST" enctype="multipart/form-data" style="margin-bottom: 20px; background: rgba(15,23,42,0.3); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
@@ -32,64 +55,66 @@ foreach ($travelReports as $report) {
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
-            <!-- 1º PASSO: UPLOAD / DIGITALIZAÇÃO DO COMPROVANTE (CNPJ NÍTIDO) -->
-            <div class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
-                <label for="comprovante" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
-                    📸 1º PASSO: Enviar Foto do Cabeçalho com CNPJ NÍTIDO (para Leitura OCR)
+            <!-- 1º PASSO: CAPTURA DO CNPJ (SERÁ ESCONDIDO APÓS LEITURA DO CNPJ) -->
+            <div id="bloco-captura-cnpj" class="form-group" style="background: rgba(13, 148, 136, 0.08); border: 2px dashed var(--accent-teal); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
+                <label for="foto_cnpj_ocr" style="font-size: 13px; font-weight: 700; color: var(--accent-teal-hover); display: flex; align-items: center; gap: 6px;">
+                    📸 1º PASSO: Fotografe ou envie um arquivo em detalhe do CNPJ da empresa impresso no cupom.
                 </label>
                 <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                    Tire uma foto bem nítida e focada no <strong>cabeçalho/topo do cupom fiscal</strong> onde consta o CNPJ. O sistema lerá o CNPJ via OCR para autocompletar a empresa!
+                    Caso seja reconhecido, preencheremos o CNPJ e o nome da empresa automaticamente, mas você poderá alterar se necessário.
                 </p>
-                <input type="file" id="comprovante" name="comprovante" accept="image/*, application/pdf" required style="padding: 6px; font-size: 12px; width: 100%;">
+                <input type="file" id="foto_cnpj_ocr" accept="image/*, application/pdf" style="padding: 6px; font-size: 12px; width: 100%;">
                 
                 <button type="button" id="btn-scan-ocr" style="margin-top: 10px; background: var(--accent-teal); color: #0f172a; font-weight: 700; width: 100%; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; transition: all 0.2s;">
-                    🔍 Digitalizar e Ler Comprovante (OCR)
+                    🔍 Digitalizar e Ler CNPJ (OCR)
                 </button>
 
-                <!-- Status do OCR / Notificação Imediata -->
+                <!-- Status do OCR -->
                 <div id="ocr_status_badge" style="margin-top: 10px; display: none;"></div>
 
-                <!-- Preview da miniatura do arquivo -->
-                <div id="comprovante-preview-container" style="display: none; margin-top: 10px; align-items: center; gap: 12px; background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 8px; border: 1px dashed var(--border-color);">
-                    <div id="comprovante-preview-thumb" style="width: 45px; height: 45px; border-radius: 6px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 18px; background-color: rgba(255,255,255,0.05);"></div>
-                    <div style="flex: 1; min-width: 0;">
-                        <div id="comprovante-preview-name" style="font-size: 11px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
-                        <div id="comprovante-preview-size" style="font-size: 9px; color: var(--text-secondary);"></div>
-                    </div>
+                <div style="margin-top: 10px; text-align: center;">
+                    <button type="button" id="btn-pular-ocr" style="background: transparent; border: none; color: var(--text-secondary); font-size: 11px; text-decoration: underline; cursor: pointer;">
+                        Ou clique aqui para digitar o CNPJ manualmente
+                    </button>
                 </div>
             </div>
 
-            <!-- CONTAINER REVELADO APÓS UPLOAD / DIGITALIZAÇÃO -->
-            <div id="dados-despesa-container" style="display: none !important; margin-top: 16px; transition: all 0.3s ease;">
-                <!-- DADOS DO FORNECEDOR (CNPJ + RAZÃO SOCIAL) -->
-                <div style="display: flex; gap: 10px;">
+            <!-- CONTAINER REVELADO APÓS LEITURA DO CNPJ -->
+            <div id="dados-despesa-container" style="display: none; margin-top: 16px; transition: all 0.3s ease;">
+                
+                <!-- MENSAGEM SOLICITADA EM DESTAQUE NO TOPO DA ETAPA 2 -->
+                <div style="background: rgba(56, 189, 248, 0.12); border-left: 4px solid #38bdf8; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px;">
+                    <p style="font-size: 13px; font-weight: 700; color: #7dd3fc; margin: 0; line-height: 1.4;">
+                        📸 Envie ou fotografe o cupom fiscal de forma que seja possivel a visualização de todas as despesas e o total. Você pode enviar mais de um arquivo ou foto
+                    </p>
+                </div>
+
+                <!-- DADOS DO FORNECEDOR (CNPJ + RAZÃO SOCIAL - PREENCHIDOS E EDITÁVEIS) -->
+                <div style="display: flex; gap: 10px; margin-bottom: 14px;">
                     <div class="form-group flex-1">
-                        <label for="supplier_cnpj" style="font-size: 12px;">CNPJ do Posto de Combustível</label>
-                        <input type="text" id="supplier_cnpj" name="supplier_cnpj" placeholder="00.000.000/0001-00" required>
+                        <label for="supplier_cnpj" style="font-size: 12px; font-weight: 600;">CNPJ do Posto de Combustível (editável)</label>
+                        <input type="text" id="supplier_cnpj" name="supplier_cnpj" placeholder="00.000.000/0001-00" required style="font-weight: 600;">
                         <div id="cnpj_supplier_info" style="margin-top: 4px; font-size: 11px;"></div>
                     </div>
                     <div class="form-group flex-1">
-                        <label for="supplier_name" style="font-size: 12px;">Nome / Razão Social da Empresa</label>
+                        <label for="supplier_name" style="font-size: 12px; font-weight: 600;">Nome / Razão Social da Empresa (editável)</label>
                         <input type="text" id="supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Alvorada Ltda" style="font-weight: 500;">
                     </div>
                 </div>
 
-                <!-- FOTOS ADICIONAIS DAS DESPESAS DISCRIMINADAS (SEM OCR) -->
-                <div class="form-group" style="background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(255, 255, 255, 0.15); padding: 12px; border-radius: 10px; margin-top: 14px; margin-bottom: 14px;">
-                    <label for="fotos_adicionais" style="font-size: 12px; font-weight: 700; color: #7dd3fc; display: flex; align-items: center; gap: 6px;">
-                        📸 Fotos Adicionais do Comprovante / Itens Discriminados (Opcional - Sem OCR)
+                <!-- UPLOAD DAS FOTOS/ARQUIVOS DO COMPROVANTE FISCAL (COM DESPESAS E TOTAL) -->
+                <div class="form-group" style="background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(255, 255, 255, 0.2); padding: 12px; border-radius: 10px; margin-bottom: 14px;">
+                    <label for="comprovante" style="font-size: 12px; font-weight: 700; color: #4ade80;">
+                        📁 Fotos / Comprovante(s) do Cupom Fiscal (Aceita 1 ou mais arquivos)
                     </label>
-                    <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                        Se o comprovante tiver mais fotos, verso ou discriminação detalhada dos itens e valores, adicione as fotos extras abaixo. <strong>Estas fotos não passam por OCR.</strong>
-                    </p>
-                    <input type="file" id="fotos_adicionais" name="fotos_adicionais[]" accept="image/*, application/pdf" multiple style="padding: 6px; font-size: 12px; width: 100%;">
-                    <div id="fotos-adicionais-preview" style="font-size: 11px; color: #4ade80; margin-top: 4px; display: none;"></div>
+                    <input type="file" id="comprovante" name="comprovante[]" accept="image/*, application/pdf" multiple required style="padding: 6px; font-size: 12px; width: 100%; margin-top: 6px;">
+                    <div id="comprovante-count-badge" style="font-size: 11px; color: #4ade80; margin-top: 6px; display: none;"></div>
                 </div>
 
                 <!-- VALOR E DATA -->
                 <div style="display: flex; gap: 10px;">
                     <div class="form-group flex-1">
-                        <label for="value" style="font-size: 12px;">Valor do Cupom (R$)</label>
+                        <label for="value" style="font-size: 12px;">Valor Total do Cupom (R$)</label>
                         <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 600; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
                     </div>
                     <div class="form-group flex-1">
@@ -114,8 +139,8 @@ foreach ($travelReports as $report) {
                     <input type="text" id="notes" name="notes" placeholder="Ex: Abastecimento equipe de campo">
                 </div>
 
-                <button type="submit" class="btn btn-teal btn-block btn-sm">
-                    ➕ Confirmar e Enviar Cupom
+                <button type="submit" style="width: 100%; background: #22c55e; color: #0f172a; font-weight: 800; padding: 12px; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; margin-top: 10px;">
+                    💾 Confirmar e Enviar Despesa
                 </button>
             </div>
         </form>
@@ -352,25 +377,37 @@ foreach ($travelReports as $report) {
         });
     }
 
-    const compInput = document.getElementById('comprovante');
+    const fotoCnpjInput = document.getElementById('foto_cnpj_ocr');
     const btnScanOcr = document.getElementById('btn-scan-ocr');
+    const btnPularOcr = document.getElementById('btn-pular-ocr');
     const statusBadge = document.getElementById('ocr_status_badge');
-    const container = document.getElementById('comprovante-preview-container');
-    const thumb = document.getElementById('comprovante-preview-thumb');
-    const namePreview = document.getElementById('comprovante-preview-name');
-    const sizePreview = document.getElementById('comprovante-preview-size');
     const dadosContainer = document.getElementById('dados-despesa-container');
-    const inputFotosAdicionais = document.getElementById('fotos_adicionais');
-    const previewFotosAdicionais = document.getElementById('fotos-adicionais-preview');
+    const blocoCapturaCnpj = document.getElementById('bloco-captura-cnpj');
+    const inputComprovante = document.getElementById('comprovante');
+    const badgeComprovante = document.getElementById('comprovante-count-badge');
 
-    if (inputFotosAdicionais && previewFotosAdicionais) {
-        inputFotosAdicionais.addEventListener('change', function(e) {
+    function revelarEtapa2() {
+        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+        if (dadosContainer) {
+            dadosContainer.style.display = 'block';
+            dadosContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    if (btnPularOcr) {
+        btnPularOcr.addEventListener('click', function() {
+            revelarEtapa2();
+        });
+    }
+
+    if (inputComprovante && badgeComprovante) {
+        inputComprovante.addEventListener('change', function(e) {
             const count = e.target.files ? e.target.files.length : 0;
             if (count > 0) {
-                previewFotosAdicionais.style.display = 'block';
-                previewFotosAdicionais.textContent = `✔ ${count} foto(s) adicional(is) selecionada(s) (sem OCR).`;
+                badgeComprovante.style.display = 'block';
+                badgeComprovante.textContent = `✔ ${count} arquivo(s)/comprovante(s) selecionado(s).`;
             } else {
-                previewFotosAdicionais.style.display = 'none';
+                badgeComprovante.style.display = 'none';
             }
         });
     }
@@ -411,7 +448,6 @@ foreach ($travelReports as $report) {
     function extrairCNPJDoTexto(text) {
         if (!text) return null;
 
-        // 1. Tentar encontrar padrões numéricos próximos ao rótulo CNPJ
         const matches = text.match(/(?:CNPJ|C\.N\.P\.J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|sS\.\-\/\s]{14,25})/gi) || [];
         for (let raw of matches) {
             let clean = raw.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
@@ -421,7 +457,6 @@ foreach ($travelReports as $report) {
             }
         }
 
-        // 2. Extração genérica de todas as sequências numéricas limpas
         const apenasNumeros = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, ' ');
         const tokens = apenasNumeros.split(/\s+/);
         for (let token of tokens) {
@@ -430,7 +465,6 @@ foreach ($travelReports as $report) {
             }
         }
 
-        // 3. Varredura por janela deslizante de 14 dígitos no texto acumulado
         const todosDigitos = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
         for (let i = 0; i <= todosDigitos.length - 14; i++) {
             let sub = todosDigitos.substring(i, i + 14);
@@ -497,7 +531,7 @@ foreach ($travelReports as $report) {
     }
 
     function executarDigitalizacaoOCR() {
-        const file = compInput ? compInput.files[0] : null;
+        const file = fotoCnpjInput ? fotoCnpjInput.files[0] : null;
 
         if (!file) {
             if (statusBadge) {
@@ -505,40 +539,25 @@ foreach ($travelReports as $report) {
                 statusBadge.innerHTML = `
                     <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 16px;">⚠️</span>
-                        <span>Por favor, escolha um arquivo ou tire uma foto primeiro no botão acima!</span>
+                        <span>Por favor, escolha uma foto do CNPJ primeiro no campo acima!</span>
                     </div>
                 `;
             }
             return;
         }
 
-        // Exibir formulário de despesa
-        if (dadosContainer) dadosContainer.style.display = 'block';
-
         if (statusBadge) {
             statusBadge.style.display = 'block';
             statusBadge.innerHTML = `
                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 16px;">⏳</span>
-                    <span>Iniciando otimizador de imagem e motor OCR... Por favor, aguarde.</span>
+                    <span>Lendo foto do CNPJ via OCR... Por favor, aguarde.</span>
                 </div>
             `;
         }
 
         if (file.type === 'application/pdf') {
-            if (statusBadge) {
-                statusBadge.innerHTML = `
-                    <div style="padding: 10px 12px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 8px; color: #7dd3fc; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 16px;">📄</span>
-                            <span>Arquivo PDF anexado com sucesso!</span>
-                        </div>
-                        <div style="font-size: 11px; font-weight: normal; color: #bae6fd; margin-left: 24px;">
-                            Por favor, informe o CNPJ e a Razão Social do Fornecedor nos campos abaixo.
-                        </div>
-                    </div>
-                `;
-            }
+            revelarEtapa2();
             return;
         }
 
@@ -556,7 +575,7 @@ foreach ($travelReports as $report) {
                             statusBadge.innerHTML = `
                                 <div style="padding: 10px 12px; background: rgba(13, 148, 136, 0.2); border: 1px solid var(--accent-teal); border-radius: 8px; color: #5eead4; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
                                     <span style="font-size: 16px;">🔍</span>
-                                    <span>Lendo comprovante via OCR (${pct}%)... Processando nitidez.</span>
+                                    <span>Lendo foto do CNPJ via OCR (${pct}%)...</span>
                                 </div>
                             `;
                         }
@@ -567,14 +586,7 @@ foreach ($travelReports as $report) {
                     if (detectedCnpj) {
                         if (cnpjInput) cnpjInput.value = detectedCnpj;
                         consultarCnpjServico(detectedCnpj);
-                        if (statusBadge) {
-                            statusBadge.innerHTML = `
-                                <div style="padding: 10px 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 8px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 16px;">✅</span>
-                                    <span>CNPJ (${detectedCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}) validado e lido! Buscando dados na Receita Federal...</span>
-                                </div>
-                            `;
-                        }
+                        revelarEtapa2();
                     } else {
                         exibirAvisoManual();
                     }
@@ -597,55 +609,11 @@ foreach ($travelReports as $report) {
     }
 
     function exibirAvisoManual() {
-        if (dadosContainer) dadosContainer.style.display = 'block';
-        if (statusBadge) {
-            statusBadge.innerHTML = `
-                <div style="padding: 10px 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 16px;">⚠️</span>
-                        <span>Não foi possível identificar o CNPJ nesta foto automaticamente.</span>
-                    </div>
-                    <div style="font-size: 11px; font-weight: normal; color: #fef08a; margin-left: 24px;">
-                        Por favor, digite o CNPJ e o Nome da Empresa nos campos abaixo.
-                    </div>
-                </div>
-            `;
-        }
+        revelarEtapa2();
     }
 
-    if (compInput) {
-        compInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) {
-                if (container) container.style.display = 'none';
-                if (statusBadge) statusBadge.style.display = 'none';
-                if (dadosContainer) dadosContainer.style.display = 'none';
-                return;
-            }
-
-            if (dadosContainer) dadosContainer.style.display = 'block';
-
-            if (container) {
-                container.style.display = 'flex';
-                if (namePreview) namePreview.textContent = file.name;
-                if (sizePreview) sizePreview.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-            }
-
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    if (thumb) {
-                        thumb.style.backgroundImage = "url('" + evt.target.result + "')";
-                        thumb.textContent = "";
-                    }
-                };
-                reader.readAsDataURL(file);
-            } else if (thumb) {
-                thumb.style.backgroundImage = 'none';
-                thumb.textContent = file.type === 'application/pdf' ? '📄' : '📎';
-            }
-
-            // Dispara automaticamente no evento change
+    if (fotoCnpjInput) {
+        fotoCnpjInput.addEventListener('change', function(e) {
             executarDigitalizacaoOCR();
         });
     }
