@@ -974,6 +974,18 @@ class FinanceController extends Controller {
     }
 
     /**
+     * Auxiliar para converter strings de moeda BRL (ex: "R$ 1.500,50") em float (1500.50)
+     */
+    private function parseBrlCurrency(string $value): float {
+        $clean = preg_replace('/[^\d,.]/', '', $value);
+        if (strpos($clean, ',') !== false) {
+            $clean = str_replace('.', '', $clean);
+            $clean = str_replace(',', '.', $clean);
+        }
+        return floatval($clean);
+    }
+
+    /**
      * Tela de Gestão de Contratos por Tempo Determinado (GET)
      */
     public function contratos(): void {
