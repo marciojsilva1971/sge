@@ -1588,9 +1588,11 @@ class FinanceController extends Controller {
         )->fetchAll();
 
         $colaboradores = $db->query(
-            "SELECT id, nome_completo, cpf, papel_eleitoral, valor_contratado, status_etapa, tse_regularidade_json, tse_regularidade_data 
-             FROM `colaboradores` 
-             ORDER BY nome_completo ASC"
+            "SELECT c.nome_completo, c.cpf, c.status, c.tse_regularidade_json, c.tse_regularidade_data,
+                    cc.funcao_campanha, cc.valor_contratado
+             FROM `colaboradores` c
+             LEFT JOIN `contratos_colaboradores` cc ON cc.colaborador_id = c.id
+             ORDER BY c.nome_completo ASC"
         )->fetchAll();
 
         echo '<!DOCTYPE html>
@@ -1765,8 +1767,8 @@ class FinanceController extends Controller {
                         echo '<tr>
                             <td>' . htmlspecialchars($col['nome_completo']) . '</td>
                             <td>' . $cpf . '</td>
-                            <td>' . htmlspecialchars($col['papel_eleitoral'] ?? 'Colaborador') . '</td>
-                            <td>' . htmlspecialchars($col['status_etapa']) . '</td>
+                            <td>' . htmlspecialchars($col['funcao_campanha'] ?? 'Apoio / Geral') . '</td>
+                            <td>' . htmlspecialchars($col['status']) . '</td>
                             <td><span class="badge ' . $regClass . '">' . $regStatus . '</span></td>
                             <td class="text-right">R$ ' . number_format($col['valor_contratado'], 2, ',', '.') . '</td>
                         </tr>';
