@@ -310,11 +310,16 @@ class PortalController extends Controller {
         try {
             $description = trim($_POST['description'] ?? '');
             $activity_date = $_POST['activity_date'] ?? '';
+            $permitirSemGps = !empty($_POST['permitir_sem_gps']);
             $latitude = floatval($_POST['latitude'] ?? 0);
             $longitude = floatval($_POST['longitude'] ?? 0);
 
-            if (empty($description) || empty($activity_date) || $latitude === 0.0 || $longitude === 0.0) {
-                throw new Exception("A descrição, a data e as coordenadas geográficas GPS são obrigatórias.");
+            if (empty($description) || empty($activity_date)) {
+                throw new Exception("A descrição e a data da atividade são obrigatórias.");
+            }
+
+            if (!$permitirSemGps && ($latitude === 0.0 || $longitude === 0.0)) {
+                throw new Exception("As coordenadas GPS são obrigatórias, ou marque a opção de enviar sem GPS.");
             }
 
             $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
@@ -367,7 +372,8 @@ class PortalController extends Controller {
                 'longitude' => $longitude
             ]);
 
-            Session::setFlash('success', 'Atividade de panfletagem registrada com sucesso com foto criptografada e GPS!');
+            $msgSucesso = $permitirSemGps ? 'Atividade de panfletagem registrada com sucesso para validação manual (sem GPS)!' : 'Atividade de panfletagem registrada com sucesso com foto criptografada e GPS!';
+            Session::setFlash('success', $msgSucesso);
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao salvar atividade: ' . $e->getMessage());
         }

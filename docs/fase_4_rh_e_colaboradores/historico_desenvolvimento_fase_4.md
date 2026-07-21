@@ -299,5 +299,14 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
   2. **Sanitização Backend (`parseBrlCurrency` com `round(..., 2)`):** Atualizado o método em `Controller.php` e `RhController.php` para sanitizar qualquer string monetária (removendo símbolos, pontos de milhar e convertendo vírgulas em ponto decimal), aplicando o arredondamento preciso em 2 casas decimais.
   3. **Integridade de Dados:** Garantido que os dados sejam gravados no MySQL como tipos numéricos exatos (`DECIMAL(12,2)`), assegurando precisão em cálculos financeiros futuros (somas, relatórios e prestação de contas do TSE/SPCE).
 
+---
+
+## 📅 Sessão 57: Modal Educativo de Autorização de GPS e Opção de Envio sem Geolocalização
+* **Ações Implementadas:**
+  1. **Modal de Instruções Multi-Plataforma (`#gpsModal`):** Criada interface modal interativa em `portal/militancia.php` dividida por abas navegáveis para **Apple (iOS / Safari / Chrome)**, **Android (Chrome / Samsung)** e **PC / Computador (Windows / Mac / Chrome / Edge)**.
+  2. **Abertura Automática & Reativa:** O modal é disparado automaticamente quando o navegador bloqueia/falha na obtenção do GPS, e pode ser reaberto via link ou botão *"❓ Como ativar o GPS?"*.
+  3. **Checkbox de Envio Sem GPS (`permitir_sem_gps`):** Adicionada a opção manual no formulário e dentro do modal (`☑️ Ativar Envio Sem GPS`). Quando ativada, a validação libera o botão de submissão mesmo sem coordenadas, registrando a atividade no banco (`PortalController.php`) como pendente de análise manual.
+
+
 
 
