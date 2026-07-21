@@ -105,6 +105,7 @@ $router->post('/admin/profile', 'AdminController@updateProfile');
 
 // Módulo Financeiro Administrativo
 $router->get('/admin/financeiro', 'FinanceController@index');
+$router->post('/admin/financeiro', 'FinanceController@index');
 $router->get('/admin/financeiro/fornecedores', 'FinanceController@suppliers');
 $router->post('/admin/financeiro/fornecedores', 'FinanceController@addSupplier');
 $router->get('/admin/financeiro/despesas', 'FinanceController@expenses');

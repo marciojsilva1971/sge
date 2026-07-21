@@ -27,6 +27,8 @@ Este documento mantém o registro permanente de todas as implementações do **M
 
 ---
 
+---
+
 ## 📅 Sessão 4: Carga Inicial, Conciliação e Ajustes de Saldo Bancário com Extrato PDF
 * **Ações:**
   - **Ajuste de UI:** Ajustados os cards KPI da interface financeira e SPCE impedindo quebras irregulares de linhas.
@@ -34,3 +36,12 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - **Carga & Conciliação:** Tela `/admin/financeiro/conciliacao` para lançamento de Carga Inicial, Ajustes de Saldo a Crédito/Débito e Conciliação com Extratos.
   - **Exigência Impositiva de Extrato PDF:** Todo ajuste de saldo exige obrigatoriamente o envio da cópia do Extrato Bancário em PDF (`storage/uploads/extratos/`).
   - **Download Seguro de Extratos:** Endpoint `/admin/financeiro/conciliacao/download` para auditoria dos extratos arquivados.
+
+---
+
+## 📅 Sessão 5: Correção da Rota de Cadastro de Receitas e Doações (Erro 404)
+* **Ações:**
+  - **Mapeamento de Rota HTTP:** Adicionado o mapeamento do método `POST` para a URL `/admin/financeiro` no arquivo de rotas (`public/index.php`), direcionando o envio do formulário "Lançar Nova Receita / Doação" para o método `FinanceController::index()`.
+  - **Resolução do Erro 404:** O formulário de receita submete via requisição `POST` para a URL `/admin/financeiro`. Sem o registro explícito dessa rota no roteador, ocorria o retorno de 404 Not Found.
+
+
