@@ -361,26 +361,31 @@ class AdminController extends Controller {
         $this->render('admin/profile', [
             'user'       => $user,
             'details'    => $userDetails,
+            'userFull'   => $userDetails,
             'csrf_token' => Session::csrfToken(),
             'error'      => Session::getFlash('error'),
             'success'    => Session::getFlash('success')
         ]);
     }
 
-    /**
-     * Atualiza dados de perfil do próprio usuário logado.
-     */
     public function updateProfile(): void {
         $user = $this->requireAuth();
         $this->validatePostCsrf();
 
         $name = trim($_POST['name'] ?? '');
-        $celular = trim($_POST['celular'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $confirmPassword = $_POST['confirm_password'] ?? '';
-
+        $celular = preg_replace('/\D/', '', $_POST['celular'] ?? '');
+        
         if ($name === '' || $celular === '') {
             Session::setFlash('error', 'Nome e Celular são campos obrigatórios.');
+            $this->redirect('/admin/profile');
+        }
+
+        // Busca os dados atuais do usuário no banco
+        $userModel = new User();
+        $userDb = $userModel->find($user['id']);
+
+        if (!$userDb) {
+            Session::setFlash('error', 'Usuário não encontrado.');
             $this->redirect('/admin/profile');
         }
 
@@ -389,31 +394,62 @@ class AdminController extends Controller {
             'celular' => $celular
         ];
 
-        // Se digitou senha, valida os critérios de senha forte
-        if ($password !== '') {
-            if (strlen($password) < 8) {
-                Session::setFlash('error', 'A senha nova deve possuir no mínimo 8 caracteres.');
+        // 1. Alteração de Senha Segura
+        $novaSenha = $_POST['nova_senha'] ?? '';
+        if (!empty($novaSenha)) {
+            $senhaAtual = $_POST['senha_atual'] ?? '';
+            if (empty($senhaAtual)) {
+                Session::setFlash('error', 'Para alterar a senha, você deve informar a senha atual.');
                 $this->redirect('/admin/profile');
             }
-            if (!preg_match('/[A-Z]/', $password) || 
-                !preg_match('/[a-z]/', $password) || 
-                !preg_match('/[0-9]/', $password) || 
-                !preg_match('/[^a-zA-Z0-9]/', $password)) {
+
+            if (!password_verify($senhaAtual, $userDb['password_hash'])) {
+                Session::setFlash('error', 'A senha atual informada está incorreta.');
+                $this->redirect('/admin/profile');
+            }
+
+            if (strlen($novaSenha) < 8) {
+                Session::setFlash('error', 'A nova senha deve possuir no mínimo 8 caracteres.');
+                $this->redirect('/admin/profile');
+            }
+
+            if (!preg_match('/[A-Z]/', $novaSenha) || 
+                !preg_match('/[a-z]/', $novaSenha) || 
+                !preg_match('/[0-9]/', $novaSenha) || 
+                !preg_match('/[^a-zA-Z0-9]/', $novaSenha)) {
                 Session::setFlash('error', 'A nova senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (ex: @, #, $, _, !).');
                 $this->redirect('/admin/profile');
             }
-            if ($password !== $confirmPassword) {
-                Session::setFlash('error', 'As senhas digitadas não coincidem.');
+
+            $confirmarSenha = $_POST['confirmar_senha'] ?? '';
+            if ($novaSenha !== $confirmarSenha) {
+                Session::setFlash('error', 'A confirmação da nova senha não confere.');
                 $this->redirect('/admin/profile');
             }
-            $updateData['password'] = $password;
+
+            $updateData['password'] = $novaSenha;
         }
 
-        // Processa upload de foto nova (opcional)
-        if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
-            $fileTmpPath = $_FILES['profile_photo']['tmp_name'];
-            $fileName = $_FILES['profile_photo']['name'];
-            $fileSize = $_FILES['profile_photo']['size'];
+        // 2. Processa upload de foto nova (opcional)
+        if (isset($_FILES['foto_rosto']) && $_FILES['foto_rosto']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $uploadError = $_FILES['foto_rosto']['error'];
+            if ($uploadError !== UPLOAD_ERR_OK) {
+                $errorsList = [
+                    UPLOAD_ERR_INI_SIZE   => 'O arquivo enviado excede o limite máximo permitido pelo servidor (php.ini).',
+                    UPLOAD_ERR_FORM_SIZE  => 'O arquivo excede o limite máximo do formulário.',
+                    UPLOAD_ERR_PARTIAL    => 'O upload foi concluído apenas parcialmente.',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Diretório temporário ausente no servidor.',
+                    UPLOAD_ERR_CANT_WRITE => 'Falha ao gravar arquivo em disco no servidor.',
+                    UPLOAD_ERR_EXTENSION  => 'O upload foi interrompido por uma extensão do PHP.'
+                ];
+                $errorMsg = $errorsList[$uploadError] ?? 'Erro desconhecido (' . $uploadError . ').';
+                Session::setFlash('error', 'Erro no upload da foto de perfil: ' . $errorMsg);
+                $this->redirect('/admin/profile');
+            }
+
+            $fileTmpPath = $_FILES['foto_rosto']['tmp_name'];
+            $fileName = $_FILES['foto_rosto']['name'];
+            $fileSize = $_FILES['foto_rosto']['size'];
             
             $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
             $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
@@ -428,8 +464,8 @@ class AdminController extends Controller {
                 $this->redirect('/admin/profile');
             }
 
-            if ($fileSize > 2 * 1024 * 1024) {
-                Session::setFlash('error', 'A foto de perfil não pode exceder o limite de 2MB.');
+            if ($fileSize > 10 * 1024 * 1024) {
+                Session::setFlash('error', 'A foto de perfil não pode exceder o limite de 10MB.');
                 $this->redirect('/admin/profile');
             }
 
@@ -437,7 +473,7 @@ class AdminController extends Controller {
             $uploadFileDir = dirname(__DIR__, 2) . '/public/uploads/profiles/';
             
             if (!is_dir($uploadFileDir)) {
-                mkdir($uploadFileDir, 0777, true);
+                mkdir($uploadFileDir, 0755, true);
             }
 
             $destPath = $uploadFileDir . $newFileName;
@@ -446,10 +482,8 @@ class AdminController extends Controller {
                 $updateData['profile_photo_path'] = 'uploads/profiles/' . $newFileName;
                 
                 // Remove a foto antiga física se existir e for diferente do default
-                $userModel = new User();
-                $currentUser = $userModel->find($user['id']);
-                if ($currentUser && !empty($currentUser['profile_photo_path'])) {
-                    $oldFilePath = dirname(__DIR__, 2) . '/public/' . $currentUser['profile_photo_path'];
+                if (!empty($userDb['profile_photo_path'])) {
+                    $oldFilePath = dirname(__DIR__, 2) . '/public/' . $userDb['profile_photo_path'];
                     if (file_exists($oldFilePath)) {
                         unlink($oldFilePath);
                     }
@@ -457,8 +491,27 @@ class AdminController extends Controller {
             }
         }
 
-        $userModel = new User();
+        // Executa a atualização
         if ($userModel->updateProfileInfo($user['id'], $updateData)) {
+            // Se o usuário também for um colaborador, sincroniza seus dados na tabela `colaboradores`
+            $db = Database::getInstance();
+            $stmtColab = $db->prepare("SELECT id FROM `colaboradores` WHERE usuario_id = :usuario_id LIMIT 1");
+            $stmtColab->execute(['usuario_id' => $user['id']]);
+            $colabExists = $stmtColab->fetch();
+
+            if ($colabExists) {
+                $syncColabSql = "UPDATE `colaboradores` SET celular_whatsapp = :celular";
+                $syncParams = ['celular' => $celular, 'usuario_id' => $user['id']];
+                if (isset($updateData['profile_photo_path'])) {
+                    $syncColabSql .= ", foto_rosto_path = :photo";
+                    $syncParams['photo'] = $updateData['profile_photo_path'];
+                }
+                $syncColabSql .= " WHERE usuario_id = :usuario_id";
+                
+                $stmtUpdateColab = $db->prepare($syncColabSql);
+                $stmtUpdateColab->execute($syncParams);
+            }
+
             // Atualiza sessão com os novos dados
             $refreshed = $userModel->findWithRole($user['id']);
             Session::set('user', [

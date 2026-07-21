@@ -134,30 +134,86 @@
     </form>
 </div>
 
-<!-- Script de Pré-Visualização de Imagem JS -->
+<!-- Script de Pré-Visualização e Compressão de Imagem JS -->
 <script>
 function previewAvatarImage(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         
-        if (file.size > 10 * 1024 * 1024) {
-            alert('A foto selecionada excede o limite de 10MB.');
-            input.value = '';
+        // Se a imagem for muito pequena (ex: < 50KB), pula a compressão
+        if (file.size < 50 * 1024 && (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewImg = document.getElementById('avatarImagePreview');
+                const placeholder = document.getElementById('avatarPlaceholder');
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                }
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(file);
             return;
         }
 
+        // Realiza redimensionamento e compressão via Canvas para evitar estourar o php.ini
         const reader = new FileReader();
         reader.onload = function(e) {
-            const previewImg = document.getElementById('avatarImagePreview');
-            const placeholder = document.getElementById('avatarPlaceholder');
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const max_size = 400; // Tamanho máximo da largura ou altura para o avatar
 
-            if (previewImg) {
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-            }
-            if (placeholder) {
-                placeholder.style.display = 'none';
-            }
+                if (width > height) {
+                    if (width > max_size) {
+                        height *= max_size / width;
+                        width = max_size;
+                    }
+                } else {
+                    if (height > max_size) {
+                        width *= max_size / height;
+                        height = max_size;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(function(blob) {
+                    const compressedFile = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+                    
+                    // Substitui o arquivo no input file para envio no form
+                    try {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(compressedFile);
+                        input.files = dataTransfer.files;
+                    } catch (err) {
+                        console.error("Erro ao definir input.files: ", err);
+                    }
+
+                    // Exibe a imagem comprimida no preview
+                    const reader2 = new FileReader();
+                    reader2.onload = function(e2) {
+                        const previewImg = document.getElementById('avatarImagePreview');
+                        const placeholder = document.getElementById('avatarPlaceholder');
+                        if (previewImg) {
+                            previewImg.src = e2.target.result;
+                            previewImg.style.display = 'block';
+                        }
+                        if (placeholder) {
+                            placeholder.style.display = 'none';
+                        }
+                    };
+                    reader2.readAsDataURL(compressedFile);
+                }, 'image/jpeg', 0.85);
+            };
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
