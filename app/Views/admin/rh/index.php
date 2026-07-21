@@ -53,18 +53,17 @@
                         <th style="width: 50px; text-align: center;">Foto</th>
                         <th>Nome Completo</th>
                         <th>CPF / Documento</th>
-                        <th>Função na Campanha</th>
                         <th>WhatsApp / E-mail</th>
                         <th>Contrato</th>
                         <th>Etapa Atual</th>
-                        <th>Perfil SGE</th>
+                        <th>Função na Campanha</th>
                         <th>Ações Obrigatórias</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($colaboradores)): ?>
                         <tr>
-                            <td colspan="9" class="text-center">Nenhum colaborador encontrado nesta etapa.</td>
+                            <td colspan="8" class="text-center">Nenhum colaborador encontrado nesta etapa.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($colaboradores as $c): ?>
@@ -103,15 +102,7 @@
                                     <?php endif; ?>
 
                                 </td>
-                                <td>
-                                    <?php if (!empty($c['funcao_campanha'])): ?>
-                                        <span class="badge" style="background:#1e293b; color:#cbd5e1; border:1px solid #475569; font-weight:bold; font-size:11px; padding:4px 8px; border-radius:4px; display:inline-block; max-width: 155px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($c['funcao_campanha']) ?>">
-                                            <?= htmlspecialchars($c['funcao_campanha']) ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="text-secondary" style="font-style:italic; font-size:12px;">Pendente</span>
-                                    <?php endif; ?>
-                                </td>
+
                                 <td>
                                     <div style="display:flex; align-items:center; gap:4px;">
                                         <span>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></span>
@@ -174,12 +165,17 @@
 
                                 </td>
                                 <td>
-                                    <?php if (!empty($c['role_nome'])): ?>
-                                        <span class="badge badge-primary"><?= htmlspecialchars($c['role_nome']) ?></span>
+                                    <?php if (!empty($c['funcao_campanha'])): ?>
+                                        <?php 
+                                            $funcaoLimpa = $c['funcao_campanha'];
+                                            if (($pos = strpos($funcaoLimpa, '(')) !== false) {
+                                                $funcaoLimpa = trim(substr($funcaoLimpa, 0, $pos));
+                                            }
+                                        ?>
+                                        <span class="badge badge-primary" style="font-weight:bold; font-size:11px; padding:4px 8px; border-radius:4px;"><?= htmlspecialchars($funcaoLimpa) ?></span>
                                     <?php else: ?>
                                         <span class="text-secondary" style="font-size:12px;">Pendente</span>
                                     <?php endif; ?>
-
                                 </td>
                                 <td>
                                     <?php if ($c['status'] === 'AGUARDANDO_AVAL_CADASTRO'): ?>
