@@ -416,16 +416,17 @@ class FinanceController extends Controller {
         $db = Database::getInstance();
         $user = $this->getLoggedUser();
 
-        // 1. Despesas gerais pendentes de aprovação (usando LEFT JOIN para contas, categorias e tipos de despesa)
+        // 1. Despesas gerais pendentes (status = 'PENDENTE')
         $stmtExpenses = $db->query(
-            "SELECT d.*, s.corporate_name AS supplier_name, b.name AS bank_name, c.code AS spce_code, 
-                    c.description AS spce_desc, u.name AS creator_name, cc.id AS doc_id, et.name AS expense_type_name
+            "SELECT d.*, COALESCE(s.corporate_name, 'Fornecedor Desconhecido') AS supplier_name, 
+                    b.name AS bank_name, c.code AS spce_code, c.description AS spce_desc, 
+                    COALESCE(u.name, 'Colaborador de Campo') AS creator_name, cc.doc_id, et.name AS expense_type_name
              FROM `despesas` d
-             JOIN `suppliers` s ON d.supplier_id = s.id
+             LEFT JOIN `suppliers` s ON d.supplier_id = s.id
              LEFT JOIN `bank_accounts` b ON d.bank_account_id = b.id
              LEFT JOIN `spce_categories` c ON d.spce_category_id = c.id
-             JOIN `usuarios` u ON d.user_id = u.id
-             LEFT JOIN `comprovantes_cripto` cc ON d.id = cc.expense_id
+             LEFT JOIN `usuarios` u ON d.user_id = u.id
+             LEFT JOIN (SELECT expense_id, MIN(id) AS doc_id FROM `comprovantes_cripto` GROUP BY expense_id) cc ON d.id = cc.expense_id
              LEFT JOIN `expense_types` et ON d.expense_type_id = et.id
              WHERE d.status = 'PENDENTE'
              ORDER BY d.date_incurred ASC, d.id ASC"
@@ -434,11 +435,11 @@ class FinanceController extends Controller {
 
         // 2. Relatórios de viagens pendentes de aprovação (status = 'ENVIADO')
         $stmtTravels = $db->query(
-            "SELECT tr.*, u.name AS user_name, u.celular 
+            "SELECT tr.*, COALESCE(u.name, 'Colaborador de Campo') AS user_name, COALESCE(u.celular, 'Não informado') AS celular 
              FROM `travel_reports` tr 
-             JOIN `usuarios` u ON tr.user_id = u.id 
+             LEFT JOIN `usuarios` u ON tr.user_id = u.id 
              WHERE tr.status = 'ENVIADO' 
-             ORDER BY tr.start_date ASC"
+             ORDER BY tr.start_date ASC, tr.id ASC"
         );
         $pendingTravels = $stmtTravels->fetchAll();
 
@@ -448,7 +449,7 @@ class FinanceController extends Controller {
             $stmtReceipts = $db->prepare(
                 "SELECT r.*, c.code AS spce_code, c.description AS spce_desc 
                  FROM `travel_receipts` r 
-                 JOIN `spce_categories` c ON r.spce_category_id = c.id 
+                 LEFT JOIN `spce_categories` c ON r.spce_category_id = c.id 
                  WHERE r.travel_report_id = :id"
             );
             $stmtReceipts->execute(['id' => $tr['id']]);
@@ -460,11 +461,11 @@ class FinanceController extends Controller {
 
         // 3. Atividades de panfletagem / militância pendentes (status = 'PENDENTE')
         $stmtMilitancy = $db->query(
-            "SELECT ma.*, u.name AS user_name 
+            "SELECT ma.*, COALESCE(u.name, 'Militante de Campo') AS user_name 
              FROM `militancy_activities` ma 
-             JOIN `usuarios` u ON ma.user_id = u.id 
+             LEFT JOIN `usuarios` u ON ma.user_id = u.id 
              WHERE ma.status = 'PENDENTE' 
-             ORDER BY ma.activity_date ASC"
+             ORDER BY ma.activity_date ASC, ma.id ASC"
         );
         $pendingMilitancy = $stmtMilitancy->fetchAll();
 
