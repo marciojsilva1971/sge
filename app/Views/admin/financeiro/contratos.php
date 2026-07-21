@@ -79,8 +79,8 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 18px;">
-                <label for="contract_pdf" style="font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px;">Anexar Contrato Assinado (PDF Obrigatório) *</label>
-                <input type="file" id="contract_pdf" name="contract_pdf" accept="application/pdf" required style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; border: 1px dashed #38bdf8; color: #f8fafc; font-size: 12px;">
+                <label for="contract_pdf" style="font-size: 12px; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px;">Anexar Arquivo do Contrato (PDF Opcional)</label>
+                <input type="file" id="contract_pdf" name="contract_pdf" accept="application/pdf" style="width: 100%; padding: 8px; border-radius: 6px; background: #0f172a; border: 1px dashed #38bdf8; color: #f8fafc; font-size: 12px;">
                 <small style="color: #94a3b8; font-size: 11px;">Somente arquivos .pdf (Máx: 10MB)</small>
             </div>
 
@@ -158,10 +158,14 @@
                                 </td>
                                 <td style="padding: 10px; text-align: center;">
                                     <div style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
-                                        <a href="<?= $this->baseUrl('admin/financeiro/contratos/download?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background: #0284c7; color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Ver Contrato PDF">
-                                            📄 PDF
-                                        </a>
-                                        <button type="button" class="btn btn-sm" onclick='abrirModalEditarContrato(<?= json_encode($c) ?>)' style="background: #334155; color: #f8fafc; border: 1px solid #475569; border-radius: 6px; padding: 6px 10px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Editar dados do contrato ou substituir PDF">
+                                        <?php if (!empty($c['file_path'])): ?>
+                                            <a href="<?= $this->baseUrl('admin/financeiro/contratos/download?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background: #0284c7; color: white; border: none; border-radius: 6px; padding: 6px 10px; font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Ver Contrato PDF">
+                                                📄 PDF
+                                            </a>
+                                        <?php else: ?>
+                                            <span style="font-size: 11px; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px;">Sem PDF</span>
+                                        <?php endif; ?>
+                                        <button type="button" class="btn btn-sm" onclick='abrirModalEditarContrato(<?= json_encode($c) ?>)' style="background: #334155; color: #f8fafc; border: 1px solid #475569; border-radius: 6px; padding: 6px 10px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Editar dados do contrato ou anexar PDF">
                                             ✏️ Editar
                                         </button>
                                     </div>

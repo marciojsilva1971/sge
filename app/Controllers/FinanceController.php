@@ -1040,35 +1040,36 @@ class FinanceController extends Controller {
                 throw new Exception("A data de término do contrato não pode ser anterior à data de início.");
             }
 
-            // Validação e Upload do Arquivo PDF
-            if (!isset($_FILES['contract_pdf']) || $_FILES['contract_pdf']['error'] !== UPLOAD_ERR_OK) {
-                throw new Exception("O envio do arquivo do Contrato Assinado em PDF é obrigatório.");
+            // Validação e Upload do Arquivo PDF (Opcional)
+            $relativePath = null;
+            $originalName = null;
+
+            if (isset($_FILES['contract_pdf']) && $_FILES['contract_pdf']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['contract_pdf'];
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if ($ext !== 'pdf') {
+                    throw new Exception("O arquivo de contrato deve estar obrigatoriamente no formato PDF.");
+                }
+
+                if ($file['size'] > 10 * 1024 * 1024) {
+                    throw new Exception("O tamanho do arquivo PDF não pode ultrapassar 10MB.");
+                }
+
+                $uploadDir = __DIR__ . '/../../storage/uploads/contratos_fornecedores/';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                $safeFileName = 'contrato_sup_' . $supplier_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.pdf';
+                $targetPath = $uploadDir . $safeFileName;
+
+                if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                    throw new Exception("Falha ao salvar o arquivo PDF no servidor.");
+                }
+
+                $relativePath = 'storage/uploads/contratos_fornecedores/' . $safeFileName;
+                $originalName = basename($file['name']);
             }
-
-            $file = $_FILES['contract_pdf'];
-            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            if ($ext !== 'pdf') {
-                throw new Exception("O arquivo de contrato deve estar obrigatoriamente no formato PDF.");
-            }
-
-            if ($file['size'] > 10 * 1024 * 1024) {
-                throw new Exception("O tamanho do arquivo PDF não pode ultrapassar 10MB.");
-            }
-
-            $uploadDir = __DIR__ . '/../../storage/uploads/contratos_fornecedores/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-
-            $safeFileName = 'contrato_sup_' . $supplier_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.pdf';
-            $targetPath = $uploadDir . $safeFileName;
-
-            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-                throw new Exception("Falha ao salvar o arquivo PDF no servidor.");
-            }
-
-            $relativePath = 'storage/uploads/contratos_fornecedores/' . $safeFileName;
-            $originalName = basename($file['name']);
 
             $stmt = $db->prepare(
                 "INSERT INTO `supplier_contracts` 
