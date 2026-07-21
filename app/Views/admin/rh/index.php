@@ -89,7 +89,17 @@
 
                                 </td>
                                 <td>
-                                    <div><?= htmlspecialchars($c['cpf']) ?></div>
+                                    <?php 
+                                    $cpfRaw = preg_replace('/\D/', '', $c['cpf'] ?? '');
+                                    if (strlen($cpfRaw) === 11) {
+                                        $cpfFormatted = substr($cpfRaw, 0, 3) . '.' . substr($cpfRaw, 3, 3) . '.' . substr($cpfRaw, 6, 3) . '-' . substr($cpfRaw, 9, 2);
+                                    } elseif (strlen($cpfRaw) === 14) {
+                                        $cpfFormatted = substr($cpfRaw, 0, 2) . '.' . substr($cpfRaw, 2, 3) . '.' . substr($cpfRaw, 5, 3) . '/' . substr($cpfRaw, 8, 4) . '-' . substr($cpfRaw, 12, 2);
+                                    } else {
+                                        $cpfFormatted = $c['cpf'];
+                                    }
+                                    ?>
+                                    <div><?= htmlspecialchars($cpfFormatted) ?></div>
                                     <small class="text-secondary">RG: <?= htmlspecialchars($c['rg']) ?> <?= htmlspecialchars($c['rg_orgao_emissor']) ?></small>
                                      <?php if (!empty($c['documento_foto_path'])): ?>
                                          <div style="margin-top:4px;">
@@ -106,7 +116,17 @@
 
                                 <td>
                                     <div style="display:flex; align-items:center; gap:4px;">
-                                        <span>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></span>
+                                        <?php 
+                                        $celRaw = preg_replace('/\D/', '', $c['celular_whatsapp'] ?? '');
+                                        if (strlen($celRaw) === 11) {
+                                            $celFormatted = '(' . substr($celRaw, 0, 2) . ') ' . substr($celRaw, 2, 5) . '-' . substr($celRaw, 7, 4);
+                                        } elseif (strlen($celRaw) === 10) {
+                                            $celFormatted = '(' . substr($celRaw, 0, 2) . ') ' . substr($celRaw, 2, 4) . '-' . substr($celRaw, 6, 4);
+                                        } else {
+                                            $celFormatted = $c['celular_whatsapp'];
+                                        }
+                                        ?>
+                                        <span>📱 <?= htmlspecialchars($celFormatted) ?></span>
                                         <button onclick="openEditarTelefoneModal(<?= $c['id'] ?>, '<?= htmlspecialchars($c['nome_completo'], ENT_QUOTES) ?>', '<?= htmlspecialchars($c['celular_whatsapp'], ENT_QUOTES) ?>')" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:12px; padding:0 2px;" title="Editar Telefone / WhatsApp">✏️</button>
                                     </div>
                                     <small class="text-secondary"><?= htmlspecialchars($c['email']) ?></small>
@@ -758,10 +778,42 @@ function openConferirContratoModal(colaborador) {
 function closeConferirContratoModal() {
     document.getElementById('conferirContratoModal').classList.add('hidden');
 }
+function aplicarMascaraTelefone(input) {
+    let value = input.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    if (value.length > 10) {
+        value = value.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
+    } else if (value.length > 6) {
+        value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, "($1) $2-$3");
+    } else if (value.length > 2) {
+        value = value.replace(/^(\d{2})(\d{0,5})$/, "($1) $2");
+    } else if (value.length > 0) {
+        value = value.replace(/^(\d*)$/, "($1");
+    }
+    input.value = value;
+}
+
+function aplicarMascaraCpf(input) {
+    let value = input.value.replace(/\D/g, "");
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    if (value.length > 9) {
+        value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+    } else if (value.length > 6) {
+        value = value.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3");
+    } else if (value.length > 3) {
+        value = value.replace(/^(\d{3})(\d{1,3})$/, "$1.$2");
+    }
+    input.value = value;
+}
+
 function openEditarTelefoneModal(id, nome, celular) {
     document.getElementById('edit_tel_colaborador_id').value = id;
     document.getElementById('edit_tel_colaborador_nome').value = nome;
-    document.getElementById('edit_tel_celular_whatsapp').value = celular;
+    const telInput = document.getElementById('edit_tel_celular_whatsapp');
+    telInput.value = celular;
+    aplicarMascaraTelefone(telInput);
     document.getElementById('editarTelefoneModal').classList.remove('hidden');
 }
 
@@ -805,4 +857,28 @@ function copiarLinkCadastro() {
         alert('✅ Link copiado!');
     });
 }
+document.addEventListener('DOMContentLoaded', function() {
+    const editTelInput = document.getElementById('edit_tel_celular_whatsapp');
+    if (editTelInput) {
+        editTelInput.addEventListener('input', function() {
+            aplicarMascaraTelefone(editTelInput);
+        });
+    }
+
+    const celularConvite = document.getElementById('celular_convite');
+    if (celularConvite) {
+        celularConvite.addEventListener('input', function() {
+            aplicarMascaraTelefone(celularConvite);
+        });
+    }
+
+    const filterCpf = document.getElementById('filter-cpf');
+    if (filterCpf) {
+        filterCpf.addEventListener('input', function() {
+            aplicarMascaraCpf(filterCpf);
+        });
+        // Aplica no carregamento inicial caso já tenha valor preenchido pelo filtro
+        aplicarMascaraCpf(filterCpf);
+    }
+});
 </script>
