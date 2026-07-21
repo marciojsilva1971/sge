@@ -34,3 +34,11 @@ Este documento mantém o registro permanente de todas as implementações para c
 * **Ações:**
   - Gerador do Dossiê Consolidado da Campanha formatado para o contador eleitoral e advogado do candidato.
   - Apresentação sintética e analítica com saldos bancários, totais de receitas, demonstrativo de despesas por fornecedor e relação de contratos por tempo determinado.
+
+---
+
+## 📅 Sessão 5: Inclusão de Colaboradores e Compliance no Dossiê SPCE
+* **Ações:**
+  - **Relacionamento de Recursos Humanos e Finanças**: Atualizado o método `exportSpcePdf()` no `FinanceController.php` para carregar todos os colaboradores contratados da campanha.
+  - **Nova Seção do Relatório**: Adicionado o módulo **"5. Contratos de Colaboradores e Apoio (Militância de Campanha)"** exibindo Nome, CPF (formatado), Cargo/Função, Status e o resultado consolidado da regularidade Receita/TSE com respectiva data de verificação.
+  - **Cálculo Consolidado**: Exibido o somatório total das despesas com pessoal da militância contratada para fechamento de balanço contábil.

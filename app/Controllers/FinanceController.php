@@ -1587,6 +1587,12 @@ class FinanceController extends Controller {
              ORDER BY c.start_date ASC"
         )->fetchAll();
 
+        $colaboradores = $db->query(
+            "SELECT id, nome_completo, cpf, papel_eleitoral, valor_contratado, status_etapa, tse_regularidade_json, tse_regularidade_data 
+             FROM `colaboradores` 
+             ORDER BY nome_completo ASC"
+        )->fetchAll();
+
         echo '<!DOCTYPE html>
         <html lang="pt-BR">
         <head>
@@ -1712,6 +1718,60 @@ class FinanceController extends Controller {
                         </tr>';
                     }
                     echo '<tr><th colspan="5" class="text-right">Total de Instrumentos Contratuais:</th><th class="text-right">R$ ' . number_format($sumCont, 2, ',', '.') . '</th></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <h3>5. Contratos de Colaboradores e Apoio (Militância de Campanha)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome Completo</th>
+                            <th>CPF</th>
+                            <th>Cargo / Papel Eleitoral</th>
+                            <th>Status Cadastral</th>
+                            <th>Situação Regularidade (TSE/Receita)</th>
+                            <th class="text-right">Valor Contratado</th>
+                        </tr>
+                    </thead>
+                    <tbody>';
+                    $sumColab = 0;
+                    foreach ($colaboradores as $col) {
+                        $sumColab += floatval($col['valor_contratado']);
+                        
+                        // Formatação CPF
+                        $cpfRaw = preg_replace('/\D/', '', $col['cpf']);
+                        if (strlen($cpfRaw) === 11) {
+                            $cpf = substr($cpfRaw, 0, 3) . '.' . substr($cpfRaw, 3, 3) . '.' . substr($cpfRaw, 6, 3) . '-' . substr($cpfRaw, 9, 2);
+                        } else {
+                            $cpf = htmlspecialchars($col['cpf']);
+                        }
+
+                        // Regularidade
+                        $regStatus = 'Não Verificado';
+                        $regClass = 'badge-danger';
+                        if (!empty($col['tse_regularidade_json'])) {
+                            $regData = json_decode($col['tse_regularidade_json'], true);
+                            if (is_array($regData) && isset($regData['valido'])) {
+                                $regStatus = $regData['valido'] ? 'Apto' : 'Inapto';
+                                $regClass = $regData['valido'] ? 'badge-success' : 'badge-danger';
+                                if (!empty($col['tse_regularidade_data'])) {
+                                    $regStatus .= ' (Ref: ' . date('d/m/Y', strtotime($col['tse_regularidade_data'])) . ')';
+                                }
+                            }
+                        }
+
+                        echo '<tr>
+                            <td>' . htmlspecialchars($col['nome_completo']) . '</td>
+                            <td>' . $cpf . '</td>
+                            <td>' . htmlspecialchars($col['papel_eleitoral'] ?? 'Colaborador') . '</td>
+                            <td>' . htmlspecialchars($col['status_etapa']) . '</td>
+                            <td><span class="badge ' . $regClass . '">' . $regStatus . '</span></td>
+                            <td class="text-right">R$ ' . number_format($col['valor_contratado'], 2, ',', '.') . '</td>
+                        </tr>';
+                    }
+                    echo '<tr><th colspan="5" class="text-right">Total Contratado (Colaboradores):</th><th class="text-right">R$ ' . number_format($sumColab, 2, ',', '.') . '</th></tr>
                     </tbody>
                 </table>
             </div>
