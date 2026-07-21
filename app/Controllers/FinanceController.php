@@ -979,6 +979,7 @@ class FinanceController extends Controller {
      * Tela de Gestão de Contratos por Tempo Determinado (GET)
      */
     public function contratos(): void {
+        $user = $this->requireAuth();
         $db = Database::getInstance();
         
         $contracts = $db->query(
@@ -998,6 +999,7 @@ class FinanceController extends Controller {
 
         $this->render('admin/financeiro/contratos', [
             'title'      => 'Contratos por Tempo Determinado | SGE',
+            'user'       => $user,
             'contracts'  => $contracts,
             'suppliers'  => $suppliers,
             'csrf_token' => Session::csrfToken()
@@ -1233,6 +1235,7 @@ class FinanceController extends Controller {
      * Download/Visualização segura do PDF do Contrato (GET)
      */
     public function downloadContrato(): void {
+        $user = $this->requireAuth();
         $db = Database::getInstance();
         $id = intval($_GET['id'] ?? 0);
 
