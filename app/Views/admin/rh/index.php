@@ -79,24 +79,14 @@
                                             <?= strtoupper(substr($c['nome_completo'], 0, 1)) ?>
                                         </div>
                                     <?php endif; ?>
-                                    
-                                    <div style="margin-top:8px;">
-                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
-                                            📄 Certidão de Regularidade
-                                        </a>
-                                    </div>
+
                                 </td>
                                 <td>
                                     <strong><?= htmlspecialchars($c['nome_completo']) ?></strong>
                                     <?php if (!empty($c['optin_whatsapp'])): ?>
                                         <span title="Opt-In WhatsApp Confirmado" style="color:#10b981; font-size:12px; margin-left:4px;">✓ Opt-In</span>
                                     <?php endif; ?>
-                                    
-                                    <div style="margin-top:8px;">
-                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
-                                            📄 Certidão de Regularidade
-                                        </a>
-                                    </div>
+
                                 </td>
                                 <td>
                                     <div><?= htmlspecialchars($c['cpf']) ?></div>
@@ -111,24 +101,14 @@
                                      <?php else: ?>
                                         <div style="margin-top:4px;"><span class="badge badge-danger" style="font-size:10px;">⚠ Sem Doc. Anexo</span></div>
                                     <?php endif; ?>
-                                    
-                                    <div style="margin-top:8px;">
-                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
-                                            📄 Certidão de Regularidade
-                                        </a>
-                                    </div>
+
                                 </td>
                                 <td>
                                     <span><?= $c['idade_calculada'] ?> anos</span>
                                     <?php if ($c['idade_calculada'] < 18): ?>
                                         <span class="badge badge-warning" style="font-size: 10px;" title="Menor de idade: Restrições legais de campanha aplicáveis">⚠ Menor</span>
                                     <?php endif; ?>
-                                    
-                                    <div style="margin-top:8px;">
-                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
-                                            📄 Certidão de Regularidade
-                                        </a>
-                                    </div>
+
                                 </td>
                                 <td>
                                     <div style="display:flex; align-items:center; gap:4px;">
@@ -189,12 +169,7 @@
                                     <?php else: ?>
                                         <span class="badge badge-danger">Rejeitado</span>
                                     <?php endif; ?>
-                                    
-                                    <div style="margin-top:8px;">
-                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
-                                            📄 Certidão de Regularidade
-                                        </a>
-                                    </div>
+
                                 </td>
                                 <td>
                                     <?php if (!empty($c['role_nome'])): ?>
@@ -202,12 +177,7 @@
                                     <?php else: ?>
                                         <span class="text-secondary" style="font-size:12px;">Pendente</span>
                                     <?php endif; ?>
-                                    
-                                    <div style="margin-top:8px;">
-                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
-                                            📄 Certidão de Regularidade
-                                        </a>
-                                    </div>
+
                                 </td>
                                 <td>
                                     <?php if ($c['status'] === 'AGUARDANDO_AVAL_CADASTRO'): ?>
@@ -273,12 +243,7 @@
                                             </form>
                                         </div>
                                     <?php endif; ?>
-                                    
-                                    <div style="margin-top:8px;">
-                                        <a href="<?= $this->baseUrl('admin/rh/regularidade-pdf?id=' . $c['id']) ?>" target="_blank" class="btn btn-sm" style="background:#0284c7; color:#fff; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; width:100%; justify-content:center; border:1px solid rgba(2,132,199,0.5);">
-                                            📄 Certidão de Regularidade
-                                        </a>
-                                    </div>
+
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -401,6 +366,23 @@
                 <small class="form-help">Após conferir o contrato assinado, selecione a permissão. O usuário será ativado no sistema somente neste momento.</small>
             </div>
 
+            <div class="form-group mb-2">
+                <label for="conf_funcao_campanha">Função na Campanha contratada: *</label>
+                <select id="conf_funcao_campanha" name="funcao_campanha" required>
+                    <option value="">Selecione a função...</option>
+                    <option value="Cabo Eleitoral">Cabo Eleitoral</option>
+                    <option value="Coordenador de Bairro / Região">Coordenador de Bairro / Região</option>
+                    <option value="Coordenador Geral de Campanha">Coordenador Geral de Campanha</option>
+                    <option value="Panfletista / Ativista">Panfletista / Ativista</option>
+                    <option value="Motorista de Campanha">Motorista de Campanha</option>
+                    <option value="Mobilizador de Rua">Mobilizador de Rua</option>
+                    <option value="Assessor de Comunicação / Mídias">Assessor de Comunicação / Mídias</option>
+                    <option value="Segurança / Apoio Logístico">Segurança / Apoio Logístico</option>
+                    <option value="Outras Funções de Campanha">Outras Funções de Campanha</option>
+                </select>
+                <small class="form-help">Caso a função de campanha seja alterada, o sistema gerará um novo contrato e enviará para assinatura do colaborador, arquivando o histórico.</small>
+            </div>
+
             <div class="modal-footer" style="margin-top: 20px;">
                 <button type="button" onclick="closeConferirContratoModal()" class="btn btn-secondary">Cancelar</button>
                 <button type="submit" class="btn btn-primary">✔ Contrato Conferido - Homologar & Liberar Permissão</button>
@@ -481,6 +463,50 @@
         </div>
         <div class="modal-footer">
             <button onclick="document.getElementById('homologSuccessModal').classList.add('hidden')" class="btn btn-secondary">Fechar</button>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Modal de Sucesso após Alteração de Contrato (Mudança de Função) -->
+<?php if (!empty($contratoAlterado)): ?>
+<div id="contratoAlteradoModal" class="modal-overlay">
+    <div class="modal-card success-modal-card" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Novo Contrato Emitido!</h3>
+            <button onclick="document.getElementById('contratoAlteradoModal').classList.add('hidden')" class="btn-close-modal">&times;</button>
+        </div>
+        <div class="modal-body text-center" style="padding: 20px;">
+            <div class="success-icon" style="font-size:42px; color:#f59e0b; margin-bottom:10px;">📝</div>
+            <p style="font-size:16px;">O contrato do colaborador <strong><?= htmlspecialchars($contratoAlterado['nome']) ?></strong> foi atualizado com sucesso!</p>
+            <p style="font-size:14px; color:#cbd5e1; margin-top:5px;">Função alterada de <span style="text-decoration:line-through; color:#ef4444;"><?= htmlspecialchars($contratoAlterado['funcao_antiga']) ?></span> para <strong style="color:#10b981;"><?= htmlspecialchars($contratoAlterado['funcao_nova']) ?></strong>.</p>
+            <p style="font-size:13px; color:#94a3b8; margin-bottom:15px;">O novo contrato foi arquivado junto ao anterior e o colaborador foi colocado de volta em etapa de assinatura.</p>
+
+            <div style="background:#0f172a; padding:14px; border-radius:8px; margin: 15px 0; text-align:left; border:1px solid rgba(245,158,11,0.3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="color:#38bdf8;">Status do Envio Automático Z-API:</strong>
+                    <?php if (!empty($contratoAlterado['zapi_sent'])): ?>
+                        <span class="badge badge-success">Enviado via WhatsApp</span>
+                    <?php else: ?>
+                        <span class="badge badge-danger" style="background:#ef4444; color:#fff;">Envio Automático Indisponível</span>
+                    <?php endif; ?>
+                </div>
+                <div style="font-size:12px; color:#cbd5e1; white-space:pre-wrap; background:#1e293b; padding:10px; border-radius:6px; font-family:monospace; margin-top:5px; max-height:120px; overflow-y:auto;"><?= htmlspecialchars($contratoAlterado['msg']) ?></div>
+            </div>
+
+            <!-- Ações: Download PDF ou Enviar WhatsApp -->
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                <a href="<?= htmlspecialchars($contratoAlterado['click_to_chat']) ?>" target="_blank" class="btn btn-success" style="background:#25D366; color:#fff; font-weight:bold; font-size:14px; padding:10px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;">
+                    💬 Enviar Link de Assinatura pelo meu WhatsApp Pessoal
+                </a>
+
+                <a href="<?= htmlspecialchars($contratoAlterado['link_pdf']) ?>" target="_blank" class="btn btn-primary" style="background:#0284c7; color:#fff; font-weight:bold; font-size:14px; padding:10px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none;">
+                    📄 Visualizar e Baixar Novo Contrato (PDF)
+                </a>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="document.getElementById('contratoAlteradoModal').classList.add('hidden')" class="btn btn-secondary">Fechar</button>
         </div>
     </div>
 </div>
@@ -609,6 +635,18 @@ function toggleAvalTerceirosUrl() {
 function openConferirContratoModal(colaborador) {
     document.getElementById('conf_colaborador_id').value = colaborador.id;
     document.getElementById('conf_colaborador_nome').value = colaborador.nome_completo;
+
+    if (colaborador.role_id) {
+        document.getElementById('conf_role_id').value = colaborador.role_id;
+    } else {
+        document.getElementById('conf_role_id').value = '';
+    }
+
+    if (colaborador.funcao_campanha) {
+        document.getElementById('conf_funcao_campanha').value = colaborador.funcao_campanha;
+    } else {
+        document.getElementById('conf_funcao_campanha').value = '';
+    }
 
     const confBox = document.getElementById('conf_contrato_preview_link');
     let html = '';

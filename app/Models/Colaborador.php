@@ -48,8 +48,9 @@ class Colaborador extends Model {
      * Lista colaboradores com filtros e dados do usuário/contrato associado.
      */
     public function getColaboradoresCompleto(array $filters = []): array {
-        $sql = "SELECT c.*, u.name as usuario_nome, u.email as usuario_email, r.name as role_nome,
-                       cc.id as contrato_id, cc.titulo_contrato, cc.valor_contratado, cc.status_contrato, cc.pdf_assinado_path, cc.tipo_assinatura, cc.external_signature_url
+        $sql = "SELECT c.*, u.name as usuario_nome, u.email as usuario_email, u.role_id, r.name as role_nome,
+                       cc.id as contrato_id, cc.titulo_contrato, cc.valor_contratado, cc.status_contrato, cc.pdf_assinado_path, cc.tipo_assinatura, cc.external_signature_url,
+                       cc.funcao_campanha, cc.forma_pagamento, cc.data_inicio, cc.data_fim
                 FROM `{$this->table}` c
                 LEFT JOIN `usuarios` u ON c.usuario_id = u.id
                 LEFT JOIN `roles` r ON u.role_id = r.id

@@ -249,6 +249,7 @@ class RhController extends Controller {
 
         $colaboradorId = (int)($_POST['colaborador_id'] ?? 0);
         $roleId = (int)($_POST['role_id'] ?? 0);
+        $funcaoCampanha = trim($_POST['funcao_campanha'] ?? '');
 
         if (!$colaboradorId || !$roleId) {
             Session::setFlash('error', 'Selecione o perfil de acesso (Role) para homologar o colaborador.');
@@ -264,35 +265,94 @@ class RhController extends Controller {
                 $this->redirect('/admin/rh');
             }
 
+            // Busca contrato ativo atual antes da homologação
+            $contratoModel = new Contrato();
+            $contratoAtual = $contratoModel->getContratoPorColaborador($colaboradorId);
+
+            // Executa homologação e atribuição de perfil SGE
             $result = $colaboradorModel->homologarEAtribuirPerfil($colaboradorId, $roleId);
             $tempPassword = $result['temp_password'];
 
-            // Envio automático das credenciais provisórias via WhatsApp Z-API
-            if (!empty($colaborador['celular_whatsapp'])) {
-                $loginUrl = $this->baseUrl('login');
-                $msg = "Olá " . $colaborador['nome_completo'] . "! Parabéns, seu contrato de campanha foi conferido e aprovado!\n\n";
-                $msg .= "Seu cadastro no Sistema de Gestão Eleitoral (SGE) foi homologado com sucesso.\n\n";
-                $msg .= "🔑 DADOS DE ACESSO AO SISTEMA:\n";
-                $msg .= "🌐 Link de Acesso: " . $loginUrl . "\n";
-                $msg .= "👤 Usuário (E-mail): " . $colaborador['email'] . "\n";
-                $msg .= "🔒 Senha Provisória: " . $tempPassword . "\n\n";
-                $msg .= "Recomendamos que você efetue seu primeiro acesso e altere sua senha no seu perfil.";
+            $contratoModificado = false;
+            // Se houver alteração na função contratada, gera novo contrato e arquiva junto ao anterior
+            if ($contratoAtual && !empty($funcaoCampanha) && $contratoAtual['funcao_campanha'] !== $funcaoCampanha) {
+                $contratoData = [
+                    'colaborador_id'         => $colaboradorId,
+                    'titulo_contrato'        => $contratoAtual['titulo_contrato'] ?? 'Contrato de Prestação de Serviços de Campanha Eleitoral',
+                    'funcao_campanha'        => $funcaoCampanha,
+                    'valor_contratado'       => (float)($contratoAtual['valor_contratado'] ?? 0.0),
+                    'forma_pagamento'        => $contratoAtual['forma_pagamento'] ?? 'Transferência Bancária / PIX',
+                    'data_inicio'            => $contratoAtual['data_inicio'] ?? date('Y-m-d'),
+                    'data_fim'               => $contratoAtual['data_fim'] ?? date('Y-m-d', strtotime('+3 months')),
+                    'tipo_assinatura'        => $contratoAtual['tipo_assinatura'] ?? 'TERCEIROS_API',
+                    'external_signature_url' => $contratoAtual['external_signature_url'] ?? null
+                ];
+                $contratoModel->emitirContrato($contratoData);
 
-                $zapiSent = WhatsAppService::send($colaborador['celular_whatsapp'], $msg);
-                $clickToChatUrl = WhatsAppService::generateClickToChat($colaborador['celular_whatsapp'], $msg);
-
-                Session::setFlash('homologSuccess', [
-                    'nome'          => $colaborador['nome_completo'],
-                    'celular'       => $colaborador['celular_whatsapp'],
-                    'email'         => $colaborador['email'],
-                    'temp_password' => $tempPassword,
-                    'msg'           => $msg,
-                    'zapi_sent'     => $zapiSent,
-                    'click_to_chat' => $clickToChatUrl
-                ]);
+                // Como geramos novo contrato, o status de etapa do colaborador volta para aguardando assinatura
+                $colaboradorModel->update($colaboradorId, ['status' => 'AGUARDANDO_ASSINATURA_CONTRATO']);
+                $contratoModificado = true;
             }
 
-            Session::setFlash('success', 'Contrato conferido! Colaborador homologado com sucesso.');
+            if ($contratoModificado) {
+                // Prepara links e mensagem para o novo contrato
+                $colaboradorAtualizado = $colaboradorModel->find($colaboradorId);
+                $linkContrato = $this->baseUrl('colaborador/contrato?token=' . $colaboradorAtualizado['token_cadastro']);
+                $linkPdf = $this->baseUrl('colaborador/contrato-pdf?token=' . $colaboradorAtualizado['token_cadastro']);
+
+                $msg = "Olá " . $colaboradorAtualizado['nome_completo'] . "! Seu contrato de campanha foi atualizado para a função de " . $funcaoCampanha . ".\n\n";
+                if ($contratoAtual && !empty($contratoAtual['external_signature_url'])) {
+                    $msg .= "✍️ Link para Assinatura Digital Externa (Plataforma):\n" . $contratoAtual['external_signature_url'] . "\n\n";
+                }
+                $msg .= "📄 Para BAIXAR e IMPRIMIR o Contrato (PDF):\n" . $linkPdf . "\n\n";
+                $msg .= "🌐 Para enviar o documento assinado ou acompanhar o cadastro:\n" . $linkContrato . "\n\n";
+                $msg .= "Por favor, imprima/assine e envie a cópia pelo link acima.";
+
+                $zapiSent = false;
+                if (!empty($colaboradorAtualizado['celular_whatsapp'])) {
+                    $zapiSent = WhatsAppService::send($colaboradorAtualizado['celular_whatsapp'], $msg);
+                }
+                $clickToChatUrl = WhatsAppService::generateClickToChat($colaboradorAtualizado['celular_whatsapp'] ?? '', $msg);
+
+                Session::setFlash('contratoAlterado', [
+                    'nome'          => $colaboradorAtualizado['nome_completo'],
+                    'celular'       => $colaboradorAtualizado['celular_whatsapp'],
+                    'funcao_antiga' => $contratoAtual['funcao_campanha'] ?? 'Pendente',
+                    'funcao_nova'   => $funcaoCampanha,
+                    'msg'           => $msg,
+                    'link_pdf'      => $linkPdf,
+                    'zapi_sent'     => $zapiSent,
+                    'click_to_chat' => $clickToChatUrl,
+                    'colaborador_id'=> $colaboradorId
+                ]);
+            } else {
+                // Envio automático normal das credenciais provisórias via WhatsApp Z-API (caso não tenha mudado de contrato)
+                if (!empty($colaborador['celular_whatsapp'])) {
+                    $loginUrl = $this->baseUrl('login');
+                    $msg = "Olá " . $colaborador['nome_completo'] . "! Parabéns, seu contrato de campanha foi conferido e aprovado!\n\n";
+                    $msg .= "Seu cadastro no Sistema de Gestão Eleitoral (SGE) foi homologado com sucesso.\n\n";
+                    $msg .= "🔑 DADOS DE ACESSO AO SISTEMA:\n";
+                    $msg .= "🌐 Link de Acesso: " . $loginUrl . "\n";
+                    $msg .= "👤 Usuário (E-mail): " . $colaborador['email'] . "\n";
+                    $msg .= "🔒 Senha Provisória: " . $tempPassword . "\n\n";
+                    $msg .= "Recomendamos que você efetue seu primeiro acesso e altere sua senha no seu perfil.";
+
+                    $zapiSent = WhatsAppService::send($colaborador['celular_whatsapp'], $msg);
+                    $clickToChatUrl = WhatsAppService::generateClickToChat($colaborador['celular_whatsapp'], $msg);
+
+                    Session::setFlash('homologSuccess', [
+                        'nome'          => $colaborador['nome_completo'],
+                        'celular'       => $colaborador['celular_whatsapp'],
+                        'email'         => $colaborador['email'],
+                        'temp_password' => $tempPassword,
+                        'msg'           => $msg,
+                        'zapi_sent'     => $zapiSent,
+                        'click_to_chat' => $clickToChatUrl
+                    ]);
+                }
+            }
+
+            Session::setFlash('success', $contratoModificado ? 'Perfil atualizado e novo contrato gerado com sucesso.' : 'Contrato conferido! Colaborador homologado com sucesso.');
             $this->redirect('/admin/rh');
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao homologar e conceder permissões: ' . $e->getMessage());
