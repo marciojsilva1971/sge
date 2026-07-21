@@ -138,6 +138,75 @@
 
     </div>
 
+    <!-- Seção: Controle de Limites de Contratação de Pessoal (RH) -->
+    <div class="panel-card" style="margin-top: 24px;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #fff;">👥 Controle de Limites de Contratação de Pessoal (Art. 100-A Lei 9.504)</h3>
+            <span style="font-size: 11px; background: rgba(45, 212, 191, 0.1); border: 1px solid rgba(45, 212, 191, 0.3); color: #2dd4bf; padding: 4px 8px; border-radius: 4px; font-weight: 600;">
+                Cargo Ativo: <?= htmlspecialchars($kpis['electoral_role'] ?? 'Deputado Federal') ?>
+            </span>
+        </div>
+        <div class="card-body">
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px;">
+                Acompanhe o quantitativo de colaboradores por função de campanha comparado aos limites máximos recomendados para evitar contratação de pessoal em excesso (o que pode acarretar multas e rejeição de contas pelo TSE).
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <?php 
+                // Funções prioritárias sujeitas a limites ou operacionais
+                $functionsToShow = [
+                    'Cabo Eleitoral'                  => 'Militância de Mobilização',
+                    'Panfletista / Ativista'          => 'Militância de Mobilização',
+                    'Mobilizador de Rua'              => 'Militância de Mobilização',
+                    'Motorista de Campanha'           => 'Militância de Mobilização',
+                    'Coordenador de Bairro / Região'  => 'Operacional (Isento de Limite Legal)',
+                    'Coordenador Geral de Campanha'   => 'Operacional (Isento de Limite Legal)',
+                    'Assessor de Comunicação / Mídias'=> 'Operacional (Isento de Limite Legal)',
+                    'Segurança / Apoio Logístico'     => 'Operacional (Isento de Limite Legal)'
+                ];
+                
+                foreach ($functionsToShow as $func => $tipoDesc):
+                    $currentCount = $colabStats[$func] ?? 0;
+                    $limit = $hiringLimits[$func] ?? 10;
+                    $percent = min(100, round(($currentCount / $limit) * 100));
+                    $isExceeded = $currentCount > $limit;
+                    
+                    // Definição de cores com base no percentual ocupado
+                    if ($percent >= 100) {
+                        $barColor = '#ef4444'; // Vermelho
+                    } elseif ($percent >= 80) {
+                        $barColor = '#f59e0b'; // Laranja
+                    } else {
+                        $barColor = '#2dd4bf'; // Teal / Verde SGE
+                    }
+                ?>
+                    <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; padding: 14px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                <strong style="color: #f1f5f9; font-size: 14px;"><?= htmlspecialchars($func) ?></strong>
+                                <span style="font-size: 10px; color: #94a3b8; font-weight: 500;"><?= $tipoDesc ?></span>
+                            </div>
+                            <div style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                                <?= $currentCount ?> <span style="font-size: 12px; font-weight: 400; color: #94a3b8;">/ limite: <?= $limit ?></span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="progress-bar-container" style="height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
+                                <div class="progress-bar" style="height: 100%; width: <?= $percent ?>%; background-color: <?= $barColor ?>; transition: width 0.3s ease;"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                                <span style="color: <?= $barColor ?>; font-weight: bold;"><?= $percent ?>% preenchido</span>
+                                <?php if ($isExceeded): ?>
+                                    <span style="color: #ef4444; font-weight: bold;">⚠️ LIMITE EXCEDIDO!</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- Modal de Configuração de Cargo e Limite Eleitoral -->

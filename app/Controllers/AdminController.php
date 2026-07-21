@@ -95,13 +95,50 @@ class AdminController extends Controller {
             'candidate_name'     => $campaignSettings['candidate_name']
         ];
 
+        // 6. Contagem de colaboradores por função de campanha
+        $colabCounts = [];
+        try {
+            $colabCounts = $db->query(
+                "SELECT cc.funcao_campanha, COUNT(c.id) as total 
+                 FROM `colaboradores` c
+                 JOIN `contratos_colaboradores` cc ON c.id = cc.colaborador_id
+                 WHERE c.status NOT IN ('REJEITADO')
+                 GROUP BY cc.funcao_campanha"
+            )->fetchAll();
+        } catch (\Exception $e) {
+            error_log("Erro ao buscar contagem de colaboradores para dashboard: " . $e->getMessage());
+        }
+
+        $colabStats = [];
+        foreach ($colabCounts as $row) {
+            $colabStats[$row['funcao_campanha']] = (int)$row['total'];
+        }
+
+        // Limites de contratação sugeridos/legais aproximados baseados no cargo da campanha
+        $roleName = $campaignSettings['electoral_role'] ?? 'Deputado Federal';
+        $isFederalOrMajor = in_array($roleName, ['Deputado Federal', 'Senador', 'Governador', 'Presidente da República']);
+        
+        $hiringLimits = [
+            'Cabo Eleitoral'                  => $isFederalOrMajor ? 150 : 60,
+            'Panfletista / Ativista'          => $isFederalOrMajor ? 200 : 80,
+            'Mobilizador de Rua'              => $isFederalOrMajor ? 100 : 40,
+            'Motorista de Campanha'           => $isFederalOrMajor ? 50  : 20,
+            'Coordenador de Bairro / Região'  => $isFederalOrMajor ? 20  : 8,
+            'Coordenador Geral de Campanha'   => $isFederalOrMajor ? 5   : 2,
+            'Assessor de Comunicação / Mídias'=> $isFederalOrMajor ? 10  : 4,
+            'Segurança / Apoio Logístico'     => $isFederalOrMajor ? 15  : 6,
+            'Outras Funções de Campanha'      => $isFederalOrMajor ? 30  : 12,
+        ];
+
         $this->render('admin/dashboard', [
             'user'             => $user,
             'stats'            => $stats,
             'recentLogs'       => $recentLogs,
             'kpis'             => $kpiFinances,
             'campaignSettings' => $campaignSettings,
-            'csrf_token'       => Session::csrfToken()
+            'csrf_token'       => Session::csrfToken(),
+            'colabStats'       => $colabStats,
+            'hiringLimits'     => $hiringLimits
         ]);
     }
 
