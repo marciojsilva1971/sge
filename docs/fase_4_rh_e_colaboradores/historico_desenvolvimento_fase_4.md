@@ -358,6 +358,10 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
      - Fluxo em 2 etapas com OCR via Tesseract.js (para extração automática de CNPJ e consulta via API), pré-preenchimento de fornecedor, upload de múltiplos comprovantes/PDFs com galeria de miniaturas, formatação de moeda e CNPJ.
      - Lançamento direto na tabela `despesas` com `status = 'PENDENTE'` e vinculo criptografado em `comprovantes_cripto`, encaminhando o gasto imediatamente para a Fila de Aprovação Financeira do Administrador.
      - Exibição de histórico de lançamentos desta categoria com badges de status e link direto para ver os anexos.
+  10. **Cadastramento de Administradores Homologados:**
+     - Cadastrado usuário administrador Maculevicius (`maculevicius@sge.com`, cel: `11 983316837`, role: `ADMINISTRADOR`, status: `ATIVO`).
+     - Cadastrado usuário administrador Rafael (`rafael@sge.com`, cel: `14 991113113`, role: `ADMINISTRADOR`, status: `ATIVO`).
+     - Gerado script SQL `seed_admin_users.sql` para carga automática no ambiente de produção.
 
 
 
