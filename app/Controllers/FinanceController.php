@@ -972,4 +972,296 @@ class FinanceController extends Controller {
         $redirect = $_POST['redirect_to'] ?? '/admin/financeiro/fila';
         $this->redirect($redirect);
     }
+
+    /**
+     * Tela de Gestão de Contratos por Tempo Determinado (GET)
+     */
+    public function contratos(): void {
+        $db = Database::getInstance();
+        
+        $contracts = $db->query(
+            "SELECT c.*, s.corporate_name, s.cnpj_cpf, u.name as created_by_name 
+             FROM `supplier_contracts` c 
+             JOIN `suppliers` s ON c.supplier_id = s.id 
+             LEFT JOIN `usuarios` u ON c.created_by = u.id 
+             ORDER BY c.created_at DESC"
+        )->fetchAll();
+
+        $suppliers = $db->query(
+            "SELECT id, corporate_name, cnpj_cpf 
+             FROM `suppliers` 
+             WHERE status = 'ATIVO' 
+             ORDER BY corporate_name ASC"
+        )->fetchAll();
+
+        $this->render('admin/financeiro/contratos', [
+            'title'      => 'Contratos por Tempo Determinado | SGE',
+            'contracts'  => $contracts,
+            'suppliers'  => $suppliers,
+            'csrf_token' => Session::generateCsrfToken()
+        ]);
+    }
+
+    /**
+     * Cadastro de Novo Contrato por Tempo Determinado (POST)
+     */
+    public function addContrato(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $supplier_id = intval($_POST['supplier_id'] ?? 0);
+            $contract_number = trim($_POST['contract_number'] ?? '');
+            $title = trim($_POST['title'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $total_amount = $this->parseBrlCurrency($_POST['total_amount'] ?? '0');
+            $monthly_amount = !empty($_POST['monthly_amount']) ? $this->parseBrlCurrency($_POST['monthly_amount']) : null;
+            $start_date = $_POST['start_date'] ?? '';
+            $end_date = $_POST['end_date'] ?? '';
+
+            if ($supplier_id <= 0 || empty($title) || $total_amount <= 0 || empty($start_date) || empty($end_date)) {
+                throw new Exception("Preencha todos os campos obrigatórios (Fornecedor, Objeto, Valor Total e Vigência).");
+            }
+
+            if (strtotime($end_date) < strtotime($start_date)) {
+                throw new Exception("A data de término do contrato não pode ser anterior à data de início.");
+            }
+
+            // Validação e Upload do Arquivo PDF
+            if (!isset($_FILES['contract_pdf']) || $_FILES['contract_pdf']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception("O envio do arquivo do Contrato Assinado em PDF é obrigatório.");
+            }
+
+            $file = $_FILES['contract_pdf'];
+            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if ($ext !== 'pdf') {
+                throw new Exception("O arquivo de contrato deve estar obrigatoriamente no formato PDF.");
+            }
+
+            if ($file['size'] > 10 * 1024 * 1024) {
+                throw new Exception("O tamanho do arquivo PDF não pode ultrapassar 10MB.");
+            }
+
+            $uploadDir = __DIR__ . '/../../storage/uploads/contratos_fornecedores/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $safeFileName = 'contrato_sup_' . $supplier_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.pdf';
+            $targetPath = $uploadDir . $safeFileName;
+
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                throw new Exception("Falha ao salvar o arquivo PDF no servidor.");
+            }
+
+            $relativePath = 'storage/uploads/contratos_fornecedores/' . $safeFileName;
+            $originalName = basename($file['name']);
+
+            $stmt = $db->prepare(
+                "INSERT INTO `supplier_contracts` 
+                 (supplier_id, contract_number, title, description, total_amount, monthly_amount, start_date, end_date, status, file_path, file_name, created_by) 
+                 VALUES (:supplier_id, :contract_number, :title, :description, :total_amount, :monthly_amount, :start_date, :end_date, 'VIGENTE', :file_path, :file_name, :created_by)"
+            );
+
+            $stmt->execute([
+                'supplier_id' => $supplier_id,
+                'contract_number' => empty($contract_number) ? null : $contract_number,
+                'title' => $title,
+                'description' => empty($description) ? null : $description,
+                'total_amount' => $total_amount,
+                'monthly_amount' => $monthly_amount,
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'file_path' => $relativePath,
+                'file_name' => $originalName,
+                'created_by' => $user['id']
+            ]);
+
+            $contractId = $db->lastInsertId();
+
+            // Log Audit
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, new_values, ip_address, user_agent) 
+                 VALUES (:user_id, 'CREATE_SUPPLIER_CONTRACT', 'supplier_contracts', :record_id, :new_values, :ip_address, :user_agent)"
+            );
+            $stmtLog->execute([
+                'user_id' => $user['id'],
+                'record_id' => $contractId,
+                'new_values' => json_encode(['title' => $title, 'supplier_id' => $supplier_id, 'total_amount' => $total_amount], JSON_UNESCAPED_UNICODE),
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+
+            Session::setFlash('success', 'Contrato por Tempo Determinado cadastrado com sucesso!');
+        } catch (Exception $e) {
+            Session::setFlash('error', 'Erro ao cadastrar contrato: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/contratos');
+    }
+
+    /**
+     * Edição de Contrato por Tempo Determinado e Atualização opcional do PDF (POST)
+     */
+    public function editContrato(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $id = intval($_POST['id'] ?? 0);
+            $supplier_id = intval($_POST['supplier_id'] ?? 0);
+            $contract_number = trim($_POST['contract_number'] ?? '');
+            $title = trim($_POST['title'] ?? '');
+            $description = trim($_POST['description'] ?? '');
+            $total_amount = $this->parseBrlCurrency($_POST['total_amount'] ?? '0');
+            $monthly_amount = !empty($_POST['monthly_amount']) ? $this->parseBrlCurrency($_POST['monthly_amount']) : null;
+            $start_date = $_POST['start_date'] ?? '';
+            $end_date = $_POST['end_date'] ?? '';
+            $status = in_array($_POST['status'] ?? '', ['VIGENTE', 'ENCERRADO', 'CANCELADO']) ? $_POST['status'] : 'VIGENTE';
+
+            if ($id <= 0 || $supplier_id <= 0 || empty($title) || $total_amount <= 0 || empty($start_date) || empty($end_date)) {
+                throw new Exception("Dados inválidos para edição do contrato.");
+            }
+
+            if (strtotime($end_date) < strtotime($start_date)) {
+                throw new Exception("A data de término não pode ser anterior à data de início.");
+            }
+
+            // Busca contrato atual
+            $stmtCur = $db->prepare("SELECT * FROM `supplier_contracts` WHERE id = :id LIMIT 1");
+            $stmtCur->execute(['id' => $id]);
+            $contract = $stmtCur->fetch();
+            if (!$contract) {
+                throw new Exception("Contrato não encontrado.");
+            }
+
+            $filePath = $contract['file_path'];
+            $fileName = $contract['file_name'];
+
+            // Se enviou novo PDF para substituir o atual
+            if (isset($_FILES['contract_pdf']) && $_FILES['contract_pdf']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['contract_pdf'];
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if ($ext !== 'pdf') {
+                    throw new Exception("O novo arquivo deve estar no formato PDF.");
+                }
+
+                if ($file['size'] > 10 * 1024 * 1024) {
+                    throw new Exception("O tamanho do arquivo PDF não pode ultrapassar 10MB.");
+                }
+
+                $uploadDir = __DIR__ . '/../../storage/uploads/contratos_fornecedores/';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+
+                $safeFileName = 'contrato_sup_' . $supplier_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.pdf';
+                $targetPath = $uploadDir . $safeFileName;
+
+                if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                    throw new Exception("Falha ao salvar o novo arquivo PDF no servidor.");
+                }
+
+                // Remove o antigo se existia
+                $oldFullPath = __DIR__ . '/../../' . $contract['file_path'];
+                if (!empty($contract['file_path']) && file_exists($oldFullPath)) {
+                    @unlink($oldFullPath);
+                }
+
+                $filePath = 'storage/uploads/contratos_fornecedores/' . $safeFileName;
+                $fileName = basename($file['name']);
+            }
+
+            $stmtUp = $db->prepare(
+                "UPDATE `supplier_contracts` 
+                 SET supplier_id = :supplier_id, 
+                     contract_number = :contract_number, 
+                     title = :title, 
+                     description = :description, 
+                     total_amount = :total_amount, 
+                     monthly_amount = :monthly_amount, 
+                     start_date = :start_date, 
+                     end_date = :end_date, 
+                     status = :status, 
+                     file_path = :file_path, 
+                     file_name = :file_name 
+                 WHERE id = :id"
+            );
+
+            $stmtUp->execute([
+                'supplier_id' => $supplier_id,
+                'contract_number' => empty($contract_number) ? null : $contract_number,
+                'title' => $title,
+                'description' => empty($description) ? null : $description,
+                'total_amount' => $total_amount,
+                'monthly_amount' => $monthly_amount,
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'status' => $status,
+                'file_path' => $filePath,
+                'file_name' => $fileName,
+                'id' => $id
+            ]);
+
+            // Auditoria
+            $stmtLog = $db->prepare(
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, new_values, ip_address, user_agent) 
+                 VALUES (:user_id, 'UPDATE_SUPPLIER_CONTRACT', 'supplier_contracts', :record_id, :new_values, :ip_address, :user_agent)"
+            );
+            $stmtLog->execute([
+                'user_id' => $user['id'],
+                'record_id' => $id,
+                'new_values' => json_encode(['title' => $title, 'status' => $status, 'total_amount' => $total_amount], JSON_UNESCAPED_UNICODE),
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown'
+            ]);
+
+            Session::setFlash('success', 'Contrato atualizado com sucesso!');
+        } catch (Exception $e) {
+            Session::setFlash('error', 'Erro ao editar contrato: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/contratos');
+    }
+
+    /**
+     * Download/Visualização segura do PDF do Contrato (GET)
+     */
+    public function downloadContrato(): void {
+        $db = Database::getInstance();
+        $id = intval($_GET['id'] ?? 0);
+
+        if ($id <= 0) {
+            header("HTTP/1.0 404 Not Found");
+            echo "Contrato não encontrado.";
+            exit;
+        }
+
+        $stmt = $db->prepare("SELECT * FROM `supplier_contracts` WHERE id = :id LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        $contract = $stmt->fetch();
+
+        if (!$contract) {
+            header("HTTP/1.0 404 Not Found");
+            echo "Contrato não localizado.";
+            exit;
+        }
+
+        $fullPath = __DIR__ . '/../../' . $contract['file_path'];
+
+        if (!file_exists($fullPath)) {
+            header("HTTP/1.0 404 Not Found");
+            echo "Arquivo PDF do contrato não encontrado no servidor.";
+            exit;
+        }
+
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . addslashes($contract['file_name']) . '"');
+        header('Content-Length: ' . filesize($fullPath));
+        readfile($fullPath);
+        exit;
+    }
 }
+

@@ -119,6 +119,12 @@ $router->post('/admin/financeiro/tipos-despesas', 'FinanceController@addExpenseT
 $router->post('/admin/financeiro/tipos-despesas/editar', 'FinanceController@editExpenseType');
 $router->post('/admin/financeiro/tipos-despesas/excluir', 'FinanceController@deleteExpenseType');
 
+// Módulo Financeiro - Contratos por Tempo Determinado (Fornecedores/Empresas)
+$router->get('/admin/financeiro/contratos', 'FinanceController@contratos');
+$router->post('/admin/financeiro/contratos', 'FinanceController@addContrato');
+$router->post('/admin/financeiro/contratos/editar', 'FinanceController@editContrato');
+$router->get('/admin/financeiro/contratos/download', 'FinanceController@downloadContrato');
+
 // Módulo de RH e Gestão de Colaboradores
 $router->get('/admin/rh', 'RhController@index');
 $router->get('/admin/rh/novo', 'RhController@create');

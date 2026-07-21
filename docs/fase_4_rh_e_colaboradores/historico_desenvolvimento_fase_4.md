@@ -363,9 +363,10 @@ Este documento mantém o registro permanente de todas as conversas, decisões t�
      - Cadastrado usuário administrador Rafael (`rafael@sge.com`, cel: `14 991113113`, role: `ADMINISTRADOR`, status: `ATIVO`).
      - Gerado script SQL `seed_admin_users.sql` para carga automática no ambiente de produção.
 
-
-
-
-
-
-
+   11. **Módulo de Contratos por Tempo Determinado com Fornecedores (Financeiro):**
+      - Criada a tabela `supplier_contracts` para gestão de contratos com fornecedores/empresas por tempo determinado (Número do contrato, título/objeto, valor total, valor mensal, data de início, data de término, status `VIGENTE`/`ENCERRADO`/`CANCELADO`, arquivo PDF e responsável pelo cadastro).
+      - Adicionada a aba `📄 Contratos por Tempo Determinado` na barra de navegação do Módulo Financeiro (`_nav_tabs.php`).
+      - Criada a rota e view `/admin/financeiro/contratos` (GET/POST) com formulário de envio de novo contrato assinado em formato PDF (com validações de MIME `application/pdf` e tamanho até 10MB) vinculado a empresas cadastradas (`suppliers`).
+      - Implementado o modal de **Edição de Contrato e Substituição de PDF** (`/admin/financeiro/contratos/editar`) para alteração de vigência, status, valores ou atualização opcional do arquivo de contrato assinado em PDF.
+      - Implementado o endpoint seguro `/admin/financeiro/contratos/download` para download e visualização direta do contrato PDF no navegador.
+      - Registrado o evento nas tabelas de auditoria (`logs_auditoria`).
