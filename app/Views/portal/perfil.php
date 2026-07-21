@@ -100,8 +100,17 @@
  
              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                  <div class="form-group">
-                     <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Função / Papel</label>
-                     <input type="text" class="form-control" value="<?= htmlspecialchars($colaborador['papel_eleitoral'] ?? $user['role_name']) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
+                     <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Função na Campanha</label>
+                     <?php 
+                     $funcaoExibicao = $colaborador['funcao_campanha'] ?? '';
+                     if (!empty($funcaoExibicao) && ($pos = strpos($funcaoExibicao, '(')) !== false) {
+                         $funcaoExibicao = trim(substr($funcaoExibicao, 0, $pos));
+                     }
+                     if (empty($funcaoExibicao)) {
+                         $funcaoExibicao = 'Não informada';
+                     }
+                     ?>
+                     <input type="text" class="form-control" value="<?= htmlspecialchars($funcaoExibicao) ?>" readonly style="background: rgba(255, 255, 255, 0.03); color: #94a3b8; cursor: not-allowed; border-color: rgba(255, 255, 255, 0.08);">
                  </div>
                  <div class="form-group">
                      <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Status RH</label>

@@ -991,8 +991,18 @@ class PortalController extends Controller {
         $stmtUser->execute(['id' => $user['id']]);
         $userFull = $stmtUser->fetch();
 
-        // Busca dados de colaborador vinculados a este usuário
-        $stmtColab = $db->prepare("SELECT * FROM `colaboradores` WHERE usuario_id = :usuario_id LIMIT 1");
+        // Busca dados de colaborador vinculados a este usuário com a função de campanha do contrato mais recente
+        $stmtColab = $db->prepare("
+            SELECT c.*, (
+                SELECT cc.funcao_campanha 
+                FROM `contratos_colaboradores` cc 
+                WHERE cc.colaborador_id = c.id 
+                ORDER BY cc.id DESC LIMIT 1
+            ) AS funcao_campanha 
+            FROM `colaboradores` c 
+            WHERE c.usuario_id = :usuario_id 
+            LIMIT 1
+        ");
         $stmtColab->execute(['usuario_id' => $user['id']]);
         $colaborador = $stmtColab->fetch();
 

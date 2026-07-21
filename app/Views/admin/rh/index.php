@@ -53,17 +53,18 @@
                         <th style="width: 50px; text-align: center;">Foto</th>
                         <th>Nome Completo</th>
                         <th>CPF / Documento</th>
+                        <th>Idade</th>
                         <th>WhatsApp / E-mail</th>
                         <th>Contrato</th>
                         <th>Etapa Atual</th>
-                        <th>Função na Campanha</th>
+                        <th>Perfil SGE</th>
                         <th>Ações Obrigatórias</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($colaboradores)): ?>
                         <tr>
-                            <td colspan="8" class="text-center">Nenhum colaborador encontrado nesta etapa.</td>
+                            <td colspan="9" class="text-center">Nenhum colaborador encontrado nesta etapa.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($colaboradores as $c): ?>
@@ -104,6 +105,11 @@
                                 </td>
 
                                 <td>
+                                    <span><?= $c['idade_calculada'] ?> anos</span>
+                                    <?php if ($c['idade_calculada'] < 18): ?>
+                                        <span class="badge badge-warning" style="font-size: 10px;" title="Menor de idade: Restrições legais de campanha aplicáveis">⚠ Menor</span>
+                                    <?php endif; ?>
+                                </td>
                                     <div style="display:flex; align-items:center; gap:4px;">
                                         <span>📱 <?= htmlspecialchars($c['celular_whatsapp']) ?></span>
                                         <button onclick="openEditarTelefoneModal(<?= $c['id'] ?>, '<?= htmlspecialchars($c['nome_completo'], ENT_QUOTES) ?>', '<?= htmlspecialchars($c['celular_whatsapp'], ENT_QUOTES) ?>')" style="background:none; border:none; color:#38bdf8; cursor:pointer; font-size:12px; padding:0 2px;" title="Editar Telefone / WhatsApp">✏️</button>
@@ -165,14 +171,8 @@
 
                                 </td>
                                 <td>
-                                    <?php if (!empty($c['funcao_campanha'])): ?>
-                                        <?php 
-                                            $funcaoLimpa = $c['funcao_campanha'];
-                                            if (($pos = strpos($funcaoLimpa, '(')) !== false) {
-                                                $funcaoLimpa = trim(substr($funcaoLimpa, 0, $pos));
-                                            }
-                                        ?>
-                                        <span class="badge badge-primary" style="font-weight:bold; font-size:11px; padding:4px 8px; border-radius:4px;"><?= htmlspecialchars($funcaoLimpa) ?></span>
+                                    <?php if (!empty($c['role_nome'])): ?>
+                                        <span class="badge badge-primary"><?= htmlspecialchars($c['role_nome']) ?></span>
                                     <?php else: ?>
                                         <span class="text-secondary" style="font-size:12px;">Pendente</span>
                                     <?php endif; ?>
