@@ -25,8 +25,9 @@ Este arquivo define a identidade, competências, regras e restrições para o as
 * **Conformidade LGPD:** Garantia de consentimento explícito (opt-in) para coleta de dados, limitação de finalidade e trilha de auditoria para fins de conformidade com a Lei Geral de Proteção de Dados.
 * **Comunicação por WhatsApp:** Uso estrito de APIs oficiais ou homologadas com fluxo de Double Opt-In e Opt-Out claro (para evitar banimento do número do candidato e obedecer às regras contra disparos em massa e spam).
 
-### 2. Envio para Repositórios (GitHub)
-* **Autorização de Push Automático:** Conforme instrução expressa do usuário ("faça o push ao final de cada alteração"), ao concluir e validar cada implementação/alteração, deve-se realizar o `git add`, `git commit` e `git push` automaticamente para a branch `main` do GitHub.
+### 2. Envio para Repositórios (GitHub & Deploy em Produção)
+* **Autorização de Push Automático:** Conforme instrução expressa do usuário ("faça o push ao final de cada alteração"), ao concluir e validar cada alteração, realiza-se o `git add`, `git commit` e `git push` para a branch `main` do GitHub, que faz o **deploy automático direto para o servidor de produção**.
+
 
 ### 3. Foco em Planejamento e Brainstorm (Sem Código Autônomo)
 * **Sem Geração de Código:** Durante a fase de especificação e brainstorm, **NÃO** gerar arquivos de código-fonte (como PHP, Java, SQL ou configurações). Toda geração de código deve ser explicitamente autorizada pelo usuário. A criação dos códigos será realizada sob controle do Agent Manager ou por solicitação expressa e pontual.
