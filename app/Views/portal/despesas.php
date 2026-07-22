@@ -120,7 +120,11 @@
 
                     <?php if ($exp['status'] === 'REJEITADO' || $exp['status'] === 'PENDENTE'): ?>
                         <div style="margin-top: 10px; text-align: right;">
-                            <button type="button" onclick='abrirModalCorrigirGasto(<?= json_encode($exp, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)' style="background: #eab308; color: #0f172a; font-weight: 800; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                            <button type="button" 
+                                class="btn-editar-gasto"
+                                data-gasto="<?= htmlspecialchars(json_encode($exp, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>"
+                                onclick="abrirModalCorrigirGastoElemento(this)"
+                                style="background: #eab308; color: #0f172a; font-weight: 800; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                 ✏️ <?= $exp['status'] === 'REJEITADO' ? 'Corrigir e Reenviar Gasto' : 'Editar Gasto' ?>
                             </button>
                         </div>
@@ -694,6 +698,18 @@ function filtrarGastosPortal(status, btnElement) {
             }
         }
     });
+}
+
+function abrirModalCorrigirGastoElemento(btn) {
+    if (!btn) return;
+    const rawData = btn.getAttribute('data-gasto');
+    if (!rawData) return;
+    try {
+        const exp = JSON.parse(rawData);
+        abrirModalCorrigirGasto(exp);
+    } catch (e) {
+        console.error("Erro ao analisar dados do gasto:", e);
+    }
 }
 
 function abrirModalCorrigirGasto(exp) {

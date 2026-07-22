@@ -178,15 +178,21 @@
                             <span style="font-size: 14px; font-weight: 700; color: #38bdf8;">
                                 R$ <?= number_format(floatval($gasto['value']), 2, ',', '.') ?>
                             </span>
-                            <div style="margin-top: 4px;">
+                            <div style="margin-top: 4px; display: flex; justify-content: flex-end; gap: 6px; align-items: center;">
                                 <?php if ($gasto['status'] === 'APROVADO'): ?>
                                     <span class="badge badge-success" style="font-size: 10px;">Aprovado</span>
                                 <?php elseif ($gasto['status'] === 'PAGO'): ?>
                                     <span class="badge badge-success" style="font-size: 10px; background: #059669;">Pago</span>
                                 <?php elseif ($gasto['status'] === 'REJEITADO'): ?>
                                     <span class="badge badge-danger" style="font-size: 10px;">Recusado</span>
+                                    <a href="<?= $this->baseUrl('portal/despesas') ?>" class="btn btn-warning btn-sm" style="font-size: 10px; padding: 2px 6px; font-weight: 700; background: #eab308; color: #0f172a; text-decoration: none;">
+                                        ✏️ Corrigir
+                                    </a>
                                 <?php else: ?>
                                     <span class="badge badge-warning" style="font-size: 10px;">Na Fila de Aprovação</span>
+                                    <a href="<?= $this->baseUrl('portal/despesas') ?>" class="btn btn-secondary btn-sm" style="font-size: 10px; padding: 2px 6px; font-weight: 600; background: rgba(255,255,255,0.1); color: #fff; text-decoration: none;">
+                                        ✏️ Editar
+                                    </a>
                                 <?php endif; ?>
                             </div>
                         </div>

@@ -128,13 +128,25 @@
                 <div style="padding: 12px; background: rgba(15,23,42,0.4); border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); font-size: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 600; color: var(--text-primary);"><?= date('d/m/Y', strtotime($act['activity_date'])) ?></span>
-                        <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
                             <?php if ($act['status'] === 'APROVADO'): ?>
                                 <span class="badge badge-success">Homologado</span>
                             <?php elseif ($act['status'] === 'REJEITADO'): ?>
                                 <span class="badge badge-danger">Recusado</span>
+                                <button type="button" class="btn btn-warning btn-sm" 
+                                    data-militancia="<?= htmlspecialchars(json_encode($act, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>"
+                                    onclick="abrirModalEditarMilitanciaElemento(this)"
+                                    style="font-size: 10px; padding: 2px 8px; font-weight: 700; background: #eab308; color: #0f172a; border: none; border-radius: 6px; cursor: pointer;">
+                                    ✏️ Editar
+                                </button>
                             <?php else: ?>
                                 <span class="badge badge-warning">Pendente</span>
+                                <button type="button" class="btn btn-secondary btn-sm" 
+                                    data-militancia="<?= htmlspecialchars(json_encode($act, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>"
+                                    onclick="abrirModalEditarMilitanciaElemento(this)"
+                                    style="font-size: 10px; padding: 2px 8px; font-weight: 600; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer;">
+                                    ✏️ Editar
+                                </button>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -147,6 +159,57 @@
         </div>
     <?php endif; ?>
 </div>
+
+<!-- MODAL DE EDIÇÃO DE ATIVIDADE DE MILITÂNCIA -->
+<div id="modalEditarMilitanciaPage" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+    <div style="background: #0f172a; border: 1px solid #38bdf8; border-radius: 16px; max-width: 500px; width: 100%; padding: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+            <h3 style="font-size: 15px; font-weight: 700; color: #38bdf8;">✏️ Editar Atividade de Militância</h3>
+            <button type="button" onclick="fecharModalEditarMilitanciaPage()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+        </div>
+
+        <form action="<?= $this->baseUrl('portal/militancia/editar') ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" id="edit_page_militancy_id" name="militancy_id" value="">
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600;">Descrição / Histórico da Atividade *</label>
+                <textarea id="edit_page_militancy_description" name="description" rows="3" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600;">Data da Atividade *</label>
+                <input type="date" id="edit_page_militancy_date" name="activity_date" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+                <button type="button" class="btn btn-secondary flex-1" onclick="fecharModalEditarMilitanciaPage()">Cancelar</button>
+                <button type="submit" class="btn btn-teal flex-1" style="background: #eab308; color: #0f172a; font-weight: 800;">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function abrirModalEditarMilitanciaElemento(btn) {
+        if (!btn) return;
+        const rawData = btn.getAttribute('data-militancia');
+        if (!rawData) return;
+        try {
+            const act = JSON.parse(rawData);
+            document.getElementById('edit_page_militancy_id').value = act.id;
+            document.getElementById('edit_page_militancy_description').value = act.description || '';
+            document.getElementById('edit_page_militancy_date').value = act.activity_date || '';
+            document.getElementById('modalEditarMilitanciaPage').style.display = 'flex';
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    function fecharModalEditarMilitanciaPage() {
+        document.getElementById('modalEditarMilitanciaPage').style.display = 'none';
+    }
+</script>
 
 <!-- Modal de Instruções de Autorização de GPS -->
 <div id="gpsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
