@@ -94,22 +94,30 @@ class PortalController extends Controller {
             $purpose = trim($_POST['purpose'] ?? '');
             $start_date = $_POST['start_date'] ?? '';
             $end_date = $_POST['end_date'] ?? '';
-            $vehicle_plate = trim($_POST['vehicle_plate'] ?? '');
+            $vehicle_plate = strtoupper(trim($_POST['vehicle_plate'] ?? ''));
+            $initial_km = isset($_POST['initial_km']) && $_POST['initial_km'] !== '' ? intval($_POST['initial_km']) : null;
 
             if (empty($purpose) || empty($start_date) || empty($end_date)) {
                 throw new Exception("Objetivo, data inicial e data final são campos obrigatórios.");
             }
+            if (empty($vehicle_plate)) {
+                throw new Exception("A Placa do Veículo é um requisito obrigatório da legislação eleitoral (TSE).");
+            }
+            if ($initial_km === null || $initial_km < 0) {
+                throw new Exception("O Hodômetro Inicial (KM) é obrigatório para comprovação de deslocamento perante o TSE.");
+            }
 
             $stmt = $db->prepare(
-                "INSERT INTO `travel_reports` (user_id, purpose, start_date, end_date, vehicle_plate, status) 
-                 VALUES (:user_id, :purpose, :start_date, :end_date, :vehicle_plate, 'EM_ANDAMENTO')"
+                "INSERT INTO `travel_reports` (user_id, purpose, start_date, end_date, vehicle_plate, initial_km, status) 
+                 VALUES (:user_id, :purpose, :start_date, :end_date, :vehicle_plate, :initial_km, 'EM_ANDAMENTO')"
             );
             $stmt->execute([
                 'user_id' => $user['id'],
                 'purpose' => $purpose,
                 'start_date' => $start_date,
                 'end_date' => $end_date,
-                'vehicle_plate' => empty($vehicle_plate) ? null : $vehicle_plate
+                'vehicle_plate' => $vehicle_plate,
+                'initial_km' => $initial_km
             ]);
 
             Session::setFlash('success', 'Relatório de viagem iniciado! Adicione os cupons fiscais abaixo.');
@@ -242,13 +250,14 @@ class PortalController extends Controller {
 
         try {
             $id = intval($_POST['id'] ?? 0);
+            $final_km = isset($_POST['final_km']) && $_POST['final_km'] !== '' ? intval($_POST['final_km']) : null;
 
             if ($id <= 0) {
                 throw new Exception("ID inválido.");
             }
 
             // Valida propriedade da viagem e status
-            $stmtCheck = $db->prepare("SELECT id, status FROM `travel_reports` WHERE id = :id AND user_id = :user_id LIMIT 1");
+            $stmtCheck = $db->prepare("SELECT id, status, initial_km FROM `travel_reports` WHERE id = :id AND user_id = :user_id LIMIT 1");
             $stmtCheck->execute(['id' => $id, 'user_id' => $user['id']]);
             $report = $stmtCheck->fetch();
 
@@ -257,6 +266,12 @@ class PortalController extends Controller {
             }
             if ($report['status'] !== 'EM_ANDAMENTO') {
                 throw new Exception("Este relatório já foi enviado.");
+            }
+            if ($final_km === null || $final_km < 0) {
+                throw new Exception("O Hodômetro Final (KM) é obrigatório para encerrar e enviar o relatório de viagem.");
+            }
+            if ($report['initial_km'] !== null && $final_km < intval($report['initial_km'])) {
+                throw new Exception("O Hodômetro Final (" . number_format($final_km, 0, ',', '.') . " KM) não pode ser menor que o Hodômetro Inicial (" . number_format($report['initial_km'], 0, ',', '.') . " KM).");
             }
 
             // Verifica se há pelo menos um recibo
@@ -268,9 +283,9 @@ class PortalController extends Controller {
                 throw new Exception("Você deve adicionar pelo menos um cupom fiscal/recibo antes de enviar o relatório.");
             }
 
-            // Atualiza status para 'ENVIADO'
-            $stmt = $db->prepare("UPDATE `travel_reports` SET status = 'ENVIADO' WHERE id = :id");
-            $stmt->execute(['id' => $id]);
+            // Atualiza status para 'ENVIADO' e grava final_km
+            $stmt = $db->prepare("UPDATE `travel_reports` SET status = 'ENVIADO', final_km = :final_km WHERE id = :id");
+            $stmt->execute(['final_km' => $final_km, 'id' => $id]);
 
             Session::setFlash('success', 'Relatório de viagem enviado com sucesso para auditoria e reembolso!');
         } catch (Exception $e) {

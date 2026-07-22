@@ -125,7 +125,13 @@
                         <span style="font-size: 12px; color: var(--accent-teal-hover); text-transform: uppercase; font-weight: 600;">Relatório de Viagem #<?= $tr['id'] ?></span>
                         <h4 style="font-size: 15px; font-weight: 600; margin-top: 2px;"><?= htmlspecialchars($tr['purpose']) ?></h4>
                         <span style="font-size: 12px; color: var(--text-secondary);">
-                            Colaborador: <strong><?= htmlspecialchars($tr['user_name']) ?></strong> (<?= htmlspecialchars($tr['celular']) ?>) &bull; Placa: <?= htmlspecialchars($tr['vehicle_plate'] ?? 'Não informada') ?>
+                            Colaborador: <strong><?= htmlspecialchars($tr['user_name']) ?></strong> (<?= htmlspecialchars($tr['celular']) ?>) &bull; Placa: <strong><?= htmlspecialchars(strtoupper($tr['vehicle_plate'] ?? 'N/I')) ?></strong>
+                            <?php if (!empty($tr['initial_km'])): ?>
+                                &bull; KM: <strong><?= number_format($tr['initial_km'], 0, ',', '.') ?> KM</strong> &rarr; <strong><?= !empty($tr['final_km']) ? number_format($tr['final_km'], 0, ',', '.') . ' KM' : 'Pendente' ?></strong>
+                                <?php if (!empty($tr['final_km'])): ?>
+                                    (<span style="color: var(--accent-teal-hover); font-weight: 700;"><?= number_format($tr['final_km'] - $tr['initial_km'], 0, ',', '.') ?> KM rodados</span>)
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </span>
                     </div>
                     <div style="text-align: right;">

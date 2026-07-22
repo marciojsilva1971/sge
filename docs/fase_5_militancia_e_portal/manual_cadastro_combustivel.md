@@ -5,46 +5,41 @@ Este guia ilustrado foi desenvolvido para orientar os colaboradores de campo e e
 ---
 
 > [!IMPORTANT]
-> **REQUISITOS DO TSE (Resolução nº 23.607/2019):**
+> **REQUISITOS OBRIGATÓRIOS DO TSE (Resolução nº 23.607/2019):**
 > 1. Todo comprovante de abastecimento deve conter o **CNPJ e Razão Social do Posto de Combustível**.
 > 2. O cupom ou nota fiscal deve ser fotografado de forma **100% legível**, enquadrando todos os itens e o valor total.
-> 3. Na abertura da viagem, informe a **Placa do Veículo** (caso o veículo seja cadastrado/locado pela campanha).
+> 3. Na abertura da viagem, é **OBRIGATÓRIO** informar a **Placa do Veículo** e o **Hodômetro Inicial (KM)**.
+> 4. No encerramento da viagem, é **OBRIGATÓRIO** informar o **Hodômetro Final (KM)** para comprovar a distância percorrida.
 
 ---
 
 ## 🚀 Passo a Passo Ilustrado
 
-### 1º PASSO: Leitura do CNPJ do Posto (Scanner OCR)
+### 1º PASSO: Abertura da Viagem (Placa & Hodômetro Inicial)
 
-1. Acesse o **Portal do Colaborador** no seu Smartphone.
-2. Na aba **"Controle de Viagens & Combustível"**, selecione a sua viagem ativa ou inicie um novo deslocamento.
-3. No **1º PASSO**, clique em **`📸 Fotografe o CNPJ`** e aponte a câmera do seu celular para o topo do cupom fiscal (onde fica impresso o CNPJ do posto).
-4. Clique no botão **`🔍 Digitalizar e Ler CNPJ (OCR)`**. O sistema identificará automaticamente o CNPJ e o Nome do Posto.
-
-![Passo 1: Leitura do CNPJ do Posto via OCR no Smartphone](file:///c:/xampp/htdocs/sge/docs/fase_5_militancia_e_portal/manual_combustivel_step1.png)
-
----
-
-### 2º PASSO: Foto do Cupom Completo, Valor e Data
-
-1. Após a leitura do CNPJ, o formulário exibirá os dados preenchidos da empresa.
-2. Clique em **`📁 Fotos / Comprovante(s) do Cupom Fiscal`** e anexe uma ou mais fotos nítidas do cupom.
-3. Preencha os campos da despesa:
-   * **Valor Total do Cupom (R$):** Digite o valor exato do abastecimento (ex: `150,00`).
-   * **Data do Recibo:** Selecione a data em que o abastecimento foi realizado.
-   * **Categoria SPCE:** Selecione a categoria (ex: *44 - Combustíveis e lubrificantes*).
-   * **Notas / Observações (Opcional):** Adicione um lembrete (ex: *Abastecimento carreata no bairro X*).
-4. Clique no botão verde **`💾 Confirmar e Enviar Despesa`**.
-
-![Passo 2: Anexo do Cupom Completo, Valor em R$ e Data](file:///c:/xampp/htdocs/sge/docs/fase_5_militancia_e_portal/manual_combustivel_step2.png)
+1. Acesse o **Portal do Colaborador** no seu Smartphone na aba **"Controle de Viagens & Combustível"**.
+2. No formulário de abertura, preencha:
+   * **Objetivo da Viagem:** Ex: *Carreata e panfletagem nos bairros*.
+   * **Placa do Veículo (*Obrigatório*):** Digite a placa oficial do veículo (ex: `AAA-0A00`).
+   * **Hodômetro Inicial (*Obrigatório*):** Digite o KM atual gravado no painel do veículo antes de rodar (ex: `45100`).
+3. Clique em **`🚗 Iniciar Registro de Viagem`**.
 
 ---
 
-### 3º PASSO: Confirmação e Acompanhamento de Status
+### 2º PASSO: Leitura do CNPJ do Posto (Scanner OCR) & Anexo do Cupom
 
-1. O sistema exibirá o modal de confirmação: **`✓ Comprovante Cadastrado com Sucesso!`**
-2. Se você realizou mais de um abastecimento na mesma viagem, clique em **`➕ Cadastrar Novo Comprovante`**.
-3. Para acompanhar se o seu gasto foi aprovado pelo setor financeiro, clique em **`📊 Ir para Meus Gastos`**.
+1. Com a viagem ativa, no **1º PASSO**, clique em **`📸 Fotografe o CNPJ`** e aponte a câmera do seu celular para o topo do cupom fiscal.
+2. Clique em **`🔍 Digitalizar e Ler CNPJ (OCR)`** para carregar os dados do posto automaticamente.
+3. No **2º PASSO**, anexe a foto do cupom fiscal completo e digite o **Valor Total em R$** e a **Data do Recibo**.
+4. Clique em **`💾 Confirmar e Enviar Despesa`**.
+
+---
+
+### 3º PASSO: Encerramento com Hodômetro Final (KM) & Auditoria
+
+1. Ao concluir os trajetos e abastecimentos da viagem, digite o **Hodômetro Final (KM)** marcado no painel do carro ao chegar.
+2. Clique no botão **`🚀 Finalizar e Enviar Relatório de Viagem`**.
+3. O sistema calcula a distância total percorrida e envia o relatório com o dossiê completo de abastecimento para aprovação do financeiro.
 
 ![Passo 3: Modal de Confirmação e Histórico de Gastos](file:///c:/xampp/htdocs/sge/docs/fase_5_militancia_e_portal/manual_combustivel_step3.png)
 

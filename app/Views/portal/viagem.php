@@ -184,6 +184,17 @@ foreach ($travelReports as $report) {
         <form action="<?= $this->baseUrl('portal/viagem/submit') ?>" method="POST" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" name="id" value="<?= $activeReport['id'] ?>">
+
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="final_km" style="font-size: 12px; font-weight: 700; color: #4ade80;">
+                    📏 Hodômetro Final (KM no Painel do Veículo ao Concluir) *
+                </label>
+                <input type="number" id="final_km" name="final_km" placeholder="Ex: 45350" min="<?= intval($activeReport['initial_km'] ?? 0) ?>" required style="font-size: 14px; font-weight: 600; color: #f8fafc;">
+                <span style="font-size: 10px; color: var(--text-secondary); display: block; margin-top: 4px;">
+                    * Exigência legal da Resolução TSE nº 23.607/2019 para cálculo e comprovação de consumo.
+                </span>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-block" <?= empty($activeReport['receipts']) ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '' ?>>
                 🚀 Finalizar e Enviar Relatório de Viagem
             </button>
@@ -204,24 +215,30 @@ foreach ($travelReports as $report) {
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
             <div class="form-group">
-                <label for="purpose">Finalidade / Objetivo da Viagem</label>
-                <input type="text" id="purpose" name="purpose" placeholder="Ex: Panfletagem na Zona Norte" required>
+                <label for="purpose">Finalidade / Objetivo da Viagem *</label>
+                <input type="text" id="purpose" name="purpose" placeholder="Ex: Panfletagem e carreatas no setor norte" required>
             </div>
 
             <div style="display: flex; gap: 10px;">
                 <div class="form-group flex-1">
-                    <label for="start_date">Data Inicial</label>
+                    <label for="start_date">Data Inicial *</label>
                     <input type="date" id="start_date" name="start_date" value="<?= date('Y-m-d') ?>" required>
                 </div>
                 <div class="form-group flex-1">
-                    <label for="end_date">Data Final</label>
+                    <label for="end_date">Data Final *</label>
                     <input type="date" id="end_date" name="end_date" value="<?= date('Y-m-d') ?>" required>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="vehicle_plate">Placa do Veículo (Opcional)</label>
-                <input type="text" id="vehicle_plate" name="vehicle_plate" placeholder="AAA-0A00">
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group flex-1">
+                    <label for="vehicle_plate" style="font-weight: 700; color: var(--accent-teal-hover);">Placa do Veículo * (Exigência TSE)</label>
+                    <input type="text" id="vehicle_plate" name="vehicle_plate" placeholder="AAA-0A00" required style="text-transform: uppercase; font-weight: 700;">
+                </div>
+                <div class="form-group flex-1">
+                    <label for="initial_km" style="font-weight: 700; color: var(--accent-teal-hover);">Hodômetro Inicial (KM) *</label>
+                    <input type="number" id="initial_km" name="initial_km" placeholder="Ex: 45100" min="0" required style="font-weight: 700;">
+                </div>
             </div>
 
             <button type="submit" class="btn btn-teal btn-block">
@@ -247,7 +264,16 @@ foreach ($travelReports as $report) {
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>
                             <span style="font-size: 13px; font-weight: 600; display: block;"><?= htmlspecialchars($tr['purpose']) ?></span>
-                            <span style="font-size: 10px; color: var(--text-secondary);">
+                            <span style="font-size: 11px; color: var(--accent-teal-hover); display: block; margin-top: 2px;">
+                                🚘 Placa: <strong><?= htmlspecialchars(strtoupper($tr['vehicle_plate'])) ?></strong>
+                                <?php if (!empty($tr['initial_km'])): ?>
+                                    &bull; Hodômetro: <?= number_format($tr['initial_km'], 0, ',', '.') ?> KM &rarr; <?= !empty($tr['final_km']) ? number_format($tr['final_km'], 0, ',', '.') . ' KM' : '---' ?>
+                                    <?php if (!empty($tr['final_km'])): ?>
+                                        (<strong><?= number_format($tr['final_km'] - $tr['initial_km'], 0, ',', '.') ?> KM rodados</strong>)
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </span>
+                            <span style="font-size: 10px; color: var(--text-secondary); display: block; margin-top: 2px;">
                                 Período: <?= date('d/m/Y', strtotime($tr['start_date'])) ?> &rarr; <?= date('d/m/Y', strtotime($tr['end_date'])) ?>
                             </span>
                         </div>
