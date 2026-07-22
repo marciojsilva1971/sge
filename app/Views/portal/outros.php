@@ -299,20 +299,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    // Extrator inteligente de CNPJ com tolerância a ruídos comuns de OCR
+    // Extrator inteligente de CNPJ com tolerância avançada a ruídos comuns de OCR
     function extrairCNPJDoTexto(text) {
         if (!text) return null;
 
-        const matches = text.match(/(?:CNPJ|C\.N\.P\.J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|sS\.\-\/\s]{14,25})/gi) || [];
+        function normalizarTextoOCR(txt) {
+            return txt
+                .replace(/[OoQ]/g, '0')
+                .replace(/[Il|!L]/g, '1')
+                .replace(/[Zz]/g, '2')
+                .replace(/[Ss$]/g, '5')
+                .replace(/[Bb]/g, '8');
+        }
+
+        const matches = text.match(/(?:CNPJ|C\.?N\.?P\.?J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|!LsSZzBb\.\-\/\s]{14,25})/gi) || [];
         for (let raw of matches) {
-            let clean = raw.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+            let norm = normalizarTextoOCR(raw);
+            let clean = norm.replace(/\D/g, '');
             for (let i = 0; i <= clean.length - 14; i++) {
                 let sub = clean.substring(i, i + 14);
                 if (validarCNPJ(sub)) return sub;
             }
         }
 
-        const apenasNumeros = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, ' ');
+        const textoNorm = normalizarTextoOCR(text);
+        const apenasNumeros = textoNorm.replace(/\D/g, ' ');
         const tokens = apenasNumeros.split(/\s+/);
         for (let token of tokens) {
             if (token.length === 14 && validarCNPJ(token)) {
@@ -320,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const todosDigitos = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+        const todosDigitos = textoNorm.replace(/\D/g, '');
         for (let i = 0; i <= todosDigitos.length - 14; i++) {
             let sub = todosDigitos.substring(i, i + 14);
             if (validarCNPJ(sub)) return sub;
