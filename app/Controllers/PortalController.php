@@ -139,6 +139,7 @@ class PortalController extends Controller {
         try {
             $travel_report_id = intval($_POST['travel_report_id'] ?? 0);
             $supplier_cnpj = trim($_POST['supplier_cnpj'] ?? '');
+            $supplier_name = trim($_POST['supplier_name'] ?? '');
             $receipt_date = $_POST['receipt_date'] ?? '';
             $value = round($this->parseBrlCurrency($_POST['value'] ?? '0'), 2);
             $spce_category_id = intval($_POST['spce_category_id'] ?? 0);
@@ -192,10 +193,14 @@ class PortalController extends Controller {
             }
 
             if (empty($allFiles)) {
-                throw new Exception("A foto do comprovante fiscal é obrigatória.");
+                throw new Exception("É necessário anexar a foto ou PDF do comprovante fiscal da despesa.");
             }
 
-            $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
+            // Diretório de armazenamento seguro dos comprovantes criptografados
+            $storageDir = dirname(dirname(__DIR__)) . '/storage/uploads/comprovantes';
+            if (!is_dir($storageDir)) {
+                mkdir($storageDir, 0755, true);
+            }
 
             // Salva e criptografa a foto principal (primeiro arquivo)
             $mainFile = $allFiles[0];
@@ -203,12 +208,13 @@ class PortalController extends Controller {
 
             // Grava o recibo principal
             $stmt = $db->prepare(
-                "INSERT INTO `travel_receipts` (travel_report_id, supplier_cnpj, receipt_date, value, spce_category_id, encrypted_file_path, iv, status, notes) 
-                 VALUES (:travel_report_id, :supplier_cnpj, :receipt_date, :value, :spce_category_id, :encrypted_file_path, :iv, 'PENDENTE', :notes)"
+                "INSERT INTO `travel_receipts` (travel_report_id, supplier_cnpj, supplier_name, receipt_date, value, spce_category_id, encrypted_file_path, iv, status, notes) 
+                 VALUES (:travel_report_id, :supplier_cnpj, :supplier_name, :receipt_date, :value, :spce_category_id, :encrypted_file_path, :iv, 'PENDENTE', :notes)"
             );
             $stmt->execute([
                 'travel_report_id' => $travel_report_id,
                 'supplier_cnpj' => $supplier_cnpj,
+                'supplier_name' => empty($supplier_name) ? null : $supplier_name,
                 'receipt_date' => $receipt_date,
                 'value' => $value,
                 'spce_category_id' => $spce_category_id,
@@ -223,12 +229,13 @@ class PortalController extends Controller {
                 $extraFile = $allFiles[$i];
                 $extraCrypto = EncryptionService::encryptAndSaveUploadedFile($extraFile, $storageDir);
                 $stmtExtra = $db->prepare(
-                    "INSERT INTO `travel_receipts` (travel_report_id, supplier_cnpj, receipt_date, value, spce_category_id, encrypted_file_path, iv, status, notes) 
-                     VALUES (:travel_report_id, :supplier_cnpj, :receipt_date, :value, :spce_category_id, :encrypted_file_path, :iv, 'PENDENTE', :notes)"
+                    "INSERT INTO `travel_receipts` (travel_report_id, supplier_cnpj, supplier_name, receipt_date, value, spce_category_id, encrypted_file_path, iv, status, notes) 
+                     VALUES (:travel_report_id, :supplier_cnpj, :supplier_name, :receipt_date, :value, :spce_category_id, :encrypted_file_path, :iv, 'PENDENTE', :notes)"
                 );
                 $stmtExtra->execute([
                     'travel_report_id' => $travel_report_id,
                     'supplier_cnpj' => $supplier_cnpj,
+                    'supplier_name' => empty($supplier_name) ? null : $supplier_name,
                     'receipt_date' => $receipt_date,
                     'value' => $value,
                     'spce_category_id' => $spce_category_id,

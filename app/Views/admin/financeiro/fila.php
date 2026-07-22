@@ -109,73 +109,107 @@
     </div>
 </div>
 
-<!-- Secção 2: Reembolsos/Despesas de Viagem Pendentes -->
-<div class="panel-card">
-    <div class="card-header">
-        <h3>Despesas e Reembolsos de Viagens (<?= count($pendingTravels) ?>)</h3>
+<!-- Secção 2: Gastos com Combustível & Viagens de Campo -->
+<div class="panel-card" style="border: 1px solid rgba(45, 212, 191, 0.3);">
+    <div class="card-header" style="background: rgba(13, 148, 136, 0.1); padding: 14px 16px; border-bottom: 1px solid rgba(45, 212, 191, 0.2);">
+        <h3 style="color: #2dd4bf; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            ⛽ Gastos com Combustível & Viagens de Campo (<?= count($pendingTravels) ?>)
+        </h3>
     </div>
     
     <?php if (empty($pendingTravels)): ?>
-        <p style="text-align: center; color: var(--text-secondary); padding: 20px; font-size: 13px;">Nenhuma viagem aguardando aprovação.</p>
+        <p style="text-align: center; color: var(--text-secondary); padding: 20px; font-size: 13px;">Nenhum gasto com combustível aguardando aprovação.</p>
     <?php else: ?>
         <?php foreach ($pendingTravels as $tr): ?>
-            <div style="background-color: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px;">
+            <div style="background-color: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 12px;">
                     <div>
-                        <span style="font-size: 12px; color: var(--accent-teal-hover); text-transform: uppercase; font-weight: 600;">Relatório de Viagem #<?= $tr['id'] ?></span>
-                        <h4 style="font-size: 15px; font-weight: 600; margin-top: 2px;"><?= htmlspecialchars($tr['purpose']) ?></h4>
-                        <span style="font-size: 12px; color: var(--text-secondary);">
+                        <span style="font-size: 11px; color: var(--accent-teal-hover); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Relatório de Viagem #<?= $tr['id'] ?></span>
+                        <h4 style="font-size: 16px; font-weight: 700; margin-top: 2px; color: #f8fafc;"><?= htmlspecialchars($tr['purpose']) ?></h4>
+                        <span style="font-size: 12px; color: var(--text-secondary); display: block; margin-top: 4px;">
                             Colaborador: <strong><?= htmlspecialchars($tr['user_name']) ?></strong> (<?= htmlspecialchars($tr['celular']) ?>) &bull; Placa: <strong><?= htmlspecialchars(strtoupper($tr['vehicle_plate'] ?? 'N/I')) ?></strong>
                             <?php if (!empty($tr['initial_km'])): ?>
                                 &bull; KM: <strong><?= number_format($tr['initial_km'], 0, ',', '.') ?> KM</strong> &rarr; <strong><?= !empty($tr['final_km']) ? number_format($tr['final_km'], 0, ',', '.') . ' KM' : 'Pendente' ?></strong>
                                 <?php if (!empty($tr['final_km'])): ?>
-                                    (<span style="color: var(--accent-teal-hover); font-weight: 700;"><?= number_format($tr['final_km'] - $tr['initial_km'], 0, ',', '.') ?> KM rodados</span>)
+                                    (<span style="color: #4ade80; font-weight: 700;"><?= number_format($tr['final_km'] - $tr['initial_km'], 0, ',', '.') ?> KM rodados</span>)
                                 <?php endif; ?>
                             <?php endif; ?>
                         </span>
+                        <span style="font-size: 11px; color: var(--text-secondary); display: block; margin-top: 2px;">
+                            Período: <?= date('d/m/Y', strtotime($tr['start_date'])) ?> até <?= date('d/m/Y', strtotime($tr['end_date'])) ?>
+                        </span>
                     </div>
-                    <div style="text-align: right;">
-                        <span style="font-size: 12px; color: var(--text-secondary);">Período: <?= date('d/m/Y', strtotime($tr['start_date'])) ?> até <?= date('d/m/Y', strtotime($tr['end_date'])) ?></span>
-                        <div style="margin-top: 4px;">
-                            <form action="<?= $this->baseUrl('admin/financeiro/aprovar') ?>" method="POST" style="display: inline;">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
-                                <input type="hidden" name="type" value="travel">
-                                <input type="hidden" name="id" value="<?= $tr['id'] ?>">
-                                <button type="submit" class="btn btn-success btn-sm" style="margin-right: 8px;">Aprovar Relatório</button>
-                            </form>
-                            <button class="btn btn-secondary btn-sm" style="background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--error-color);" onclick="rejeitarRegistro('travel', <?= $tr['id'] ?>)">Rejeitar</button>
+
+                    <!-- Formulário de Aprovação & Vinculação de Conta e Categoria SPCE -->
+                    <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; border-radius: 10px; padding: 12px; max-width: 440px; width: 100%;">
+                        <div style="font-size: 11px; font-weight: 700; color: #2dd4bf; margin-bottom: 8px;">
+                            ⚖️ Vinculação Financeira & Fiscal (TSE):
                         </div>
+                        <form action="<?= $this->baseUrl('admin/financeiro/aprovar') ?>" method="POST" style="display: flex; flex-direction: column; gap: 8px;">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                            <input type="hidden" name="type" value="travel">
+                            <input type="hidden" name="id" value="<?= $tr['id'] ?>">
+
+                            <div style="display: flex; gap: 6px;">
+                                <select name="bank_account_id" required style="font-size: 11px; padding: 6px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #475569; flex: 1;">
+                                    <option value="">-- Conta Bancária Origem * --</option>
+                                    <?php foreach ($bankAccounts as $acc): ?>
+                                        <option value="<?= $acc['id'] ?>"><?= htmlspecialchars($acc['name']) ?> (Saldo: R$ <?= number_format($acc['balance'], 2, ',', '.') ?>)</option>
+                                    <?php endforeach; ?>
+                                </select>
+
+                                <select name="spce_category_id" required style="font-size: 11px; padding: 6px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #475569; flex: 1;">
+                                    <option value="">-- Categoria SPCE * --</option>
+                                    <?php foreach ($spceCategories as $cat): ?>
+                                        <option value="<?= $cat['id'] ?>" <?= strpos($cat['code'], '44') !== false ? 'selected' : '' ?>><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div style="display: flex; gap: 6px; margin-top: 4px;">
+                                <button type="submit" class="btn btn-success btn-sm" style="flex: 1; font-weight: 700; font-size: 11px; padding: 6px;">🚀 Aprovar e Lançar Despesa</button>
+                                <button type="button" class="btn btn-secondary btn-sm btn-danger-hover" style="font-size: 11px; padding: 6px;" onclick="rejeitarRegistro('travel', <?= $tr['id'] ?>)">Rejeitar</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
-                <div style="padding-left: 16px; border-left: 3px solid var(--accent-indigo);">
-                    <h5 style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary);">Recibos de Combustível/Despesas Anexados:</h5>
+                <div style="padding-left: 16px; border-left: 3px solid var(--accent-teal);">
+                    <h5 style="font-size: 12px; font-weight: 700; margin-bottom: 8px; color: #94a3b8; text-transform: uppercase;">Recibos de Combustível / Cupons Fiscais Anexados:</h5>
                     <table class="table" style="font-size: 12px;">
                         <thead>
                             <tr>
                                 <th>Data Recibo</th>
-                                <th>CNPJ Posto/Fornecedor</th>
+                                <th>Posto / Fornecedor</th>
+                                <th>CNPJ</th>
                                 <th>Categoria SPCE</th>
-                                <th>Valor</th>
-                                <th style="width: 120px;">Voucher Cripto</th>
+                                <th>Valor (R$)</th>
+                                <th>Comprovante</th>
+                                <th style="text-align: center;">Ação</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($tr['receipts'])): ?>
                                 <tr>
-                                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">Nenhum recibo anexado a esta viagem.</td>
+                                    <td colspan="7" style="text-align: center; color: var(--text-secondary);">Nenhum recibo anexado a esta viagem.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($tr['receipts'] as $rec): ?>
                                     <tr>
                                         <td><?= date('d/m/Y', strtotime($rec['receipt_date'])) ?></td>
-                                        <td style="font-family: monospace;"><?= htmlspecialchars($rec['supplier_cnpj']) ?></td>
-                                        <td><?= htmlspecialchars($rec['spce_code']) ?> - <?= htmlspecialchars($rec['spce_desc']) ?></td>
-                                        <td style="font-weight: 600; color: var(--text-primary);">R$ <?= number_format($rec['value'], 2, ',', '.') ?></td>
+                                        <td style="font-weight: 600;"><?= htmlspecialchars($rec['supplier_name'] ?? 'Posto de Combustível') ?></td>
+                                        <td style="font-family: monospace; font-size: 11px;"><?= htmlspecialchars($rec['supplier_cnpj']) ?></td>
+                                        <td><?= htmlspecialchars($rec['spce_code'] ?? '44') ?> - <?= htmlspecialchars($rec['spce_desc'] ?? 'Combustíveis e lubrificantes') ?></td>
+                                        <td style="font-weight: 700; color: #4ade80;">R$ <?= number_format($rec['value'], 2, ',', '.') ?></td>
                                         <td>
                                             <a href="<?= $this->baseUrl('admin/financeiro/comprovante?id=' . $rec['id'] . '&type=travel') ?>" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 10px; padding: 2px 6px; min-height: 24px;">
-                                                📄 Abrir
+                                                📄 Abrir Cripto
                                             </a>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <button type="button" class="btn btn-warning btn-sm" style="font-size: 10px; padding: 2px 6px; min-height: 24px; background: #eab308; color: #0f172a; font-weight: 700;" onclick='editarReciboCombustivelAdmin(<?= json_encode($rec, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+                                                ✏️ Editar
+                                            </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -424,4 +458,74 @@
     function fecharAdminEditModal() {
         document.getElementById('adminEditExpenseModal').style.display = 'none';
     }
+
+    function editarReciboCombustivelAdmin(rec) {
+        document.getElementById('edit_receipt_id').value = rec.id;
+        document.getElementById('edit_receipt_supplier_cnpj').value = rec.supplier_cnpj || '';
+        formatarCnpjCpf(document.getElementById('edit_receipt_supplier_cnpj'));
+        
+        document.getElementById('edit_receipt_supplier_name').value = rec.supplier_name || '';
+        document.getElementById('edit_receipt_date').value = rec.receipt_date || '';
+        document.getElementById('edit_receipt_spce_category_id').value = rec.spce_category_id || '';
+
+        const valFloat = parseFloat(rec.value || 0);
+        document.getElementById('edit_receipt_value').value = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valFloat);
+
+        document.getElementById('adminEditTravelReceiptModal').style.display = 'flex';
+    }
+
+    function fecharAdminEditReceiptModal() {
+        document.getElementById('adminEditTravelReceiptModal').style.display = 'none';
+    }
 </script>
+
+<!-- MODAL DE EDIÇÃO DE RECIBO DE COMBUSTÍVEL PELO ADMINISTRADOR -->
+<div id="adminEditTravelReceiptModal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+    <div style="background: #0f172a; border: 1px solid var(--accent-teal); border-radius: 16px; max-width: 520px; width: 100%; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: #2dd4bf;">✏️ Editar Recibo de Combustível / Posto</h3>
+            <button type="button" onclick="fecharAdminEditReceiptModal()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+        </div>
+
+        <form action="<?= $this->baseUrl('admin/financeiro/viagem/recibo/editar') ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" id="edit_receipt_id" name="receipt_id" value="">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">CNPJ do Posto *</label>
+                    <input type="text" id="edit_receipt_supplier_cnpj" name="supplier_cnpj" onkeyup="formatarCnpjCpf(this)" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Data do Recibo *</label>
+                    <input type="date" id="edit_receipt_date" name="receipt_date" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600;">Nome / Razão Social do Posto</label>
+                <input type="text" id="edit_receipt_supplier_name" name="supplier_name" placeholder="Ex: Auto Posto Alvorada Ltda" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Valor (R$) *</label>
+                    <input type="text" id="edit_receipt_value" name="value" onkeyup="formatarMoeda(this)" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #4ade80; font-size: 14px; font-weight: 700;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Categoria SPCE *</label>
+                    <select id="edit_receipt_spce_category_id" name="spce_category_id" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 12px;">
+                        <?php foreach ($spceCategories as $cat): ?>
+                            <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 16px;">
+                <button type="button" class="btn btn-secondary flex-1" onclick="fecharAdminEditReceiptModal()">Cancelar</button>
+                <button type="submit" class="btn btn-teal flex-1" style="background: #eab308; color: #0f172a; font-weight: 800;">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>

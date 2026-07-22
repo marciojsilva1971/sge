@@ -652,15 +652,85 @@ class FinanceController extends Controller {
                 $stmtBank->execute(['value' => $exp['value'], 'id' => $bankAccountId]);
 
             } elseif ($type === 'travel') {
-                // Aprova relatório de viagem e seus recibos
+                $bankAccountId = intval($_POST['bank_account_id'] ?? 0);
+                $spceCategoryId = intval($_POST['spce_category_id'] ?? 0);
+
+                if ($bankAccountId <= 0) {
+                    throw new Exception("É necessário selecionar a Conta Bancária Origem antes de aprovar o Relatório de Viagem/Combustível.");
+                }
+
+                // Busca o relatório de viagem
+                $stmtTravel = $db->prepare("SELECT * FROM `travel_reports` WHERE id = :id LIMIT 1");
+                $stmtTravel->execute(['id' => $id]);
+                $travel = $stmtTravel->fetch();
+
+                if (!$travel) throw new Exception("Relatório de viagem não encontrado.");
+                if ($travel['status'] === 'APROVADO') throw new Exception("Este relatório de viagem já foi aprovado.");
+
+                // Busca todos os recibos atrelados a esta viagem
+                $stmtRec = $db->prepare("SELECT * FROM `travel_receipts` WHERE travel_report_id = :id");
+                $stmtRec->execute(['id' => $id]);
+                $receipts = $stmtRec->fetchAll();
+
+                if (empty($receipts)) {
+                    throw new Exception("O relatório de viagem não possui recibos de combustível anexados.");
+                }
+
+                $totalFuelValue = 0.00;
+                foreach ($receipts as $rec) {
+                    $recVal = floatval($rec['value']);
+                    $totalFuelValue += $recVal;
+
+                    $catId = !empty($rec['spce_category_id']) ? intval($rec['spce_category_id']) : $spceCategoryId;
+                    if ($catId <= 0) $catId = $spceCategoryId;
+                    if ($catId <= 0) {
+                        throw new Exception("É necessário selecionar a Categoria SPCE antes de aprovar os gastos com combustível.");
+                    }
+
+                    $kmStr = "";
+                    if (!empty($travel['initial_km']) && !empty($travel['final_km'])) {
+                        $kmStr = " (Placa: " . strtoupper($travel['vehicle_plate']) . " - KM " . number_format($travel['initial_km'], 0, ',', '.') . " ➔ " . number_format($travel['final_km'], 0, ',', '.') . " | " . number_format($travel['final_km'] - $travel['initial_km'], 0, ',', '.') . " KM rodados)";
+                    } elseif (!empty($travel['vehicle_plate'])) {
+                        $kmStr = " (Placa: " . strtoupper($travel['vehicle_plate']) . ")";
+                    }
+
+                    $supplierDisplay = !empty($rec['supplier_name']) ? $rec['supplier_name'] : 'Posto de Combustível';
+                    $desc = "Reembolso Combustível / Viagem #" . $travel['id'] . $kmStr . " - " . $travel['purpose'];
+
+                    // Insere despesa oficial vinculada no módulo financeiro
+                    $stmtInsertExp = $db->prepare(
+                        "INSERT INTO `despesas` 
+                         (user_id, bank_account_id, spce_category_id, supplier_name, supplier_cnpj_cpf, description, value, date_incurred, status, approved_by, approved_at, notes, created_at, updated_at)
+                         VALUES 
+                         (:user_id, :bank_account_id, :spce_category_id, :supplier_name, :supplier_cnpj_cpf, :description, :value, :date_incurred, 'PAGO', :approved_by, NOW(), :notes, NOW(), NOW())"
+                    );
+                    $stmtInsertExp->execute([
+                        'user_id' => $travel['user_id'],
+                        'bank_account_id' => $bankAccountId,
+                        'spce_category_id' => $catId,
+                        'supplier_name' => $supplierDisplay,
+                        'supplier_cnpj_cpf' => !empty($rec['supplier_cnpj']) ? $rec['supplier_cnpj'] : null,
+                        'description' => $desc,
+                        'value' => $recVal,
+                        'date_incurred' => $rec['receipt_date'],
+                        'approved_by' => $user['id'],
+                        'notes' => $notes
+                    ]);
+
+                    // Atualiza status do recibo para APROVADO
+                    $stmtRecUpd = $db->prepare("UPDATE `travel_receipts` SET status = 'APROVADO' WHERE id = :id");
+                    $stmtRecUpd->execute(['id' => $rec['id']]);
+                }
+
+                // Aprova relatório de viagem
                 $stmtUpdate = $db->prepare(
                     "UPDATE `travel_reports` SET status = 'APROVADO', approved_by = :approved_by, approved_at = NOW() WHERE id = :id"
                 );
                 $stmtUpdate->execute(['approved_by' => $user['id'], 'id' => $id]);
 
-                // Atualiza todos os recibos atrelados
-                $stmtReceipts = $db->prepare("UPDATE `travel_receipts` SET status = 'APROVADO' WHERE travel_report_id = :id");
-                $stmtReceipts->execute(['id' => $id]);
+                // Desconta o valor total da conta bancária vinculada
+                $stmtBank = $db->prepare("UPDATE `bank_accounts` SET balance = balance - :value WHERE id = :id");
+                $stmtBank->execute(['value' => $totalFuelValue, 'id' => $bankAccountId]);
 
             } elseif ($type === 'militancy') {
                 // Aprova atividade de militância
@@ -2179,6 +2249,52 @@ class FinanceController extends Controller {
         }
 
         $this->redirect('/admin/financeiro/contas');
+    }
+
+    /**
+     * Atualiza dados de um recibo de combustível/viagem (CNPJ, Razão Social, Categoria SPCE, Valor).
+     */
+    public function updateTravelReceipt(): void {
+        $user = $this->requireAuth();
+        $this->validatePostCsrf();
+
+        try {
+            $id = intval($_POST['receipt_id'] ?? 0);
+            $supplier_cnpj = trim($_POST['supplier_cnpj'] ?? '');
+            $supplier_name = trim($_POST['supplier_name'] ?? '');
+            $spce_category_id = intval($_POST['spce_category_id'] ?? 0);
+            $value = $this->parseBrlCurrency($_POST['value'] ?? '0');
+            $receipt_date = $_POST['receipt_date'] ?? '';
+
+            if ($id <= 0 || $value <= 0 || empty($receipt_date)) {
+                throw new \Exception("Parâmetros inválidos para atualização do recibo.");
+            }
+
+            $db = Database::getInstance();
+            $stmt = $db->prepare(
+                "UPDATE `travel_receipts` 
+                 SET supplier_cnpj = :supplier_cnpj, supplier_name = :supplier_name, spce_category_id = :spce_category_id, value = :value, receipt_date = :receipt_date 
+                 WHERE id = :id"
+            );
+            $stmt->execute([
+                'supplier_cnpj' => empty($supplier_cnpj) ? null : $supplier_cnpj,
+                'supplier_name' => empty($supplier_name) ? null : $supplier_name,
+                'spce_category_id' => $spce_category_id > 0 ? $spce_category_id : null,
+                'value' => $value,
+                'receipt_date' => $receipt_date,
+                'id' => $id
+            ]);
+
+            \App\Services\AuditLogger::log('UPDATE_TRAVEL_RECEIPT', 'travel_receipts', $id, null, [
+                'supplier_cnpj' => $supplier_cnpj, 'supplier_name' => $supplier_name, 'value' => $value
+            ]);
+
+            Session::setFlash('success', 'Recibo de combustível atualizado com sucesso!');
+        } catch (\Exception $e) {
+            Session::setFlash('error', 'Erro ao atualizar recibo: ' . $e->getMessage());
+        }
+
+        $this->redirect('/admin/financeiro/fila');
     }
 }
 

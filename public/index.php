@@ -121,6 +121,7 @@ $router->post('/admin/financeiro/despesas/editar', 'FinanceController@updateExpe
 $router->get('/admin/financeiro/fila', 'FinanceController@queue');
 $router->post('/admin/financeiro/aprovar', 'FinanceController@approve');
 $router->post('/admin/financeiro/rejeitar', 'FinanceController@reject');
+$router->post('/admin/financeiro/viagem/recibo/editar', 'FinanceController@updateTravelReceipt');
 $router->get('/admin/financeiro/comprovante', 'FinanceController@comprovante');
 $router->get('/admin/financeiro/tipos-despesas', 'FinanceController@expenseTypes');
 $router->post('/admin/financeiro/tipos-despesas', 'FinanceController@addExpenseType');

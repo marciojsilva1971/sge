@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS `travel_receipts` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `travel_report_id` INT NOT NULL,
     `supplier_cnpj` VARCHAR(20) NOT NULL,
+    `supplier_name` VARCHAR(255) NULL,
     `receipt_date` DATE NOT NULL,
     `value` DECIMAL(15,2) NOT NULL,
     `spce_category_id` INT NOT NULL,
