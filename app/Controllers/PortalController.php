@@ -296,13 +296,13 @@ class PortalController extends Controller {
             }
 
             Session::setFlash('success', "Recibo registrado com sucesso! ({$totalArquivos} foto(s) anexada(s))");
-            $this->redirect('/portal/viagem?envio_sucesso=1');
+            $this->redirect('/portal/viagem?modo=adicionar_gasto&envio_sucesso=1');
             return;
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao adicionar recibo: ' . $e->getMessage());
         }
 
-        $this->redirect('/portal/viagem');
+        $this->redirect('/portal/viagem?modo=adicionar_gasto');
     }
 
     /**
@@ -357,11 +357,13 @@ class PortalController extends Controller {
             $stmt->execute(['end_date' => $end_date, 'final_km' => $final_km, 'id' => $id]);
 
             Session::setFlash('success', 'Relatório de viagem enviado com sucesso para auditoria e reembolso!');
+            $this->redirect('/portal/viagem');
+            return;
         } catch (Exception $e) {
             Session::setFlash('error', 'Erro ao enviar relatório: ' . $e->getMessage());
         }
 
-        $this->redirect('/portal/viagem');
+        $this->redirect('/portal/viagem?modo=encerrar');
     }
 
     /**
