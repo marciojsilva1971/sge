@@ -267,6 +267,68 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Validador matemático oficial do Digito Verificador de CNPJ (Módulo 11)
+    function validarCNPJ(cnpj) {
+        cnpj = String(cnpj || '').replace(/[^\d]+/g, '');
+        if (cnpj.length !== 14) return false;
+        if (/^(\d)\1+$/.test(cnpj)) return false;
+
+        let tamanho = cnpj.length - 2;
+        let numeros = cnpj.substring(0, tamanho);
+        let digitos = cnpj.substring(tamanho);
+        let soma = 0;
+        let pos = tamanho - 7;
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        let resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+        if (resultado != digitos.charAt(0)) return false;
+
+        tamanho = tamanho + 1;
+        numeros = cnpj.substring(0, tamanho);
+        soma = 0;
+        pos = tamanho - 7;
+        for (let i = tamanho; i >= 1; i--) {
+            soma += numeros.charAt(tamanho - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11);
+        if (resultado != digitos.charAt(1)) return false;
+
+        return true;
+    }
+
+    // Extrator inteligente de CNPJ com tolerância a ruídos comuns de OCR
+    function extrairCNPJDoTexto(text) {
+        if (!text) return null;
+
+        const matches = text.match(/(?:CNPJ|C\.N\.P\.J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|sS\.\-\/\s]{14,25})/gi) || [];
+        for (let raw of matches) {
+            let clean = raw.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+            for (let i = 0; i <= clean.length - 14; i++) {
+                let sub = clean.substring(i, i + 14);
+                if (validarCNPJ(sub)) return sub;
+            }
+        }
+
+        const apenasNumeros = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, ' ');
+        const tokens = apenasNumeros.split(/\s+/);
+        for (let token of tokens) {
+            if (token.length === 14 && validarCNPJ(token)) {
+                return token;
+            }
+        }
+
+        const todosDigitos = text.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/[sS]/g, '5').replace(/\D/g, '');
+        for (let i = 0; i <= todosDigitos.length - 14; i++) {
+            let sub = todosDigitos.substring(i, i + 14);
+            if (validarCNPJ(sub)) return sub;
+        }
+
+        return null;
+    }
+
     // Processamento de OCR
     if (btnScanOcr) {
         btnScanOcr.addEventListener('click', async () => {
@@ -286,14 +348,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 await worker.terminate();
 
                 const text = ret.data.text;
-                const cnpjMatch = text.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/);
+                const detectedCnpj = extrairCNPJDoTexto(text);
 
-                if (cnpjMatch) {
-                    const cnpjLimpo = cnpjMatch[0].replace(/\D/g, '');
+                if (detectedCnpj) {
                     ocrStatusBadge.innerHTML = '<span style="color: #38bdf8; font-size: 12px; font-weight: 700;">🔍 Consultando Receita Federal...</span>';
-
-                    // Consulta nome da empresa via API com isOcr = true
-                    consultarCnpjApi(cnpjLimpo, true);
+                    consultarCnpjApi(detectedCnpj, true);
                 } else {
                     if (cnpjInput) cnpjInput.value = '';
                     if (nameInput) nameInput.value = '';

@@ -113,9 +113,16 @@ foreach ($travelReports as $report) {
                 </div>
             </div>
 
-            <!-- CONTAINER REVELADO APÓS LEITURA DO CNPJ -->
+            <!-- CONTAINER REVELADO APÓS LEITURA DO CNPJ OU DIGITAÇÃO MANUAL -->
             <div id="dados-despesa-container" style="display: none; margin-top: 16px; transition: all 0.3s ease;">
                 
+                <!-- ALERTA DE FALHA NO OCR / PREENCHIMENTO MANUAL -->
+                <div id="ocr_notice_banner" style="display: none; background: rgba(245, 158, 11, 0.15); border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px;">
+                    <p style="font-size: 12px; font-weight: 700; color: #fbbf24; margin: 0; line-height: 1.4;">
+                        ⚠️ Não foi possível efetuar a leitura automática do CNPJ no comprovante. Por favor, digite o CNPJ e a Razão Social da empresa manualmente nos campos abaixo.
+                    </p>
+                </div>
+
                 <!-- MENSAGEM SOLICITADA EM DESTAQUE NO TOPO DA ETAPA 2 -->
                 <div style="background: rgba(56, 189, 248, 0.12); border-left: 4px solid #38bdf8; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px;">
                     <p style="font-size: 13px; font-weight: 700; color: #7dd3fc; margin: 0; line-height: 1.4;">
@@ -457,52 +464,35 @@ function formatarMoeda(input) {
         fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + clean)
             .then(res => res.json())
             .then(data => {
-                if (data.success) {
-                    if (cnpjInput) cnpjInput.value = data.cnpj;
-                    if (supplierNameInput) supplierNameInput.value = data.razao_social;
+                if (data.success && (data.razao_social || (data.company && (data.company.corporate_name || data.company.trade_name)))) {
+                    const razaoSocial = data.razao_social || (data.company.corporate_name || data.company.trade_name);
+                    const formattedCnpj = clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+
+                    if (cnpjInput) cnpjInput.value = formattedCnpj;
+                    if (supplierNameInput) supplierNameInput.value = razaoSocial;
                     if (cnpjInfoDiv) {
-                        cnpjInfoDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ ${data.razao_social}</span> <span style="color: #94a3b8;">(${data.municipio}/${data.uf})</span>`;
+                        cnpjInfoDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ ${razaoSocial}</span>`;
                     }
-                    if (statusBadge) {
-                        statusBadge.style.display = 'block';
-                        statusBadge.innerHTML = `
-                            <div style="padding: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 10px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 18px;">✅</span>
-                                    <span>Empresa Identificada: <strong>${data.razao_social}</strong> (${data.cnpj})</span>
-                                </div>
-                                <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
-                                    📸 <strong>Atenção:</strong> Certifique-se de anexar uma ou mais fotos nítidas do comprovante fiscal.
-                                </div>
-                            </div>
-                        `;
+                    if (isOcr) {
+                        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                        if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+                        if (dadosContainer) {
+                            dadosContainer.style.display = 'block';
+                            dadosContainer.scrollIntoView({ behavior: 'smooth' });
+                        }
                     }
                 } else {
                     if (isOcr) {
-                        // Se a busca via OCR falhar, limpa CNPJ e Razão Social para preenchimento manual
-                        if (cnpjInput) cnpjInput.value = '';
-                        if (supplierNameInput) supplierNameInput.value = '';
-                        if (cnpjInfoDiv) {
-                            cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ CNPJ não localizado na Receita Federal.</span>`;
-                        }
-                        if (statusBadge) {
-                            statusBadge.style.display = 'block';
-                            statusBadge.innerHTML = `
-                                <div style="padding: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 10px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="font-size: 18px;">⚠️</span>
-                                        <span>CNPJ não localizado na Receita Federal. Os campos foram mantidos em branco para preenchimento manual.</span>
-                                    </div>
-                                </div>
-                            `;
-                        }
+                        // Se busca via OCR falhar/não encontrar na Receita, oculta bloco 1 e abre campos editáveis vazios
+                        exibirAvisoEPreenchimentoManual("⚠️ CNPJ não localizado na Receita Federal. Os campos foram mantidos em branco para preenchimento manual.");
                     } else {
                         // Digitação manual de CNPJ não encontrado na Receita Federal
                         if (supplierNameInput) supplierNameInput.value = '';
                         if (cnpjInfoDiv) {
                             cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ CNPJ não localizado na Receita Federal.</span>`;
                         }
-                        const querManter = confirm("CNPJ (" + clean + ") não foi localizado na base pública da Receita Federal.\n\nDeseja manter este CNPJ e preencher o Nome / Razão Social da empresa manualmente?");
+                        const formattedCnpj = clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+                        const querManter = confirm("CNPJ (" + formattedCnpj + ") não foi localizado na base pública da Receita Federal.\n\nDeseja manter este CNPJ e preencher o Nome / Razão Social da empresa manualmente?");
                         if (querManter) {
                             if (supplierNameInput) supplierNameInput.focus();
                         } else {
@@ -517,11 +507,11 @@ function formatarMoeda(input) {
             .catch(err => {
                 console.error('Erro na consulta do CNPJ:', err);
                 if (isOcr) {
-                    if (cnpjInput) cnpjInput.value = '';
-                    if (supplierNameInput) supplierNameInput.value = '';
-                }
-                if (cnpjInfoDiv) {
-                    cnpjInfoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao conectar com base da Receita</span>';
+                    exibirAvisoEPreenchimentoManual("⚠️ Erro ao conectar com base da Receita. Os campos foram mantidos em branco para preenchimento manual.");
+                } else {
+                    if (cnpjInfoDiv) {
+                        cnpjInfoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao conectar com base da Receita</span>';
+                    }
                 }
             });
     }
@@ -537,7 +527,7 @@ function formatarMoeda(input) {
             e.target.value = value;
 
             if (value.replace(/\D/g, "").length === 14) {
-                consultarCnpjServico(value);
+                consultarCnpjServico(value, false);
             }
         });
     }
@@ -548,15 +538,40 @@ function formatarMoeda(input) {
     const statusBadge = document.getElementById('ocr_status_badge');
     const dadosContainer = document.getElementById('dados-despesa-container');
     const blocoCapturaCnpj = document.getElementById('bloco-captura-cnpj');
+    const ocrNoticeBanner = document.getElementById('ocr_notice_banner');
     const inputComprovante = document.getElementById('comprovante');
     const badgeComprovante = document.getElementById('comprovante-count-badge');
 
-    function revelarEtapa2() {
+    function exibirAvisoEPreenchimentoManual(mensagem = null) {
         if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
         if (dadosContainer) {
             dadosContainer.style.display = 'block';
             dadosContainer.scrollIntoView({ behavior: 'smooth' });
         }
+        if (ocrNoticeBanner) {
+            ocrNoticeBanner.style.display = 'block';
+            if (mensagem) {
+                const p = ocrNoticeBanner.querySelector('p');
+                if (p) p.innerText = mensagem;
+            }
+        }
+        if (cnpjInput) {
+            cnpjInput.value = '';
+            cnpjInput.focus();
+        }
+        if (supplierNameInput) {
+            supplierNameInput.value = '';
+        }
+    }
+
+    function revelarEtapa2() {
+        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+        if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+        if (dadosContainer) {
+            dadosContainer.style.display = 'block';
+            dadosContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        if (cnpjInput) cnpjInput.focus();
     }
 
     if (btnPularOcr) {
