@@ -5,10 +5,10 @@ Este guia ilustrado foi desenvolvido para orientar os colaboradores de campo e e
 ---
 
 > [!IMPORTANT]
-> **REQUISITOS OBRIGATÓRIOS DO TSE (Resolução nº 23.607/2019):**
-> 1. Todo comprovante de abastecimento deve ser emitido com o **CNPJ do Posto de Combustível**.
-> 2. O cupom/nota fiscal deve estar **100% legível**, sem rasuras ou corte nos valores totais.
-> 3. É obrigatório registrar a **Placa do Veículo** e a **Quilometragem (Hodômetro)** no momento da viagem/abastecimento.
+> **REQUISITOS DO TSE (Resolução nº 23.607/2019):**
+> 1. Todo comprovante de abastecimento deve conter o **CNPJ e Razão Social do Posto de Combustível**.
+> 2. O cupom ou nota fiscal deve ser fotografado de forma **100% legível**, enquadrando todos os itens e o valor total.
+> 3. Na abertura da viagem, informe a **Placa do Veículo** (caso o veículo seja cadastrado/locado pela campanha).
 
 ---
 
@@ -19,22 +19,24 @@ Este guia ilustrado foi desenvolvido para orientar os colaboradores de campo e e
 1. Acesse o **Portal do Colaborador** no seu Smartphone.
 2. Na aba **"Controle de Viagens & Combustível"**, selecione a sua viagem ativa ou inicie um novo deslocamento.
 3. No **1º PASSO**, clique em **`📸 Fotografe o CNPJ`** e aponte a câmera do seu celular para o topo do cupom fiscal (onde fica impresso o CNPJ do posto).
-4. Clique no botão **`🔍 Digitalizar e Ler CNPJ (OCR)`**. O sistema identificará automaticamente o CNPJ e a Razão Social do Posto de Combustível.
+4. Clique no botão **`🔍 Digitalizar e Ler CNPJ (OCR)`**. O sistema identificará automaticamente o CNPJ e o Nome do Posto.
 
 ![Passo 1: Leitura do CNPJ do Posto via OCR no Smartphone](file:///c:/xampp/htdocs/sge/docs/fase_5_militancia_e_portal/manual_combustivel_step1.png)
 
 ---
 
-### 2º PASSO: Foto do Cupom Completo & Dados de Quilometragem
+### 2º PASSO: Foto do Cupom Completo, Valor e Data
 
-1. Após a confirmação do CNPJ, o formulário exibirá a **Etapa 2**.
-2. Clique em **`📸 Enviar Cupom Fiscal Completo`** e tire uma foto nítida de todo o cupom fiscal (enquadrando os itens, data e o valor total em R$).
-3. Preencha os campos informativos:
-   * **Valor Total (R$):** Digite o valor exato do abastecimento (ex: `150,00`).
-   * **Hodômetro (KM):** Digite a quilometragem atual marcada no painel do veículo.
-4. Clique no botão verde **`💾 Finalizar Lançamento do Comprovante`**.
+1. Após a leitura do CNPJ, o formulário exibirá os dados preenchidos da empresa.
+2. Clique em **`📁 Fotos / Comprovante(s) do Cupom Fiscal`** e anexe uma ou mais fotos nítidas do cupom.
+3. Preencha os campos da despesa:
+   * **Valor Total do Cupom (R$):** Digite o valor exato do abastecimento (ex: `150,00`).
+   * **Data do Recibo:** Selecione a data em que o abastecimento foi realizado.
+   * **Categoria SPCE:** Selecione a categoria (ex: *44 - Combustíveis e lubrificantes*).
+   * **Notas / Observações (Opcional):** Adicione um lembrete (ex: *Abastecimento carreata no bairro X*).
+4. Clique no botão verde **`💾 Confirmar e Enviar Despesa`**.
 
-![Passo 2: Anexo do Cupom Completo, Valor em R$ e Hodômetro KM](file:///c:/xampp/htdocs/sge/docs/fase_5_militancia_e_portal/manual_combustivel_step2.png)
+![Passo 2: Anexo do Cupom Completo, Valor em R$ e Data](file:///c:/xampp/htdocs/sge/docs/fase_5_militancia_e_portal/manual_combustivel_step2.png)
 
 ---
 
