@@ -697,19 +697,48 @@ class FinanceController extends Controller {
                     $supplierDisplay = !empty($rec['supplier_name']) ? $rec['supplier_name'] : 'Posto de Combustível';
                     $desc = "Reembolso Combustível / Viagem #" . $travel['id'] . $kmStr . " - " . $travel['purpose'];
 
+                    // Busca ou cadastra o fornecedor (Posto) na tabela suppliers
+                    $supplierId = null;
+                    if (!empty($rec['supplier_cnpj'])) {
+                        $cleanCnpj = preg_replace('/\D/', '', $rec['supplier_cnpj']);
+                        $stmtSup = $db->prepare("SELECT id FROM `suppliers` WHERE cnpj_cpf = :cnpj OR cnpj_cpf = :clean LIMIT 1");
+                        $stmtSup->execute(['cnpj' => $rec['supplier_cnpj'], 'clean' => $cleanCnpj]);
+                        $existingSup = $stmtSup->fetch();
+                        if ($existingSup) {
+                            $supplierId = $existingSup['id'];
+                            if (!empty($supplierDisplay) && $supplierDisplay !== 'Posto de Combustível') {
+                                $db->prepare("UPDATE `suppliers` SET corporate_name = :name WHERE id = :id")->execute(['name' => $supplierDisplay, 'id' => $supplierId]);
+                            }
+                        } else {
+                            $stmtIns = $db->prepare("INSERT INTO `suppliers` (cnpj_cpf, corporate_name, status) VALUES (:cnpj_cpf, :corporate_name, 'ATIVO')");
+                            $stmtIns->execute(['cnpj_cpf' => !empty($cleanCnpj) ? $cleanCnpj : $rec['supplier_cnpj'], 'corporate_name' => $supplierDisplay]);
+                            $supplierId = $db->lastInsertId();
+                        }
+                    } else {
+                        $stmtSup = $db->prepare("SELECT id FROM `suppliers` WHERE corporate_name = :name LIMIT 1");
+                        $stmtSup->execute(['name' => $supplierDisplay]);
+                        $genSup = $stmtSup->fetch();
+                        if ($genSup) {
+                            $supplierId = $genSup['id'];
+                        } else {
+                            $stmtIns = $db->prepare("INSERT INTO `suppliers` (cnpj_cpf, corporate_name, status) VALUES ('00000000000000', :name, 'ATIVO')");
+                            $stmtIns->execute(['name' => $supplierDisplay]);
+                            $supplierId = $db->lastInsertId();
+                        }
+                    }
+
                     // Insere despesa oficial vinculada no módulo financeiro
                     $stmtInsertExp = $db->prepare(
                         "INSERT INTO `despesas` 
-                         (user_id, bank_account_id, spce_category_id, supplier_name, supplier_cnpj_cpf, description, value, date_incurred, status, approved_by, approved_at, notes, created_at, updated_at)
+                         (user_id, supplier_id, bank_account_id, spce_category_id, description, value, date_incurred, status, approved_by, approved_at, notes, created_at)
                          VALUES 
-                         (:user_id, :bank_account_id, :spce_category_id, :supplier_name, :supplier_cnpj_cpf, :description, :value, :date_incurred, 'PAGO', :approved_by, NOW(), :notes, NOW(), NOW())"
+                         (:user_id, :supplier_id, :bank_account_id, :spce_category_id, :description, :value, :date_incurred, 'PAGO', :approved_by, NOW(), :notes, NOW())"
                     );
                     $stmtInsertExp->execute([
                         'user_id' => $travel['user_id'],
+                        'supplier_id' => $supplierId,
                         'bank_account_id' => $bankAccountId,
                         'spce_category_id' => $catId,
-                        'supplier_name' => $supplierDisplay,
-                        'supplier_cnpj_cpf' => !empty($rec['supplier_cnpj']) ? $rec['supplier_cnpj'] : null,
                         'description' => $desc,
                         'value' => $recVal,
                         'date_incurred' => $rec['receipt_date'],
