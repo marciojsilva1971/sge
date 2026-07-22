@@ -1317,6 +1317,18 @@ class PortalController extends Controller {
                 throw new Exception("Atividades já homologadas não podem ser alteradas.");
             }
 
+            // Auto-cria a tabela de fotos adicionais de militância ANTES de abrir a transação (DDL realiza commit implícito no MySQL)
+            $db->exec("CREATE TABLE IF NOT EXISTS `militancy_photos` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `militancy_id` INT NOT NULL,
+                `encrypted_photo_path` VARCHAR(255) NOT NULL,
+                `original_name` VARCHAR(255) NOT NULL,
+                `iv` VARCHAR(64) NOT NULL,
+                `mime_type` VARCHAR(100) NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`militancy_id`) REFERENCES `militancy_activities` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
             $db->beginTransaction();
 
             $sql = "UPDATE `militancy_activities` SET description = :description, activity_date = :activity_date, status = 'PENDENTE'";
@@ -1335,18 +1347,6 @@ class PortalController extends Controller {
             $sql .= " WHERE id = :id";
             $stmtUpd = $db->prepare($sql);
             $stmtUpd->execute($params);
-
-            // Auto-cria a tabela de fotos adicionais de militância se não existir
-            $db->exec("CREATE TABLE IF NOT EXISTS `militancy_photos` (
-                `id` INT AUTO_INCREMENT PRIMARY KEY,
-                `militancy_id` INT NOT NULL,
-                `encrypted_photo_path` VARCHAR(255) NOT NULL,
-                `original_name` VARCHAR(255) NOT NULL,
-                `iv` VARCHAR(64) NOT NULL,
-                `mime_type` VARCHAR(100) NOT NULL,
-                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (`militancy_id`) REFERENCES `militancy_activities` (`id`) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
             $allFiles = [];
             $storageDir = dirname(dirname(__DIR__)) . '/storage/uploads/comprovantes';
