@@ -275,14 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (cnpjMatch) {
                     const cnpjLimpo = cnpjMatch[0].replace(/\D/g, '');
-                    cnpjInput.value = cnpjLimpo;
-                    formatarCnpjCpf(cnpjInput);
-                    ocrStatusBadge.innerHTML = '<span style="color: #4ade80; font-size: 12px; font-weight: 700;">✓ CNPJ identificado: ' + cnpjInput.value + '</span>';
+                    ocrStatusBadge.innerHTML = '<span style="color: #38bdf8; font-size: 12px; font-weight: 700;">🔍 Consultando Receita Federal...</span>';
 
-                    // Consulta nome da empresa via API
-                    consultarCnpjApi(cnpjLimpo);
+                    // Consulta nome da empresa via API com isOcr = true
+                    consultarCnpjApi(cnpjLimpo, true);
                 } else {
-                    ocrStatusBadge.innerHTML = '<span style="color: #f59e0b; font-size: 12px;">⚠️ Não foi possível identificar o CNPJ automaticamente. Preencha manualmente abaixo.</span>';
+                    if (cnpjInput) cnpjInput.value = '';
+                    if (nameInput) nameInput.value = '';
+                    ocrStatusBadge.innerHTML = '<span style="color: #f59e0b; font-size: 12px;">⚠️ Não foi possível identificar o CNPJ automaticamente. Campos mantidos em branco para preenchimento manual.</span>';
                 }
             } catch (err) {
                 console.error(err);

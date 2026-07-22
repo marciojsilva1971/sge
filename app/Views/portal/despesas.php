@@ -614,8 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log("Texto extraído via OCR:", text);
                     const detectedCnpj = extrairCNPJDoTexto(text);
                     if (detectedCnpj) {
-                        if (inputCnpjCpf) inputCnpjCpf.value = detectedCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-                        consultarCnpj(detectedCnpj);
+                        consultarCnpj(detectedCnpj, true);
                         revelarEtapa2();
                     } else {
                         exibirAvisoManual();

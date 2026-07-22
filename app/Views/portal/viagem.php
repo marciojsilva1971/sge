@@ -755,8 +755,7 @@ function formatarMoeda(input) {
                     console.log("Texto extraído via OCR:", text);
                     const detectedCnpj = extrairCNPJDoTexto(text);
                     if (detectedCnpj) {
-                        if (cnpjInput) cnpjInput.value = detectedCnpj;
-                        consultarCnpjServico(detectedCnpj);
+                        consultarCnpjServico(detectedCnpj, true);
                         revelarEtapa2();
                     } else {
                         exibirAvisoManual();
