@@ -325,7 +325,8 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">CPF/CNPJ Fornecedor</label>
-                    <input type="text" id="admin_edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" oninput="formatarCnpjCpf(this)" maxlength="18" placeholder="00.000.000/0001-00" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <input type="text" id="admin_edit_supplier_cnpj_cpf" name="supplier_cnpj_cpf" oninput="formatarCnpjCpf(this); if (this.value.replace(/\D/g, '').length === 14) consultarCnpjModalAdmin(this, document.getElementById('admin_edit_supplier_name'), document.getElementById('admin_edit_cnpj_info'));" maxlength="18" placeholder="00.000.000/0001-00" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <div id="admin_edit_cnpj_info" style="margin-top: 4px; font-size: 11px;"></div>
                 </div>
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">Razão Social Fornecedor</label>
@@ -474,6 +475,45 @@
         document.getElementById('adminEditTravelReceiptModal').style.display = 'flex';
     }
 
+    function consultarCnpjModalAdmin(inputCnpj, inputName, divInfo) {
+        if (!inputCnpj) return;
+        const clean = inputCnpj.value.replace(/\D/g, "");
+        if (clean.length !== 14) return;
+
+        if (divInfo) {
+            divInfo.innerHTML = '<span style="color: #38bdf8; font-size: 11px;">🔍 Consultando Receita Federal...</span>';
+        }
+
+        fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + clean)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (inputName) inputName.value = data.razao_social;
+                    if (divInfo) {
+                        divInfo.innerHTML = `<span style="color: #22c55e; font-size: 11px; font-weight: 600;">✔ ${data.razao_social}</span> <span style="color: #94a3b8; font-size: 10px;">(${data.municipio}/${data.uf})</span>`;
+                    }
+                } else {
+                    if (inputName) inputName.value = '';
+                    if (divInfo) {
+                        divInfo.innerHTML = `<span style="color: #ef4444; font-size: 11px;">⚠️ CNPJ não localizado na Receita Federal.</span>`;
+                    }
+                    const querManter = confirm("CNPJ (" + clean + ") não foi localizado na base pública da Receita Federal.\n\nDeseja manter este CNPJ e preencher o Nome / Razão Social da empresa manualmente?");
+                    if (querManter) {
+                        if (inputName) inputName.focus();
+                    } else {
+                        inputCnpj.value = '';
+                        inputCnpj.focus();
+                    }
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (divInfo) {
+                    divInfo.innerHTML = '<span style="color: #ef4444; font-size: 11px;">⚠️ Erro ao consultar Receita Federal.</span>';
+                }
+            });
+    }
+
     function fecharAdminEditReceiptModal() {
         document.getElementById('adminEditTravelReceiptModal').style.display = 'none';
     }
@@ -494,7 +534,8 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">CNPJ do Posto *</label>
-                    <input type="text" id="edit_receipt_supplier_cnpj" name="supplier_cnpj" onkeyup="formatarCnpjCpf(this)" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <input type="text" id="edit_receipt_supplier_cnpj" name="supplier_cnpj" oninput="formatarCnpjCpf(this); if (this.value.replace(/\D/g, '').length === 14) consultarCnpjModalAdmin(this, document.getElementById('edit_receipt_supplier_name'), document.getElementById('edit_receipt_cnpj_info'));" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                    <div id="edit_receipt_cnpj_info" style="margin-top: 4px; font-size: 11px;"></div>
                 </div>
                 <div class="form-group">
                     <label style="font-size: 12px; font-weight: 600;">Data do Recibo *</label>
