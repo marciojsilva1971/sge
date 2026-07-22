@@ -41,6 +41,10 @@ Este arquivo define a identidade, competências, regras e restrições para o as
 * **Banco Local:** Scripts e comandos SQL de ajuste no banco de dados local estão pré-autorizados e podem ser executados diretamente.
 * **Orientação para Produção:** Para qualquer alteração estrutural no banco, gerar o arquivo de script `.sql` correspondente e fornecer orientações claras de execução para atualização do banco em produção (DigitalOcean VPS).
 
+### 6. Regra de Leitura OCR, Consulta de CNPJ e Preenchimento de Fornecedor
+* **Falha no OCR ou Receita Federal:** Sempre que o OCR não reconhecer o CNPJ do comprovante ou se a consulta pública à Receita Federal falhar/não encontrar a empresa, os campos `CNPJ` e `Nome/Razão Social` devem ser mantidos em branco (`""`) para preenchimento manual pelo usuário.
+* **Preenchimento Manual de CNPJ:** Ao preencher manualmente um CNPJ de 14 dígitos, o sistema realiza a busca automática na Receita Federal. Se a empresa for localizada, a Razão Social é preenchida automaticamente. Caso o CNPJ não seja localizado na Receita Federal, o sistema solicita confirmação do usuário (`confirm()`) se deseja manter o CNPJ digitado e preencher o campo Nome/Razão Social manualmente.
+
 
 
 

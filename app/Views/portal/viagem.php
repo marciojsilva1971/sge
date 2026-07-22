@@ -369,7 +369,7 @@ function formatarMoeda(input) {
     const cnpjInfoDiv = document.getElementById('cnpj_supplier_info');
     const supplierNameInput = document.getElementById('supplier_name');
 
-    function consultarCnpjServico(cnpjVal) {
+    function consultarCnpjServico(cnpjVal, isOcr = false) {
         const clean = cnpjVal.replace(/\D/g, "");
         if (clean.length !== 14) return;
 
@@ -381,14 +381,13 @@ function formatarMoeda(input) {
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    cnpjInput.value = data.cnpj;
-                    if (supplierNameInput) {
-                        supplierNameInput.value = data.razao_social;
-                    }
+                    if (cnpjInput) cnpjInput.value = data.cnpj;
+                    if (supplierNameInput) supplierNameInput.value = data.razao_social;
                     if (cnpjInfoDiv) {
                         cnpjInfoDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ ${data.razao_social}</span> <span style="color: #94a3b8;">(${data.municipio}/${data.uf})</span>`;
                     }
                     if (statusBadge) {
+                        statusBadge.style.display = 'block';
                         statusBadge.innerHTML = `
                             <div style="padding: 12px; background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; border-radius: 10px; color: #4ade80; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -396,32 +395,54 @@ function formatarMoeda(input) {
                                     <span>Empresa Identificada: <strong>${data.razao_social}</strong> (${data.cnpj})</span>
                                 </div>
                                 <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
-                                    📸 <strong>Atenção:</strong> Certifique-se de anexar uma ou mais fotos nítidas do comprovante fiscal onde estejam perfeitamente discriminadas todas as despesas e seus respectivos valores.
+                                    📸 <strong>Atenção:</strong> Certifique-se de anexar uma ou mais fotos nítidas do comprovante fiscal.
                                 </div>
                             </div>
                         `;
                     }
                 } else {
-                    if (cnpjInfoDiv) {
-                        cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ ${data.message || 'CNPJ não encontrado na Receita Federal'}</span>`;
-                    }
-                    if (statusBadge) {
-                        statusBadge.innerHTML = `
-                            <div style="padding: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 10px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 18px;">⚠️</span>
-                                    <span>CNPJ Lido (${clean}), mas empresa não localizada na Receita Federal.</span>
+                    if (isOcr) {
+                        // Se a busca via OCR falhar, limpa CNPJ e Razão Social para preenchimento manual
+                        if (cnpjInput) cnpjInput.value = '';
+                        if (supplierNameInput) supplierNameInput.value = '';
+                        if (cnpjInfoDiv) {
+                            cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ CNPJ não localizado na Receita Federal.</span>`;
+                        }
+                        if (statusBadge) {
+                            statusBadge.style.display = 'block';
+                            statusBadge.innerHTML = `
+                                <div style="padding: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 10px; color: #fde047; font-weight: 600; font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="font-size: 18px;">⚠️</span>
+                                        <span>CNPJ não localizado na Receita Federal. Os campos foram mantidos em branco para preenchimento manual.</span>
+                                    </div>
                                 </div>
-                                <div style="background: rgba(13, 148, 136, 0.3); border-left: 3px solid var(--accent-teal); padding: 8px 10px; border-radius: 6px; color: #5eead4; font-weight: 500; font-size: 11px;">
-                                    📸 <strong>Atenção:</strong> Preencha o nome da empresa abaixo e certifique-se de anexar uma ou mais fotos do comprovante discriminando todas as despesas e valores.
-                                </div>
-                            </div>
-                        `;
+                            `;
+                        }
+                    } else {
+                        // Digitação manual de CNPJ não encontrado na Receita Federal
+                        if (supplierNameInput) supplierNameInput.value = '';
+                        if (cnpjInfoDiv) {
+                            cnpjInfoDiv.innerHTML = `<span style="color: #ef4444; font-weight: 500;">⚠️ CNPJ não localizado na Receita Federal.</span>`;
+                        }
+                        const querManter = confirm("CNPJ (" + clean + ") não foi localizado na base pública da Receita Federal.\n\nDeseja manter este CNPJ e preencher o Nome / Razão Social da empresa manualmente?");
+                        if (querManter) {
+                            if (supplierNameInput) supplierNameInput.focus();
+                        } else {
+                            if (cnpjInput) {
+                                cnpjInput.value = '';
+                                cnpjInput.focus();
+                            }
+                        }
                     }
                 }
             })
             .catch(err => {
                 console.error('Erro na consulta do CNPJ:', err);
+                if (isOcr) {
+                    if (cnpjInput) cnpjInput.value = '';
+                    if (supplierNameInput) supplierNameInput.value = '';
+                }
                 if (cnpjInfoDiv) {
                     cnpjInfoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao conectar com base da Receita</span>';
                 }

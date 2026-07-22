@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function consultarCnpj(cleanCnpj) {
+    function consultarCnpj(cleanCnpj, isOcr = false) {
         if (cleanCnpj.length !== 14) return;
         if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '<span style="color: var(--accent-teal); font-weight: 500;">🔍 Buscando Razão Social na Receita Federal...</span>';
 
@@ -372,11 +372,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (inputSupplierName) inputSupplierName.value = data.razao_social;
                     if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = `<span style="color: #22c55e; font-weight: 600;">✔ ${data.razao_social}</span> <span style="color: #94a3b8;">(${data.municipio}/${data.uf})</span>`;
                 } else {
-                    if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = `<span style="color: #ef4444;">⚠️ ${data.message || 'CNPJ não encontrado'}</span>`;
+                    if (isOcr) {
+                        if (inputCnpjCpf) inputCnpjCpf.value = '';
+                        if (inputSupplierName) inputSupplierName.value = '';
+                        if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = `<span style="color: #ef4444;">⚠️ CNPJ não encontrado na Receita Federal. Campos em branco.</span>`;
+                    } else {
+                        if (inputSupplierName) inputSupplierName.value = '';
+                        if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = `<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal.</span>`;
+                        const querManter = confirm("CNPJ (" + cleanCnpj + ") não foi localizado na base pública da Receita Federal.\n\nDeseja manter este CNPJ e preencher o Nome / Razão Social da empresa manualmente?");
+                        if (querManter) {
+                            if (inputSupplierName) inputSupplierName.focus();
+                        } else {
+                            if (inputCnpjCpf) {
+                                inputCnpjCpf.value = '';
+                                inputCnpjCpf.focus();
+                            }
+                        }
+                    }
                 }
             })
             .catch(err => {
                 console.error(err);
+                if (isOcr) {
+                    if (inputCnpjCpf) inputCnpjCpf.value = '';
+                    if (inputSupplierName) inputSupplierName.value = '';
+                }
                 if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao consultar Receita Federal</span>';
             });
     }

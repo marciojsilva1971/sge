@@ -294,20 +294,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Consulta de CNPJ via API
-    async function consultarCnpjApi(cnpj) {
+    // Consulta de CNPJ via API com suporte a confirmação e limpeza de campos
+    async function consultarCnpjApi(cnpj, isOcr = false) {
+        const clean = cnpj.replace(/\D/g, '');
+        if (clean.length !== 14) return;
+
         try {
-            infoDiv.innerHTML = '<span style="color: #38bdf8;">Buscando Razão Social...</span>';
-            const res = await fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + cnpj);
+            if (infoDiv) infoDiv.innerHTML = '<span style="color: #38bdf8;">Buscando Razão Social na Receita Federal...</span>';
+            const res = await fetch('<?= $this->baseUrl("api/cnpj/consultar") ?>?cnpj=' + clean);
             const data = await res.json();
-            if (data.success && data.company) {
-                nameInput.value = data.company.corporate_name || data.company.trade_name || '';
-                infoDiv.innerHTML = '<span style="color: #4ade80;">✓ Empresa: ' + (data.company.corporate_name || '') + '</span>';
+            if (data.success && (data.company || data.razao_social)) {
+                const corporateName = data.razao_social || (data.company ? (data.company.corporate_name || data.company.trade_name) : '');
+                if (nameInput) nameInput.value = corporateName;
+                if (infoDiv) infoDiv.innerHTML = '<span style="color: #4ade80;">✓ Empresa: ' + corporateName + '</span>';
             } else {
-                infoDiv.innerHTML = '<span style="color: #94a3b8;">Preencha o nome do fornecedor se necessário.</span>';
+                if (isOcr) {
+                    if (cnpjInput) cnpjInput.value = '';
+                    if (nameInput) nameInput.value = '';
+                    if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal. Campos mantidos em branco.</span>';
+                } else {
+                    if (nameInput) nameInput.value = '';
+                    if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal.</span>';
+                    const querManter = confirm("CNPJ (" + clean + ") não foi localizado na base pública da Receita Federal.\n\nDeseja manter este CNPJ e preencher o Nome / Razão Social da empresa manualmente?");
+                    if (querManter) {
+                        if (nameInput) nameInput.focus();
+                    } else {
+                        if (cnpjInput) {
+                            cnpjInput.value = '';
+                            cnpjInput.focus();
+                        }
+                    }
+                }
             }
         } catch (e) {
-            infoDiv.innerHTML = '';
+            console.error('Erro na consulta CNPJ:', e);
+            if (isOcr) {
+                if (cnpjInput) cnpjInput.value = '';
+                if (nameInput) nameInput.value = '';
+            }
+            if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao conectar com base da Receita</span>';
         }
     }
 
@@ -315,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cnpjInput.addEventListener('change', () => {
             const val = cnpjInput.value.replace(/\D/g, '');
             if (val.length === 14) {
-                consultarCnpjApi(val);
+                consultarCnpjApi(val, false);
             }
         });
     }
