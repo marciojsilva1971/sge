@@ -968,65 +968,77 @@ function formatarMoeda(input) {
                 return;
             }
 
-            try {
-                const worker = await Tesseract.createWorker('por');
-                await worker.setParameters({
-                    tessedit_pageseg_mode: '6', // PSM 6: Bloco único de texto (ideal para recibos/cupons)
-                });
+            otimizarImagemParaOCR(file, async function(processedFile) {
+                try {
+                    const worker = await Tesseract.createWorker('por');
+                    await worker.setParameters({
+                        tessedit_pageseg_mode: '6', // PSM 6: Bloco único de texto (ideal para recibos/cupons)
+                    });
 
-                const ret = await worker.recognize(file);
-                await worker.terminate();
+                    const ret = await worker.recognize(processedFile);
+                    await worker.terminate();
 
-                console.log("Texto extraído via OCR (PSM 6):", ret.data.text);
-                let detectedResult = extrairCNPJDoTexto(ret.data.text);
+                    console.log("Texto extraído via OCR (PSM 6):", ret.data.text);
+                    let detectedResult = extrairCNPJDoTexto(ret.data.text);
 
-                if (!detectedResult) {
-                    // Fallback PSM 3 (auto)
-                    const workerAuto = await Tesseract.createWorker('por');
-                    const retAuto = await workerAuto.recognize(file);
-                    await workerAuto.terminate();
+                    if (!detectedResult) {
+                        // Fallback 1: PSM Auto na imagem otimizada
+                        const workerAuto = await Tesseract.createWorker('por');
+                        const retAuto = await workerAuto.recognize(processedFile);
+                        await workerAuto.terminate();
 
-                    console.log("Texto extraído via OCR (PSM Auto):", retAuto.data.text);
-                    detectedResult = extrairCNPJDoTexto(retAuto.data.text);
-                }
+                        console.log("Texto extraído via OCR (PSM Auto):", retAuto.data.text);
+                        detectedResult = extrairCNPJDoTexto(retAuto.data.text);
+                    }
 
-                if (detectedResult && detectedResult.cnpj) {
-                    const detectedCnpj = detectedResult.cnpj;
-                    const isValidoDV = detectedResult.valido;
+                    if (!detectedResult) {
+                        // Fallback 2: Imagem original sem filtro
+                        const workerOrig = await Tesseract.createWorker('por');
+                        const retOrig = await workerOrig.recognize(file);
+                        await workerOrig.terminate();
 
-                    // Preenche o campo de CNPJ com a captura do OCR
-                    if (cnpjInput) {
-                        let clean = detectedCnpj.replace(/\D/g, "");
-                        if (clean.length === 14) {
-                            cnpjInput.value = clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+                        console.log("Texto extraído via OCR (Imagem Original):", retOrig.data.text);
+                        detectedResult = extrairCNPJDoTexto(retOrig.data.text);
+                    }
+
+                    if (detectedResult && detectedResult.cnpj) {
+                        const detectedCnpj = detectedResult.cnpj;
+                        const isValidoDV = detectedResult.valido;
+
+                        // Preenche o campo de CNPJ com a captura do OCR
+                        if (cnpjInput) {
+                            let clean = detectedCnpj.replace(/\D/g, "");
+                            if (clean.length === 14) {
+                                cnpjInput.value = clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+                            } else {
+                                cnpjInput.value = detectedCnpj;
+                            }
+                        }
+
+                        if (isValidoDV) {
+                            consultarCnpjServico(detectedCnpj, true);
                         } else {
-                            cnpjInput.value = detectedCnpj;
+                            // Se o OCR capturou o CNPJ mas o DV ficou impreciso no OCR, MANTÉM o CNPJ preenchido para o usuário conferir/ajustar
+                            if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                            if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                            if (dadosContainer) {
+                                dadosContainer.style.display = 'block';
+                                dadosContainer.scrollIntoView({ behavior: 'smooth' });
+                            }
+                            if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '<span style="color: #f59e0b; font-weight: 500;">⚠️ Confira o número do CNPJ acima.</span>';
+                            if (cnpjInput) cnpjInput.focus();
+                            setTimeout(() => {
+                                alert("⚠️ O sistema identificou o CNPJ (" + cnpjInput.value + ") no comprovante, mas alguns dígitos podem precisar de confirmação.\n\nPor favor, confira o número e altere se necessário.");
+                            }, 100);
                         }
-                    }
-
-                    if (isValidoDV) {
-                        consultarCnpjServico(detectedCnpj, true);
                     } else {
-                        // Se o OCR capturou o CNPJ mas o DV ficou impreciso no OCR, MANTÉM o CNPJ preenchido para o usuário conferir/ajustar
-                        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
-                        if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
-                        if (dadosContainer) {
-                            dadosContainer.style.display = 'block';
-                            dadosContainer.scrollIntoView({ behavior: 'smooth' });
-                        }
-                        if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '<span style="color: #f59e0b; font-weight: 500;">⚠️ Confira o número do CNPJ acima.</span>';
-                        if (cnpjInput) cnpjInput.focus();
-                        setTimeout(() => {
-                            alert("⚠️ O sistema identificou o CNPJ (" + cnpjInput.value + ") no comprovante, mas alguns dígitos podem precisar de confirmação.\n\nPor favor, confira o número e altere se necessário.");
-                        }, 100);
+                        exibirAvisoEPreenchimentoManual();
                     }
-                } else {
+                } catch (err) {
+                    console.error("Erro OCR Tesseract:", err);
                     exibirAvisoEPreenchimentoManual();
                 }
-            } catch (err) {
-                console.error("Erro OCR Tesseract:", err);
-                exibirAvisoEPreenchimentoManual();
-            }
+            });
         };
 
         rodarOCR();
