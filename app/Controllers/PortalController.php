@@ -22,24 +22,74 @@ class PortalController extends Controller {
         $db = Database::getInstance();
         $user = $this->getLoggedUser();
 
-        // 1. Busca relatórios de viagem recentes do usuário
+        // 1. Busca relatórios de viagem do usuário e estatísticas
         $stmtTravel = $db->prepare(
-            "SELECT * FROM `travel_reports` WHERE user_id = :user_id ORDER BY start_date DESC LIMIT 5"
+            "SELECT * FROM `travel_reports` WHERE user_id = :user_id ORDER BY start_date DESC"
         );
         $stmtTravel->execute(['user_id' => $user['id']]);
-        $recentTravels = $stmtTravel->fetchAll();
+        $allTravels = $stmtTravel->fetchAll();
+        $recentTravels = array_slice($allTravels, 0, 5);
 
-        // 2. Busca atividades de militância recentes do usuário
+        $travelStats = ['open' => 0, 'pending' => 0, 'rejected' => 0, 'approved' => 0];
+        foreach ($allTravels as $t) {
+            if ($t['status'] === 'EM_ANDAMENTO') $travelStats['open']++;
+            elseif ($t['status'] === 'ENVIADO') $travelStats['pending']++;
+            elseif ($t['status'] === 'REJEITADO') $travelStats['rejected']++;
+            elseif ($t['status'] === 'APROVADO') $travelStats['approved']++;
+        }
+
+        // 2. Busca atividades de militância do usuário e estatísticas
         $stmtMilitancy = $db->prepare(
-            "SELECT * FROM `militancy_activities` WHERE user_id = :user_id ORDER BY activity_date DESC LIMIT 5"
+            "SELECT * FROM `militancy_activities` WHERE user_id = :user_id ORDER BY activity_date DESC"
         );
         $stmtMilitancy->execute(['user_id' => $user['id']]);
-        $recentMilitancy = $stmtMilitancy->fetchAll();
+        $allMilitancy = $stmtMilitancy->fetchAll();
+        $recentMilitancy = array_slice($allMilitancy, 0, 5);
+
+        $militancyStats = ['pending' => 0, 'rejected' => 0, 'approved' => 0];
+        foreach ($allMilitancy as $m) {
+            if ($m['status'] === 'PENDENTE') $militancyStats['pending']++;
+            elseif ($m['status'] === 'REJEITADO') $militancyStats['rejected']++;
+            elseif ($m['status'] === 'APROVADO') $militancyStats['approved']++;
+        }
+
+        // 3. Busca despesas do usuário (Outros e Gerais)
+        $stmtExpenses = $db->prepare(
+            "SELECT d.*, et.name AS type_name 
+             FROM `despesas` d 
+             LEFT JOIN `expense_types` et ON d.expense_type_id = et.id 
+             WHERE d.user_id = :user_id 
+             ORDER BY d.date_incurred DESC"
+        );
+        $stmtExpenses->execute(['user_id' => $user['id']]);
+        $allExpenses = $stmtExpenses->fetchAll();
+
+        $expenseStats = ['pending' => 0, 'rejected' => 0, 'approved' => 0];
+        $outrosStats = ['pending' => 0, 'rejected' => 0, 'approved' => 0];
+
+        foreach ($allExpenses as $e) {
+            $isOutros = (isset($e['type_name']) && strpos(mb_strtolower($e['type_name']), 'outro') !== false);
+            if ($e['status'] === 'PENDENTE') {
+                $expenseStats['pending']++;
+                if ($isOutros) $outrosStats['pending']++;
+            } elseif ($e['status'] === 'REJEITADO') {
+                $expenseStats['rejected']++;
+                if ($isOutros) $outrosStats['rejected']++;
+            } elseif ($e['status'] === 'APROVADO' || $e['status'] === 'PAGO') {
+                $expenseStats['approved']++;
+                if ($isOutros) $outrosStats['approved']++;
+            }
+        }
 
         $this->render('portal/index', [
             'user' => $user,
             'recentTravels' => $recentTravels,
-            'recentMilitancy' => $recentMilitancy
+            'recentMilitancy' => $recentMilitancy,
+            'travelStats' => $travelStats,
+            'militancyStats' => $militancyStats,
+            'expenseStats' => $expenseStats,
+            'outrosStats' => $outrosStats,
+            'csrf_token' => Session::csrfToken()
         ], 'portal');
     }
 
@@ -1210,5 +1260,161 @@ class PortalController extends Controller {
         }
 
         return 'uploads/profiles/' . $filename;
+    }
+
+    /**
+     * Edição / Correção de Atividade de Militância (POST)
+     */
+    public function updateMilitancy(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $id = intval($_POST['militancy_id'] ?? 0);
+            $description = trim($_POST['description'] ?? '');
+            $activity_date = $_POST['activity_date'] ?? date('Y-m-d');
+            $latitude = trim($_POST['latitude'] ?? '');
+            $longitude = trim($_POST['longitude'] ?? '');
+
+            if ($id <= 0 || empty($description)) {
+                throw new Exception("A descrição e o ID da atividade são obrigatórios.");
+            }
+
+            $stmtCheck = $db->prepare("SELECT * FROM `militancy_activities` WHERE id = :id AND user_id = :user_id LIMIT 1");
+            $stmtCheck->execute(['id' => $id, 'user_id' => $user['id']]);
+            $act = $stmtCheck->fetch();
+
+            if (!$act) {
+                throw new Exception("Atividade não encontrada ou sem permissão para alteração.");
+            }
+
+            if ($act['status'] === 'APROVADO') {
+                throw new Exception("Atividades já homologadas não podem ser alteradas.");
+            }
+
+            $db->beginTransaction();
+
+            $sql = "UPDATE `militancy_activities` SET description = :description, activity_date = :activity_date, status = 'PENDENTE'";
+            $params = [
+                'description' => $description,
+                'activity_date' => $activity_date,
+                'id' => $id
+            ];
+
+            if (!empty($latitude) && !empty($longitude)) {
+                $sql .= ", latitude = :latitude, longitude = :longitude";
+                $params['latitude'] = $latitude;
+                $params['longitude'] = $longitude;
+            }
+
+            $sql .= " WHERE id = :id";
+            $stmtUpd = $db->prepare($sql);
+            $stmtUpd->execute($params);
+
+            // Processa foto base64 se enviada
+            if (!empty($_POST['foto_base64'])) {
+                $base64Str = $_POST['foto_base64'];
+                if (preg_match('/^data:image\/(\w+);base64,/', $base64Str, $type)) {
+                    $base64Str = substr($base64Str, strpos($base64Str, ',') + 1);
+                    $imgData = base64_decode($base64Str);
+                    if ($imgData !== false) {
+                        $tmpFile = tempnam(sys_get_temp_dir(), 'mil_img_edit_');
+                        file_put_contents($tmpFile, $imgData);
+                        $fileArray = [
+                            'name' => 'foto_militancia_edit_' . time() . '.jpg',
+                            'type' => 'image/jpeg',
+                            'tmp_name' => $tmpFile,
+                            'error' => UPLOAD_ERR_OK,
+                            'size' => filesize($tmpFile)
+                        ];
+
+                        $storageDir = dirname(dirname(__DIR__)) . '/storage/uploads/comprovantes';
+                        if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+                        $cryptoData = EncryptionService::encryptAndSaveUploadedFile($fileArray, $storageDir);
+                        @unlink($tmpFile);
+
+                        $stmtFoto = $db->prepare(
+                            "UPDATE `militancy_activities` SET encrypted_photo_path = :path, iv = :iv WHERE id = :id"
+                        );
+                        $stmtFoto->execute([
+                            'path' => $cryptoData['encrypted_file_path'],
+                            'iv' => $cryptoData['iv'],
+                            'id' => $id
+                        ]);
+                    }
+                }
+            }
+
+            $db->commit();
+            Session::setFlash('success', 'Atividade de militância atualizada e enviada para homologação!');
+        } catch (Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            Session::setFlash('error', 'Erro ao atualizar atividade: ' . $e->getMessage());
+        }
+
+        $this->redirect('/portal');
+    }
+
+    /**
+     * Edição / Correção de Relatório de Viagem (POST)
+     */
+    public function updateTravel(): void {
+        $this->validatePostCsrf();
+        $db = Database::getInstance();
+        $user = $this->getLoggedUser();
+
+        try {
+            $id = intval($_POST['travel_id'] ?? 0);
+            $purpose = trim($_POST['purpose'] ?? '');
+            $start_date = $_POST['start_date'] ?? '';
+            $end_date = $_POST['end_date'] ?? '';
+            $vehicle_plate = strtoupper(trim($_POST['vehicle_plate'] ?? ''));
+            $initial_km = isset($_POST['initial_km']) && $_POST['initial_km'] !== '' ? intval($_POST['initial_km']) : null;
+            $final_km = isset($_POST['final_km']) && $_POST['final_km'] !== '' ? intval($_POST['final_km']) : null;
+
+            if ($id <= 0 || empty($purpose) || empty($start_date) || empty($end_date) || empty($vehicle_plate) || $initial_km === null) {
+                throw new Exception("Objetivo, datas, Placa do Veículo e Hodômetro Inicial são obrigatórios.");
+            }
+
+            if ($final_km !== null && $final_km < $initial_km) {
+                throw new Exception("O Hodômetro Final ($final_km KM) não pode ser menor que o Hodômetro Inicial ($initial_km KM).");
+            }
+
+            $stmtCheck = $db->prepare("SELECT * FROM `travel_reports` WHERE id = :id AND user_id = :user_id LIMIT 1");
+            $stmtCheck->execute(['id' => $id, 'user_id' => $user['id']]);
+            $travel = $stmtCheck->fetch();
+
+            if (!$travel) {
+                throw new Exception("Relatório de viagem não encontrado ou sem permissão para alteração.");
+            }
+
+            if ($travel['status'] === 'APROVADO') {
+                throw new Exception("Relatórios de viagem aprovados não podem ser alterados.");
+            }
+
+            $stmtUpd = $db->prepare(
+                "UPDATE `travel_reports` 
+                 SET purpose = :purpose, start_date = :start_date, end_date = :end_date, 
+                     vehicle_plate = :vehicle_plate, initial_km = :initial_km, final_km = :final_km, 
+                     status = 'ENVIADO' 
+                 WHERE id = :id"
+            );
+            $stmtUpd->execute([
+                'purpose' => $purpose,
+                'start_date' => $start_date,
+                'end_date' => $end_date,
+                'vehicle_plate' => $vehicle_plate,
+                'initial_km' => $initial_km,
+                'final_km' => $final_km,
+                'id' => $id
+            ]);
+
+            Session::setFlash('success', 'Relatório de viagem atualizado e reenviado para auditoria!');
+        } catch (Exception $e) {
+            Session::setFlash('error', 'Erro ao atualizar relatório de viagem: ' . $e->getMessage());
+        }
+
+        $this->redirect('/portal');
     }
 }
