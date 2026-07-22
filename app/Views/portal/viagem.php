@@ -294,22 +294,41 @@ foreach ($travelReports as $report) {
 </div>
 
 <script>
-    // Máscara CNPJ do Posto
-    document.getElementById('supplier_cnpj').addEventListener('input', function (e) {
-        var value = e.target.value.replace(/\D/g, "");
-        if (value.length > 14) value = value.slice(0, 14);
-
-        if (value.length > 11) {
-            value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-        } else if (value.length > 9) {
-            value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
-        } else if (value.length > 6) {
-            value = value.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3");
-        } else if (value.length > 3) {
-            value = value.replace(/^(\d{3})(\d{1,3})$/, "$1.$2");
+    // Função global de Formatação de Moeda (BRL)
+    window.formatarMoeda = function(input) {
+        if (!input) return;
+        let value = input.value.replace(/\D/g, "");
+        if (value === "") {
+            input.value = "";
+            return;
         }
-        e.target.value = value;
-    });
+        let numberVal = (parseFloat(value) / 100).toFixed(2);
+        let formatted = new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(numberVal);
+        input.value = formatted;
+    };
+
+    // Máscara CNPJ do Posto (com verificação de existência no DOM)
+    var supplierCnpjElem = document.getElementById('supplier_cnpj');
+    if (supplierCnpjElem) {
+        supplierCnpjElem.addEventListener('input', function (e) {
+            var value = e.target.value.replace(/\D/g, "");
+            if (value.length > 14) value = value.slice(0, 14);
+
+            if (value.length > 11) {
+                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+            } else if (value.length > 9) {
+                value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+            } else if (value.length > 6) {
+                value = value.replace(/^(\d{3})(\d{3})(\d{1,3})$/, "$1.$2.$3");
+            } else if (value.length > 3) {
+                value = value.replace(/^(\d{3})(\d{1,3})$/, "$1.$2");
+            }
+            e.target.value = value;
+        });
+    }
 
     // Máscara básica de Placa
     var plateInput = document.getElementById('vehicle_plate');
@@ -319,20 +338,6 @@ foreach ($travelReports as $report) {
             if (value.length > 8) value = value.slice(0, 8);
             e.target.value = value;
         });
-    }
-
-    function formatarMoeda(input) {
-        let value = input.value.replace(/\D/g, "");
-        if (value === "") {
-            input.value = "";
-            return;
-        }
-        value = (parseFloat(value) / 100).toFixed(2);
-        let formatted = new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(value);
-        input.value = formatted;
     }
 
 <!-- Biblioteca Tesseract.js para leitura OCR de comprovantes no navegador -->
