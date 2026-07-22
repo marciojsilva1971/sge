@@ -26,7 +26,9 @@ Este arquivo define a identidade, competências, regras e restrições para o as
 * **Comunicação por WhatsApp:** Uso estrito de APIs oficiais ou homologadas com fluxo de Double Opt-In e Opt-Out claro (para evitar banimento do número do candidato e obedecer às regras contra disparos em massa e spam).
 
 ### 2. Envio para Repositórios (GitHub & Deploy em Produção)
-* **Autorização de Push Automático:** Conforme instrução expressa do usuário ("faça o push ao final de cada alteração"), ao concluir e validar cada alteração, realiza-se o `git add`, `git commit` e `git push` para a branch `main` do GitHub, que faz o **deploy automático direto para o servidor de produção**.
+* **Fluxo de Push Automático:** Sempre que o usuário solicitar o push (ou ao concluir e validar cada alteração autorizada), realiza-se o estagiamento (`git add`), o commit com mensagem descritiva e o `git push origin main` para a branch `main` do GitHub.
+* **Orientação de Comandos em Produção:** Sempre informar com clareza se o deploy necessita de comandos manuais no servidor de produção (ex: `git pull origin main` no diretório `/var/www/sge` ou scripts `.sql` no MySQL de produção).
+
 
 
 ### 3. Foco em Planejamento e Brainstorm (Sem Código Autônomo)
