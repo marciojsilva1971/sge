@@ -564,6 +564,9 @@ function formatarMoeda(input) {
                             dadosContainer.style.display = 'block';
                             dadosContainer.scrollIntoView({ behavior: 'smooth' });
                         }
+                        setTimeout(() => {
+                            alert("✅ CNPJ e Razão Social lidos com sucesso!\n\n" + razaoSocial + " (" + formattedCnpj + ")");
+                        }, 100);
                     }
                 } else {
                     if (isOcr) {
@@ -935,13 +938,12 @@ function formatarMoeda(input) {
                     const detectedCnpj = extrairCNPJDoTexto(text);
                     if (detectedCnpj) {
                         consultarCnpjServico(detectedCnpj, true);
-                        revelarEtapa2();
                     } else {
-                        exibirAvisoManual();
+                        exibirAvisoEPreenchimentoManual();
                     }
                 }).catch(err => {
                     console.error("Erro OCR Tesseract:", err);
-                    exibirAvisoManual();
+                    exibirAvisoEPreenchimentoManual();
                 });
             });
         };
@@ -950,15 +952,11 @@ function formatarMoeda(input) {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
             script.onload = rodarOCR;
-            script.onerror = () => exibirAvisoManual();
+            script.onerror = () => exibirAvisoEPreenchimentoManual();
             document.head.appendChild(script);
         } else {
             rodarOCR();
         }
-    }
-
-    function exibirAvisoManual() {
-        revelarEtapa2();
     }
 
     if (btnScanOcr) {
