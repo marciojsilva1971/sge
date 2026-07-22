@@ -191,12 +191,20 @@
                 </select>
             </div>
 
-            <div class="form-group" style="margin-bottom: 16px; background: rgba(56, 189, 248, 0.08); padding: 10px; border-radius: 8px; border: 1px dashed #38bdf8;">
-                <label style="font-size: 12px; font-weight: 700; color: #38bdf8; display: block; margin-bottom: 4px;">
-                    📸 Anexar Novo(s) Comprovante(s) / Cupom (Opcional)
-                </label>
-                <input type="file" name="novo_comprovante[]" accept="image/*, application/pdf" multiple style="font-size: 11px; color: #cbd5e1; width: 100%;">
-                <span style="font-size: 10px; color: #94a3b8; display: block; margin-top: 4px;">Você pode selecionar múltiplos arquivos (fotos/PDFs). Criptografia AES-256 ativa.</span>
+            <div class="form-group" style="margin-bottom: 16px; background: rgba(56, 189, 248, 0.08); padding: 12px; border-radius: 10px; border: 1px dashed #38bdf8;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 6px;">
+                        📸 Anexar Novo(s) Comprovante(s) / Cupom (Opcional)
+                    </label>
+                    <span id="edit_expense_file_count" style="font-size: 11px; font-weight: 700; color: #4ade80; display: none;"></span>
+                </div>
+                <p style="font-size: 11px; color: #94a3b8; margin: 0 0 8px 0;">
+                    Você pode selecionar um ou mais arquivos. As fotos serão criptografadas em AES-256.
+                </p>
+                <input type="file" id="edit_expense_files" name="novo_comprovante[]" accept="image/*, application/pdf" multiple style="font-size: 12px; color: #fff; background: #1e293b; border: 1px solid #475569; border-radius: 6px; padding: 6px; width: 100%;" onchange="gerarPreviewThumbsEdit(this, 'edit_expense_file_count', 'edit_expense_thumbs_container')">
+                
+                <!-- Container de Miniaturas (Thumbs Grid) -->
+                <div id="edit_expense_thumbs_container" style="display: none; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, 0.15);"></div>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
@@ -701,6 +709,48 @@ function filtrarGastosPortal(status, btnElement) {
     });
 }
 
+function gerarPreviewThumbsEdit(input, badgeId, containerId) {
+    const badge = document.getElementById(badgeId);
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (input.files && input.files.length > 0) {
+        container.style.display = 'grid';
+        if (badge) {
+            badge.style.display = 'inline-block';
+            badge.innerText = '📎 ' + input.files.length + ' arquivo(s) selecionado(s)';
+        }
+
+        Array.from(input.files).forEach((file) => {
+            const box = document.createElement('div');
+            box.style.cssText = 'background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px; text-align: center; overflow: hidden; font-size: 10px;';
+
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.cssText = 'width: 100%; height: 65px; object-fit: cover; border-radius: 4px; margin-bottom: 4px; display: block;';
+                box.appendChild(img);
+            } else {
+                const docIcon = document.createElement('div');
+                docIcon.innerHTML = '📄 PDF';
+                docIcon.style.cssText = 'height: 65px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #38bdf8; font-size: 13px; background: rgba(15, 23, 42, 0.5); border-radius: 4px; margin-bottom: 4px;';
+                box.appendChild(docIcon);
+            }
+
+            const label = document.createElement('span');
+            label.style.cssText = 'color: #cbd5e1; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;';
+            label.innerText = file.name;
+            box.appendChild(label);
+
+            container.appendChild(box);
+        });
+    } else {
+        container.style.display = 'none';
+        if (badge) badge.style.display = 'none';
+    }
+}
+
 function abrirModalCorrigirGastoElemento(btn) {
     if (!btn) return;
     const rawData = btn.getAttribute('data-gasto');
@@ -716,6 +766,13 @@ function abrirModalCorrigirGastoElemento(btn) {
 function abrirModalCorrigirGasto(exp) {
     document.getElementById('edit_expense_id').value = exp.id;
     document.getElementById('edit_description').value = exp.description || '';
+    
+    // Reseta campo de arquivos
+    const expFilesInput = document.getElementById('edit_expense_files');
+    if (expFilesInput) {
+        expFilesInput.value = '';
+        gerarPreviewThumbsEdit(expFilesInput, 'edit_expense_file_count', 'edit_expense_thumbs_container');
+    }
     
     const cnpjInput = document.getElementById('edit_supplier_cnpj_cpf');
     if (cnpjInput) {

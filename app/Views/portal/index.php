@@ -184,15 +184,21 @@
                 <input type="date" id="edit_militancy_date" name="activity_date" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
             </div>
 
-            <!-- Upload de Fotos/Arquivos Adicionais com Criptografia -->
+            <!-- Upload de Fotos/Arquivos Adicionais com Criptografia e Previsualização (Thumbs) -->
             <div class="form-group" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.6); border: 1px dashed #38bdf8; padding: 12px; border-radius: 10px;">
-                <label style="font-size: 12px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                    📸 Anexar Nova(s) Foto(s) / Comprovantes
-                </label>
-                <p style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 6px;">
+                        📸 Anexar Nova(s) Foto(s) / Comprovantes
+                    </label>
+                    <span id="edit_militancy_file_count_index" style="font-size: 11px; font-weight: 700; color: #4ade80; display: none;"></span>
+                </div>
+                <p style="font-size: 11px; color: #94a3b8; margin: 0 0 8px 0;">
                     Você pode selecionar um ou mais arquivos. As fotos serão criptografadas em AES-256 e salvas na galeria da atividade.
                 </p>
-                <input type="file" name="foto_militancia[]" accept="image/*, application/pdf" multiple style="width: 100%; padding: 6px; font-size: 12px; color: #fff; background: #1e293b; border: 1px solid #475569; border-radius: 6px;">
+                <input type="file" id="edit_militancy_files_index" name="foto_militancia[]" accept="image/*, application/pdf" multiple style="width: 100%; padding: 6px; font-size: 12px; color: #fff; background: #1e293b; border: 1px solid #475569; border-radius: 6px;" onchange="gerarPreviewThumbsEdit(this, 'edit_militancy_file_count_index', 'edit_militancy_thumbs_index')">
+                
+                <!-- Container de Miniaturas (Thumbs Grid) -->
+                <div id="edit_militancy_thumbs_index" style="display: none; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, 0.15);"></div>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 16px;">
@@ -255,10 +261,60 @@
 </div>
 
 <script>
+    function gerarPreviewThumbsEdit(input, badgeId, containerId) {
+        const badge = document.getElementById(badgeId);
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+        if (input.files && input.files.length > 0) {
+            container.style.display = 'grid';
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.innerText = '📎 ' + input.files.length + ' arquivo(s) selecionado(s)';
+            }
+
+            Array.from(input.files).forEach((file) => {
+                const box = document.createElement('div');
+                box.style.cssText = 'background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px; text-align: center; overflow: hidden; font-size: 10px;';
+
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.style.cssText = 'width: 100%; height: 65px; object-fit: cover; border-radius: 4px; margin-bottom: 4px; display: block;';
+                    box.appendChild(img);
+                } else {
+                    const docIcon = document.createElement('div');
+                    docIcon.innerHTML = '📄 PDF';
+                    docIcon.style.cssText = 'height: 65px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #38bdf8; font-size: 13px; background: rgba(15, 23, 42, 0.5); border-radius: 4px; margin-bottom: 4px;';
+                    box.appendChild(docIcon);
+                }
+
+                const label = document.createElement('span');
+                label.style.cssText = 'color: #cbd5e1; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;';
+                label.innerText = file.name;
+                box.appendChild(label);
+
+                container.appendChild(box);
+            });
+        } else {
+            container.style.display = 'none';
+            if (badge) badge.style.display = 'none';
+        }
+    }
+
     function abrirModalEditarMilitancia(act) {
         document.getElementById('edit_militancy_id').value = act.id;
         document.getElementById('edit_militancy_description').value = act.description || '';
         document.getElementById('edit_militancy_date').value = act.activity_date || '';
+        
+        // Reseta campo de arquivo e thumbs
+        const inp = document.getElementById('edit_militancy_files_index');
+        if (inp) {
+            inp.value = '';
+            gerarPreviewThumbsEdit(inp, 'edit_militancy_file_count_index', 'edit_militancy_thumbs_index');
+        }
+
         document.getElementById('modalEditarMilitancia').style.display = 'flex';
     }
 
