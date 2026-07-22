@@ -646,6 +646,9 @@ function formatarMoeda(input) {
         if (supplierNameInput) {
             supplierNameInput.value = '';
         }
+        setTimeout(() => {
+            alert(mensagem || "⚠️ Não foi possível efetuar a leitura automática do CNPJ no comprovante.\n\nPor favor, digite o CNPJ e a Razão Social da empresa manualmente nos campos abaixo.");
+        }, 100);
     }
 
     function revelarEtapa2() {

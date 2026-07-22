@@ -360,6 +360,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
                     dadosContainer.style.display = 'block';
                     if (cnpjInput) cnpjInput.focus();
+                    setTimeout(() => {
+                        alert("⚠️ Não foi possível efetuar a leitura automática do CNPJ no comprovante.\n\nPor favor, digite o CNPJ e a Razão Social da empresa manualmente nos campos abaixo.");
+                    }, 100);
                 }
             } catch (err) {
                 console.error(err);
@@ -369,6 +372,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
                 dadosContainer.style.display = 'block';
                 if (cnpjInput) cnpjInput.focus();
+                setTimeout(() => {
+                    alert("⚠️ Não foi possível efetuar a leitura automática do CNPJ no comprovante.\n\nPor favor, digite o CNPJ e a Razão Social da empresa manualmente nos campos abaixo.");
+                }, 100);
             } finally {
                 btnScanOcr.disabled = false;
             }
@@ -397,6 +403,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
                     if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
                     dadosContainer.style.display = 'block';
+                    setTimeout(() => {
+                        alert("✅ CNPJ e Razão Social lidos com sucesso!\n\n" + corporateName + " (" + clean + ")");
+                    }, 100);
                 }
             } else {
                 if (isOcr) {
@@ -407,6 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
                     dadosContainer.style.display = 'block';
                     if (cnpjInput) cnpjInput.focus();
+                    setTimeout(() => {
+                        alert("⚠️ CNPJ não localizado na base da Receita Federal.\n\nOs campos foram liberados para preenchimento manual abaixo.");
+                    }, 100);
                 } else {
                     if (nameInput) nameInput.value = '';
                     if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal.</span>';
