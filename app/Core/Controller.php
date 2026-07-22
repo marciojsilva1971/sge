@@ -137,17 +137,32 @@ abstract class Controller {
      * Converte uma string formatada em Real Brasileiro (R$) para float de forma robusta e precisa.
      */
     protected function parseBrlCurrency(string $rawValue): float {
-        if (is_numeric($rawValue)) {
-            return round((float)$rawValue, 2);
+        $rawValue = trim((string)$rawValue);
+        if ($rawValue === '') {
+            return 0.0;
         }
-        $clean = preg_replace('/[^\d,.-]/', '', (string)$rawValue);
+
+        // Remove símbolos de moeda (R$), espaços normais e inquebráveis
+        $clean = preg_replace('/[^\d,.-]/u', '', $rawValue);
         if (empty($clean)) {
             return 0.0;
         }
-        if (strpos($clean, ',') !== false) {
-            $clean = str_replace('.', '', $clean);
+
+        // Caso haja ponto e vírgula simultaneamente (ex: 1.500,50 ou 1,500.50)
+        if (strpos($clean, ',') !== false && strpos($clean, '.') !== false) {
+            if (strrpos($clean, ',') > strrpos($clean, '.')) {
+                // Padrão Brasileiro: 1.500,50
+                $clean = str_replace('.', '', $clean);
+                $clean = str_replace(',', '.', $clean);
+            } else {
+                // Padrão Americano: 1,500.50
+                $clean = str_replace(',', '', $clean);
+            }
+        } elseif (strpos($clean, ',') !== false) {
+            // Vírgula como separador decimal: 150,50
             $clean = str_replace(',', '.', $clean);
         }
+
         return round((float)$clean, 2);
     }
 }

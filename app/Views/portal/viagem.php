@@ -129,8 +129,8 @@ foreach ($travelReports as $report) {
                 <!-- VALOR E DATA -->
                 <div style="display: flex; gap: 10px;">
                     <div class="form-group flex-1">
-                        <label for="value" style="font-size: 12px;">Valor Total do Cupom (R$)</label>
-                        <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 600; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
+                        <label for="value" style="font-size: 12px; font-weight: 700; color: var(--accent-teal-hover);">Valor Total do Cupom (R$) *</label>
+                        <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 700; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);" onblur="formatarMoeda(this);" onpaste="setTimeout(() => formatarMoeda(this), 10);">
                     </div>
                     <div class="form-group flex-1">
                         <label for="receipt_date" style="font-size: 12px;">Data do Recibo</label>

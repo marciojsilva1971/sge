@@ -140,12 +140,20 @@ class PortalController extends Controller {
             $travel_report_id = intval($_POST['travel_report_id'] ?? 0);
             $supplier_cnpj = trim($_POST['supplier_cnpj'] ?? '');
             $receipt_date = $_POST['receipt_date'] ?? '';
-            $value = $this->parseBrlCurrency($_POST['value'] ?? '0');
+            $value = round($this->parseBrlCurrency($_POST['value'] ?? '0'), 2);
             $spce_category_id = intval($_POST['spce_category_id'] ?? 0);
             $notes = trim($_POST['notes'] ?? '');
 
-            if ($travel_report_id <= 0 || empty($supplier_cnpj) || empty($receipt_date) || $value <= 0 || $spce_category_id <= 0) {
+            if ($travel_report_id <= 0 || empty($supplier_cnpj) || empty($receipt_date) || $spce_category_id <= 0) {
                 throw new Exception("Todos os campos do recibo são obrigatórios.");
+            }
+
+            if ($value <= 0.00) {
+                throw new Exception("O Valor Total do Cupom é obrigatório e deve ser maior que R$ 0,00.");
+            }
+
+            if ($value > 999999999.99) {
+                throw new Exception("O valor informado excede o limite máximo permitido pelo sistema.");
             }
 
             // Valida propriedade da viagem e status
