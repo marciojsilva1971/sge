@@ -214,7 +214,12 @@
 <!-- SCRIPTS DE OCR E ANEXOS -->
 <script>
 function formatarMoeda(input) {
+    if (!input) return;
     let value = input.value.replace(/\D/g, '');
+    if (value === '') {
+        input.value = '';
+        return;
+    }
     value = (value / 100).toFixed(2) + '';
     value = value.replace(".", ",");
     value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
@@ -242,6 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const fotoOcrInput = document.getElementById('foto_cnpj_ocr');
     const ocrStatusBadge = document.getElementById('ocr_status_badge');
     const dadosContainer = document.getElementById('dados-despesa-container');
+    const blocoCapturaCnpj = document.getElementById('bloco-captura-cnpj');
+    const ocrNoticeBanner = document.getElementById('ocr_notice_banner');
     const btnPularOcr = document.getElementById('btn-pular-ocr');
     const cnpjInput = document.getElementById('supplier_cnpj');
     const nameInput = document.getElementById('supplier_name');
@@ -253,6 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botão pular OCR
     if (btnPularOcr) {
         btnPularOcr.addEventListener('click', () => {
+            if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+            if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
             dadosContainer.style.display = 'block';
             cnpjInput.focus();
         });
@@ -288,14 +297,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     if (cnpjInput) cnpjInput.value = '';
                     if (nameInput) nameInput.value = '';
-                    ocrStatusBadge.innerHTML = '<span style="color: #f59e0b; font-size: 12px;">⚠️ Não foi possível identificar o CNPJ automaticamente. Campos mantidos em branco para preenchimento manual.</span>';
+                    if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                    if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                    dadosContainer.style.display = 'block';
+                    if (cnpjInput) cnpjInput.focus();
                 }
             } catch (err) {
                 console.error(err);
-                ocrStatusBadge.innerHTML = '<span style="color: #f43f5e; font-size: 12px;">⚠️ Falha no OCR. Por favor informe os dados manualmente.</span>';
+                if (cnpjInput) cnpjInput.value = '';
+                if (nameInput) nameInput.value = '';
+                if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                dadosContainer.style.display = 'block';
+                if (cnpjInput) cnpjInput.focus();
             } finally {
                 btnScanOcr.disabled = false;
-                dadosContainer.style.display = 'block';
             }
         });
     }
@@ -311,13 +327,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.success && (data.company || data.razao_social)) {
                 const corporateName = data.razao_social || (data.company ? (data.company.corporate_name || data.company.trade_name) : '');
+                if (cnpjInput) {
+                    cnpjInput.value = clean;
+                    formatarCnpjCpf(cnpjInput);
+                }
                 if (nameInput) nameInput.value = corporateName;
                 if (infoDiv) infoDiv.innerHTML = '<span style="color: #4ade80;">✓ Empresa: ' + corporateName + '</span>';
+
+                if (isOcr) {
+                    if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                    if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+                    dadosContainer.style.display = 'block';
+                }
             } else {
                 if (isOcr) {
                     if (cnpjInput) cnpjInput.value = '';
                     if (nameInput) nameInput.value = '';
-                    if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal. Campos mantidos em branco.</span>';
+                    if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal.</span>';
+                    if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                    if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                    dadosContainer.style.display = 'block';
+                    if (cnpjInput) cnpjInput.focus();
                 } else {
                     if (nameInput) nameInput.value = '';
                     if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal.</span>';
@@ -337,6 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isOcr) {
                 if (cnpjInput) cnpjInput.value = '';
                 if (nameInput) nameInput.value = '';
+                if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                dadosContainer.style.display = 'block';
+                if (cnpjInput) cnpjInput.focus();
             }
             if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ Erro ao conectar com base da Receita</span>';
         }
