@@ -200,8 +200,123 @@
         </main>
     </div>
 
-    <!-- Active Navigation Highlight -->
+    <!-- Active Navigation Highlight & File Accumulator Manager -->
     <script>
+        window.FileAccumulatorManager = window.FileAccumulatorManager || {
+            stores: {},
+
+            getStore: function(inputId) {
+                if (!this.stores[inputId]) {
+                    this.stores[inputId] = new DataTransfer();
+                }
+                return this.stores[inputId];
+            },
+
+            resetStore: function(inputId) {
+                this.stores[inputId] = new DataTransfer();
+            },
+
+            handleFileSelect: function(inputElem, badgeElemId, containerElemId) {
+                if (!inputElem) return;
+                const inputId = inputElem.id || inputElem.name || 'default_file_input';
+                const store = this.getStore(inputId);
+
+                if (inputElem.files && inputElem.files.length > 0) {
+                    Array.from(inputElem.files).forEach(file => {
+                        let exists = false;
+                        for (let i = 0; i < store.files.length; i++) {
+                            let f = store.files[i];
+                            if (f.name === file.name && f.size === file.size && f.lastModified === file.lastModified) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            store.items.add(file);
+                        }
+                    });
+                }
+
+                inputElem.files = store.files;
+                this.renderThumbs(inputElem, badgeElemId, containerElemId);
+            },
+
+            removeFileIndex: function(inputElem, indexToRemove, badgeElemId, containerElemId) {
+                if (!inputElem) return;
+                const inputId = inputElem.id || inputElem.name || 'default_file_input';
+                const currentStore = this.getStore(inputId);
+                const newStore = new DataTransfer();
+
+                for (let i = 0; i < currentStore.files.length; i++) {
+                    if (i !== indexToRemove) {
+                        newStore.items.add(currentStore.files[i]);
+                    }
+                }
+
+                this.stores[inputId] = newStore;
+                inputElem.files = newStore.files;
+
+                this.renderThumbs(inputElem, badgeElemId, containerElemId);
+            },
+
+            renderThumbs: function(inputElem, badgeElemId, containerElemId) {
+                const badge = document.getElementById(badgeElemId);
+                const container = document.getElementById(containerElemId);
+                if (!container) return;
+
+                container.innerHTML = '';
+                const files = inputElem.files;
+
+                if (files && files.length > 0) {
+                    container.style.display = 'grid';
+                    if (badge) {
+                        badge.style.display = 'inline-block';
+                        badge.innerText = '📎 ' + files.length + ' arquivo(s) selecionado(s)';
+                    }
+
+                    Array.from(files).forEach((file, idx) => {
+                        const box = document.createElement('div');
+                        box.style.cssText = 'background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px; text-align: center; position: relative; overflow: hidden; font-size: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
+
+                        // Botão de Exclusão (✕)
+                        const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.innerHTML = '✕';
+                        removeBtn.title = 'Remover este arquivo';
+                        removeBtn.style.cssText = 'position: absolute; top: 3px; right: 3px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.5); padding: 0;';
+                        removeBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            FileAccumulatorManager.removeFileIndex(inputElem, idx, badgeElemId, containerElemId);
+                        };
+                        box.appendChild(removeBtn);
+
+                        if (file.type.startsWith('image/')) {
+                            const img = document.createElement('img');
+                            img.src = URL.createObjectURL(file);
+                            img.style.cssText = 'width: 100%; height: 75px; object-fit: cover; border-radius: 4px; margin-bottom: 4px; display: block;';
+                            box.appendChild(img);
+                        } else {
+                            const docIcon = document.createElement('div');
+                            docIcon.innerHTML = '📄 PDF';
+                            docIcon.style.cssText = 'height: 75px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #38bdf8; font-size: 13px; background: rgba(15, 23, 42, 0.5); border-radius: 4px; margin-bottom: 4px;';
+                            box.appendChild(docIcon);
+                        }
+
+                        const label = document.createElement('span');
+                        label.style.cssText = 'color: #cbd5e1; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; padding: 0 2px;';
+                        label.innerText = file.name;
+                        box.appendChild(label);
+
+                        container.appendChild(box);
+                    });
+                } else {
+                    container.style.display = 'none';
+                    if (badge) badge.style.display = 'none';
+                }
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             const path = window.location.pathname;
             const items = document.querySelectorAll('.top-nav-item');

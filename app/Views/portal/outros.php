@@ -351,42 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Galeria de miniaturas de arquivos
+    // Galeria de miniaturas de arquivos acumulados com exclusão (✕)
     if (comprovanteInput) {
         comprovanteInput.addEventListener('change', () => {
-            galeriaContainer.innerHTML = '';
-            if (comprovanteInput.files && comprovanteInput.files.length > 0) {
-                galeriaContainer.style.display = 'grid';
-                countBadge.style.display = 'block';
-                countBadge.innerText = '📎 ' + comprovanteInput.files.length + ' arquivo(s) selecionado(s)';
-
-                Array.from(comprovanteInput.files).forEach((file, index) => {
-                    const box = document.createElement('div');
-                    box.style.cssText = 'background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 6px; text-align: center; position: relative; overflow: hidden;';
-
-                    if (file.type.startsWith('image/')) {
-                        const img = document.createElement('img');
-                        img.src = URL.createObjectURL(file);
-                        img.style.cssText = 'width: 100%; height: 75px; object-fit: cover; border-radius: 6px; margin-bottom: 4px;';
-                        box.appendChild(img);
-                    } else {
-                        const pdfIcon = document.createElement('div');
-                        pdfIcon.innerHTML = '📄 PDF';
-                        pdfIcon.style.cssText = 'height: 75px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #38bdf8; font-size: 14px;';
-                        box.appendChild(pdfIcon);
-                    }
-
-                    const label = document.createElement('span');
-                    label.style.cssText = 'font-size: 10px; color: #94a3b8; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
-                    label.innerText = file.name;
-                    box.appendChild(label);
-
-                    galeriaContainer.appendChild(box);
-                });
-            } else {
-                galeriaContainer.style.display = 'none';
-                countBadge.style.display = 'none';
-            }
+            FileAccumulatorManager.handleFileSelect(comprovanteInput, 'comprovante-count-badge', 'galeria-miniaturas-container');
         });
     }
 });
