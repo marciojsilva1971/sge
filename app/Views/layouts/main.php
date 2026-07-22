@@ -9,14 +9,20 @@
 </head>
 <body class="admin-body">
 
+    <!-- Overlay para fechar sidebar no mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <!-- Container Geral -->
     <div class="admin-container">
         
         <!-- Sidebar Esquerda -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="logo">SGE</div>
-                <span class="logo-subtitle">Gestão Eleitoral</span>
+                <div>
+                    <div class="logo">SGE</div>
+                    <span class="logo-subtitle">Gestão Eleitoral</span>
+                </div>
+                <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Fechar Menu">✕</button>
             </div>
             
             <nav class="sidebar-nav">
@@ -70,8 +76,13 @@
             
             <!-- Topbar Superior -->
             <header class="topbar">
-                <div class="topbar-title">
-                    Painel SGE
+                <div class="topbar-left" style="display: flex; align-items: center; gap: 12px;">
+                    <button type="button" class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Abrir Menu">
+                        <span>☰</span>
+                    </button>
+                    <div class="topbar-title">
+                        Painel SGE
+                    </div>
                 </div>
                 
                 <a href="<?= $this->baseUrl('admin/profile') ?>" class="user-profile-menu" style="text-decoration: none; display: flex; align-items: center; gap: 12px; cursor: pointer;">
@@ -122,9 +133,36 @@
 
     </div>
 
-    <!-- Script de Interatividade para a Sidebar Ativa -->
+    <!-- Script de Interatividade para a Sidebar e Responsividade Mobile -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('mobileMenuToggle');
+            const closeBtn = document.getElementById('sidebarCloseBtn');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            function openSidebar() {
+                if (sidebar) sidebar.classList.add('mobile-open');
+                if (overlay) overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeSidebar() {
+                if (sidebar) sidebar.classList.remove('mobile-open');
+                if (overlay) overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+            if (overlay) overlay.addEventListener('click', closeSidebar);
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 992) {
+                    closeSidebar();
+                }
+            });
+
             const currentPath = window.location.pathname;
             const navLinks = document.querySelectorAll('.nav-item');
             

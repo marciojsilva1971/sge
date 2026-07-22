@@ -1305,37 +1305,176 @@ code {
 }
 
 /* ----------------------------------
-   RESPONSIVIDADE (MOBILE-FIRST)
+   RESPONSIVIDADE PREMIUM (MOBILE, TABLET & DESKTOP)
    ---------------------------------- */
 
-@media (max-width: 992px) {
-    .sidebar {
-        width: 0;
-        overflow: hidden;
-        border-right: none;
+/* Botão de Menu Mobile (Escondido no Desktop) */
+.mobile-menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 22px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--accent-teal);
+}
+
+.sidebar-close-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: var(--transition-fast);
+}
+
+.sidebar-close-btn:hover {
+    color: var(--error-color);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Sub-Navegação por Abas (Nav Tabs) com Rolagem Touch */
+.sub-nav-tabs,
+.nav-tabs,
+.tabs-header {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+    padding-bottom: 6px;
+    margin-bottom: 20px;
+    scrollbar-width: none; /* Firefox */
+}
+
+.sub-nav-tabs::-webkit-scrollbar,
+.nav-tabs::-webkit-scrollbar,
+.tabs-header::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.sub-nav-tabs a,
+.sub-nav-tabs button,
+.nav-tabs a,
+.nav-tabs button {
+    flex-shrink: 0;
+}
+
+/* Tablets Landscape & Telas Médias (max-width: 1200px) */
+@media (max-width: 1200px) {
+    .kpis-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
-    
+}
+
+/* Tablets (Portrait) e Dispositivos Móveis (max-width: 992px) */
+@media (max-width: 992px) {
+    .mobile-menu-btn {
+        display: inline-flex;
+    }
+
+    .sidebar-close-btn {
+        display: block;
+    }
+
+    .sidebar-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -290px;
+        width: 280px;
+        height: 100vh;
+        z-index: 999;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
+    }
+
     .main-content {
         margin-left: 0;
+        width: 100%;
     }
 
     .topbar {
-        padding: 0 20px;
+        padding: 0 16px;
+        gap: 12px;
+    }
+
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .content-wrapper {
-        padding: 20px;
+        padding: 16px 12px;
     }
 
     .profile-layout-grid {
         grid-template-columns: 1fr;
-        gap: 24px;
+        gap: 20px;
     }
 }
 
+/* Smartphones (max-width: 576px) */
 @media (max-width: 576px) {
+    .topbar {
+        height: 64px;
+        padding: 0 12px;
+    }
+
+    .topbar-title {
+        font-size: 15px;
+    }
+
+    .user-info {
+        display: none; /* Mantém apenas o avatar no cabeçalho mobile para economizar espaço */
+    }
+
     .auth-card {
         padding: 20px;
+        border-radius: 16px;
     }
 
     .filters-form {
@@ -1349,21 +1488,41 @@ code {
 
     .filters-actions {
         width: 100%;
-        justify-content: space-between;
+        flex-direction: column;
+        gap: 8px;
     }
 
     .filters-actions button,
     .filters-actions a {
-        flex: 1;
+        width: 100%;
         text-align: center;
     }
 
     .kpis-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
     }
 
     .dashboard-sections {
         grid-template-columns: 1fr;
+    }
+
+    /* Modais Responsivos em Smartphones */
+    .modal-content,
+    .modal-dialog {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 10px auto !important;
+        padding: 16px !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    /* Tabelas Responsivas Touch */
+    .table-responsive {
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: rgba(15, 23, 42, 0.4);
     }
 }
 

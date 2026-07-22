@@ -26,3 +26,12 @@ Este documento mantém o registro permanente de todas as sessões, decisões té
   - Criado o script `seed_admin_users.sql` para carga segura de usuários administradores homologados no banco de dados.
   - Definição da política de senhas fortes criptografadas via `Bcrypt`.
   - Definição do perfil `ADMINISTRADOR` no controle de acesso.
+
+---
+
+## 📅 Sessão 4: Implementação de Responsividade Multi-Dispositivo (Tablets & Smartphones)
+* **Ações:**
+  - **Menu Off-Canvas Drawer:** Adicionado o botão hambúrguer de navegação mobile no cabeçalho superior (`topbar`) e overlay escurecido de foco no layout principal [`app/Views/layouts/main.php`](file:///c:/xampp/htdocs/sge/app/Views/layouts/main.php).
+  - **Recolhimento Inteligente da Sidebar:** Em telas menores ou iguais a `992px` (tablets em pé e smartphones), a barra lateral recolhe-se fora da tela e desliza suavemente ao ser ativada pelo usuário.
+  - **Sub-navegações por Abas (Touch Scroll):** Configurada a rolagem horizontal por toque (`overflow-x: auto`) para todas as abas dos módulos (Financeiro, RH, Prestação de Contas SPCE), impedindo quebras verticais e mantendo a navegabilidade fluida.
+  - **Grid Fluido & Modais Mobile:** Ajustados os cards KPI para colunas adaptativas (`minmax(220px, 1fr)`) e modais com largura responsiva de `95%` em smartphones com rolagem interna de conteúdos longos.
