@@ -1,3 +1,27 @@
+<script>
+function formatarMoeda(input) {
+    if (!input) return;
+    let value = input.value.replace(/\D/g, '');
+    if (value === '') {
+        input.value = '';
+        return;
+    }
+    value = (value / 100).toFixed(2) + '';
+    value = value.replace(".", ",");
+    value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+    input.value = "R$ " + value;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#value, #edit_value, .input-moeda').forEach(el => {
+        el.addEventListener('input', function() { formatarMoeda(this); });
+        el.addEventListener('keyup', function() { formatarMoeda(this); });
+        el.addEventListener('change', function() { formatarMoeda(this); });
+        el.addEventListener('blur', function() { formatarMoeda(this); });
+    });
+});
+</script>
+
 <div style="margin-bottom: 20px;">
     <h2 style="font-size: 20px;">Controle de Viagens & Combustível</h2>
     <p class="subtitle" style="font-size: 12px;">Monitore suas viagens e anexe comprovantes para reembolso de combustível.</p>
@@ -130,7 +154,7 @@ foreach ($travelReports as $report) {
                 <div style="display: flex; gap: 10px;">
                     <div class="form-group flex-1">
                         <label for="value" style="font-size: 12px; font-weight: 700; color: var(--accent-teal-hover);">Valor Total do Cupom (R$) *</label>
-                        <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 700; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
+                        <input type="text" id="value" name="value" class="input-moeda" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 700; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);" onkeyup="formatarMoeda(this);" onchange="formatarMoeda(this);">
                     </div>
                     <div class="form-group flex-1">
                         <label for="receipt_date" style="font-size: 12px;">Data do Recibo</label>
