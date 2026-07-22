@@ -36,6 +36,7 @@ foreach ($travelReports as $report) {
         break;
     }
 }
+$modo = $_GET['modo'] ?? ($modo ?? '');
 ?>
 
 <?php if ($activeReport): ?>
