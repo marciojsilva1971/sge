@@ -142,13 +142,13 @@ class PortalController extends Controller {
 
         try {
             $purpose = trim($_POST['purpose'] ?? '');
-            $start_date = $_POST['start_date'] ?? '';
-            $end_date = $_POST['end_date'] ?? '';
+            $start_date = $_POST['start_date'] ?? date('Y-m-d');
+            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : $start_date;
             $vehicle_plate = strtoupper(trim($_POST['vehicle_plate'] ?? ''));
             $initial_km = isset($_POST['initial_km']) && $_POST['initial_km'] !== '' ? intval($_POST['initial_km']) : null;
 
-            if (empty($purpose) || empty($start_date) || empty($end_date)) {
-                throw new Exception("Objetivo, data inicial e data final são campos obrigatórios.");
+            if (empty($purpose) || empty($start_date)) {
+                throw new Exception("Objetivo e Data Inicial são campos obrigatórios.");
             }
             if (empty($vehicle_plate)) {
                 throw new Exception("A Placa do Veículo é um requisito obrigatório da legislação eleitoral (TSE).");
@@ -316,6 +316,7 @@ class PortalController extends Controller {
         try {
             $id = intval($_POST['id'] ?? 0);
             $final_km = isset($_POST['final_km']) && $_POST['final_km'] !== '' ? intval($_POST['final_km']) : null;
+            $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : date('Y-m-d');
 
             if ($id <= 0) {
                 throw new Exception("ID inválido.");
@@ -331,6 +332,9 @@ class PortalController extends Controller {
             }
             if ($report['status'] !== 'EM_ANDAMENTO') {
                 throw new Exception("Este relatório já foi enviado.");
+            }
+            if (empty($end_date)) {
+                throw new Exception("A Data Final da Viagem é obrigatória para encerramento do relatório.");
             }
             if ($final_km === null || $final_km < 0) {
                 throw new Exception("O Hodômetro Final (KM) é obrigatório para encerrar e enviar o relatório de viagem.");
@@ -348,9 +352,9 @@ class PortalController extends Controller {
                 throw new Exception("Você deve adicionar pelo menos um cupom fiscal/recibo antes de enviar o relatório.");
             }
 
-            // Atualiza status para 'ENVIADO' e grava final_km
-            $stmt = $db->prepare("UPDATE `travel_reports` SET status = 'ENVIADO', final_km = :final_km WHERE id = :id");
-            $stmt->execute(['final_km' => $final_km, 'id' => $id]);
+            // Atualiza status para 'ENVIADO', grava end_date e final_km
+            $stmt = $db->prepare("UPDATE `travel_reports` SET status = 'ENVIADO', end_date = :end_date, final_km = :final_km WHERE id = :id");
+            $stmt->execute(['end_date' => $end_date, 'final_km' => $final_km, 'id' => $id]);
 
             Session::setFlash('success', 'Relatório de viagem enviado com sucesso para auditoria e reembolso!');
         } catch (Exception $e) {

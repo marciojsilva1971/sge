@@ -209,15 +209,24 @@ foreach ($travelReports as $report) {
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" name="id" value="<?= $activeReport['id'] ?>">
 
-            <div class="form-group" style="margin-bottom: 14px;">
-                <label for="final_km" style="font-size: 12px; font-weight: 700; color: #4ade80;">
-                    📏 Hodômetro Final (KM no Painel do Veículo ao Concluir) *
-                </label>
-                <input type="number" id="final_km" name="final_km" placeholder="Ex: 45350" min="<?= intval($activeReport['initial_km'] ?? 0) ?>" required style="font-size: 14px; font-weight: 600; color: #f8fafc;">
-                <span style="font-size: 10px; color: var(--text-secondary); display: block; margin-top: 4px;">
-                    * Exigência legal da Resolução TSE nº 23.607/2019 para cálculo e comprovação de consumo.
-                </span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <div class="form-group">
+                    <label for="end_date_submit" style="font-size: 12px; font-weight: 700; color: #4ade80;">
+                        📅 Data Final da Viagem *
+                    </label>
+                    <input type="date" id="end_date_submit" name="end_date" value="<?= date('Y-m-d') ?>" required style="font-size: 13px; font-weight: 600; color: #f8fafc; width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569;">
+                </div>
+
+                <div class="form-group">
+                    <label for="final_km" style="font-size: 12px; font-weight: 700; color: #4ade80;">
+                        📏 Hodômetro Final (KM) *
+                    </label>
+                    <input type="number" id="final_km" name="final_km" placeholder="Ex: 45350" min="<?= intval($activeReport['initial_km'] ?? 0) ?>" required style="font-size: 13px; font-weight: 600; color: #f8fafc; width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569;">
+                </div>
             </div>
+            <span style="font-size: 10px; color: var(--text-secondary); display: block; margin-top: -6px; margin-bottom: 12px;">
+                * Informe a data de encerramento e o hodômetro final do veículo (Resolução TSE nº 23.607/2019).
+            </span>
 
             <button type="submit" class="btn btn-primary btn-block" <?= empty($activeReport['receipts']) ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '' ?>>
                 🚀 Finalizar e Enviar Relatório de Viagem
@@ -238,31 +247,25 @@ foreach ($travelReports as $report) {
         <form action="<?= $this->baseUrl('portal/viagem') ?>" method="POST">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 12px;">
                 <label for="purpose">Finalidade / Objetivo da Viagem *</label>
                 <input type="text" id="purpose" name="purpose" placeholder="Ex: Panfletagem e carreatas no setor norte" required>
             </div>
 
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group flex-1">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
                     <label for="start_date">Data Inicial *</label>
                     <input type="date" id="start_date" name="start_date" value="<?= date('Y-m-d') ?>" required>
                 </div>
-                <div class="form-group flex-1">
-                    <label for="end_date">Data Final *</label>
-                    <input type="date" id="end_date" name="end_date" value="<?= date('Y-m-d') ?>" required>
-                </div>
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <div class="form-group flex-1">
+                <div class="form-group">
                     <label for="vehicle_plate" style="font-weight: 700; color: var(--accent-teal-hover);">Placa do Veículo * (Exigência TSE)</label>
                     <input type="text" id="vehicle_plate" name="vehicle_plate" placeholder="AAA-0A00" required style="text-transform: uppercase; font-weight: 700;">
                 </div>
-                <div class="form-group flex-1">
-                    <label for="initial_km" style="font-weight: 700; color: var(--accent-teal-hover);">Hodômetro Inicial (KM) *</label>
-                    <input type="number" id="initial_km" name="initial_km" placeholder="Ex: 45100" min="0" required style="font-weight: 700;">
-                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label for="initial_km" style="font-weight: 700; color: var(--accent-teal-hover);">Hodômetro Inicial (KM) *</label>
+                <input type="number" id="initial_km" name="initial_km" placeholder="Ex: 45100" min="0" required style="font-weight: 700;">
             </div>
 
             <button type="submit" class="btn btn-teal btn-block">
