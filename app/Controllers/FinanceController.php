@@ -562,13 +562,42 @@ class FinanceController extends Controller {
 
         // 3. Atividades de panfletagem / militância pendentes (status = 'PENDENTE')
         $stmtMilitancy = $db->query(
-            "SELECT ma.*, COALESCE(u.name, 'Militante de Campo') AS user_name 
+            "SELECT ma.*, COALESCE(u.name, 'Militante de Campo') AS user_name, u.celular 
              FROM `militancy_activities` ma 
              LEFT JOIN `usuarios` u ON ma.user_id = u.id 
              WHERE ma.status = 'PENDENTE' 
              ORDER BY ma.activity_date ASC, ma.id ASC"
         );
-        $pendingMilitancy = $stmtMilitancy->fetchAll();
+        $pendingMilitancyRaw = $stmtMilitancy->fetchAll();
+
+        $pendingMilitancy = [];
+        foreach ($pendingMilitancyRaw as $act) {
+            $stmtPhotos = $db->prepare(
+                "SELECT id, encrypted_photo_path, original_name FROM `militancy_photos` WHERE militancy_id = :id ORDER BY id ASC"
+            );
+            $stmtPhotos->execute(['id' => $act['id']]);
+            $photos = $stmtPhotos->fetchAll();
+
+            $allPhotos = [];
+            $allPhotos[] = [
+                'id' => $act['id'],
+                'type' => 'militancy',
+                'url' => $this->baseUrl('admin/financeiro/comprovante?id=' . $act['id'] . '&type=militancy'),
+                'label' => 'Foto Principal (GPS)'
+            ];
+
+            foreach ($photos as $idx => $p) {
+                $allPhotos[] = [
+                    'id' => $p['id'],
+                    'type' => 'militancy_photo',
+                    'url' => $this->baseUrl('admin/financeiro/comprovante?id=' . $p['id'] . '&type=militancy_photo'),
+                    'label' => 'Foto Adicional #' . ($idx + 1)
+                ];
+            }
+
+            $act['photos'] = $allPhotos;
+            $pendingMilitancy[] = $act;
+        }
 
         // Contas bancárias, tipos e categorias para a vinculação/edição (admin)
         $bankAccounts = $db->query("SELECT id, name, fund_type, balance FROM `bank_accounts` WHERE status = 'ATIVA' ORDER BY name ASC")->fetchAll();
@@ -926,6 +955,17 @@ class FinanceController extends Controller {
                 $iv = $doc['iv'];
                 $mimeType = 'image/jpeg';
                 $originalName = basename($doc['encrypted_photo_path']) . '.jpg';
+
+            } elseif ($type === 'militancy_photo') {
+                $stmt = $db->prepare("SELECT * FROM `militancy_photos` WHERE id = :id LIMIT 1");
+                $stmt->execute(['id' => $id]);
+                $doc = $stmt->fetch();
+                if (!$doc) throw new Exception("Foto adicional de militância não encontrada.");
+
+                $filePath = $storageDir . $doc['encrypted_photo_path'];
+                $iv = $doc['iv'];
+                $mimeType = $doc['mime_type'] ?? 'image/jpeg';
+                $originalName = $doc['original_name'] ?? (basename($doc['encrypted_photo_path']) . '.jpg');
             }
 
             // Descriptografa o conteúdo

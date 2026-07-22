@@ -275,14 +275,17 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                        <div style="display: flex; gap: 6px; border-top: 1px solid var(--border-color); padding-top: 12px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-secondary btn-sm" style="flex: 1; background: #0284c7; color: #ffffff; border: none; font-weight: 700; font-size: 11px; min-height: 32px;" onclick='verDetalhesMilitanciaAdmin(<?= json_encode($act, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+                                🔍 Ver Atividade
+                            </button>
                             <form action="<?= $this->baseUrl('admin/financeiro/aprovar') ?>" method="POST" style="flex: 1;">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
                                 <input type="hidden" name="type" value="militancy">
                                 <input type="hidden" name="id" value="<?= $act['id'] ?>">
-                                <button type="submit" class="btn btn-success btn-sm btn-block">Homologar</button>
+                                <button type="submit" class="btn btn-success btn-sm btn-block" style="font-weight: 700; min-height: 32px;">Homologar</button>
                             </form>
-                            <button class="btn btn-secondary btn-sm" style="background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--error-color); flex: 1;" onclick="rejeitarRegistro('militancy', <?= $act['id'] ?>)">
+                            <button class="btn btn-secondary btn-sm" style="background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--error-color); flex: 1; min-height: 32px;" onclick="rejeitarRegistro('militancy', <?= $act['id'] ?>)">
                                 Rejeitar
                             </button>
                         </div>
@@ -530,6 +533,62 @@
     function fecharAdminEditReceiptModal() {
         document.getElementById('adminEditTravelReceiptModal').style.display = 'none';
     }
+
+    function verDetalhesMilitanciaAdmin(act) {
+        document.getElementById('militancy_modal_subtitle').innerText = `Atividade Georreferenciada #${act.id} • ${act.activity_date ? new Date(act.activity_date + 'T00:00:00').toLocaleDateString('pt-BR') : ''}`;
+        document.getElementById('militancy_modal_title').innerText = `Colaborador: ${act.user_name || 'Militante'} ${act.celular ? '(' + act.celular + ')' : ''}`;
+        
+        document.getElementById('militancy_modal_coords').innerText = `${act.latitude}, ${act.longitude}`;
+        document.getElementById('militancy_map_iframe').src = `https://maps.google.com/maps?q=${act.latitude},${act.longitude}&z=16&output=embed`;
+        document.getElementById('militancy_gmaps_link').href = `https://www.google.com/maps/search/?api=1&query=${act.latitude},${act.longitude}`;
+
+        document.getElementById('militancy_modal_description').innerText = act.description || 'Nenhum histórico/relato gravado.';
+
+        // Processa galeria de imagens
+        const photosContainer = document.getElementById('militancy_photos_container');
+        photosContainer.innerHTML = '';
+        
+        const photos = act.photos || [];
+        document.getElementById('militancy_photos_count').innerText = photos.length;
+
+        if (photos.length === 0) {
+            photosContainer.innerHTML = '<p style="color: #94a3b8; font-size: 12px; grid-column: span 2; text-align: center;">Nenhuma imagem anexada.</p>';
+        } else {
+            photos.forEach((p, idx) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden; position: relative; cursor: pointer; display: flex; flex-direction: column;';
+                card.innerHTML = `
+                    <div style="height: 140px; width: 100%; overflow: hidden; background: #0b1120;">
+                        <img src="${p.url}" alt="${p.label}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s ease-in-out;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="window.open('${p.url}', '_blank')">
+                    </div>
+                    <div style="padding: 6px 8px; background: #0f172a; border-top: 1px solid #334155; font-size: 11px; color: #38bdf8; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${p.label} 🔍
+                    </div>
+                `;
+                photosContainer.appendChild(card);
+            });
+        }
+
+        // Botões de ação no modal
+        const actionsContainer = document.getElementById('militancy_modal_actions');
+        actionsContainer.innerHTML = `
+            <form action="<?= $this->baseUrl('admin/financeiro/aprovar') ?>" method="POST" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+                <input type="hidden" name="type" value="militancy">
+                <input type="hidden" name="id" value="${act.id}">
+                <button type="submit" class="btn btn-success btn-sm" style="font-weight: 700; padding: 8px 16px;">🚀 Homologar Atividade</button>
+            </form>
+            <button class="btn btn-secondary btn-sm" style="background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--error-color); padding: 8px 16px;" onclick="fecharViewMilitancyModal(); rejeitarRegistro('militancy', ${act.id})">
+                ❌ Rejeitar
+            </button>
+        `;
+
+        document.getElementById('viewMilitancyModal').style.display = 'flex';
+    }
+
+    function fecharViewMilitancyModal() {
+        document.getElementById('viewMilitancyModal').style.display = 'none';
+    }
 </script>
 
 <!-- MODAL DE EDIÇÃO DE RECIBO DE COMBUSTÍVEL PELO ADMINISTRADOR -->
@@ -581,5 +640,69 @@
                 <button type="submit" class="btn btn-teal flex-1" style="background: #eab308; color: #0f172a; font-weight: 800;">Salvar Alterações</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- MODAL DE VISUALIZAÇÃO COMPLETA DA ATIVIDADE GEORREFERENCIADA -->
+<div id="viewMilitancyModal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px);">
+    <div style="background: #0f172a; border: 1px solid #0284c7; border-radius: 16px; max-width: 850px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <div>
+                <span style="font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" id="militancy_modal_subtitle">Atividade Georreferenciada</span>
+                <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-top: 2px;" id="militancy_modal_title">Detalhes da Panfletagem</h3>
+            </div>
+            <button type="button" onclick="fecharViewMilitancyModal()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px;">✕</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Coluna 1: Mapa Georreferenciado & GPS e Histórico -->
+            <div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    📍 Localização Geográfica (GPS)
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 12px; margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">
+                        Coordenadas Exatas: <strong style="color: #f8fafc; font-family: monospace;" id="militancy_modal_coords">-23.0000, -46.0000</strong>
+                    </div>
+                    <div style="width: 100%; height: 220px; border-radius: 8px; overflow: hidden; border: 1px solid #475569; background: #020617; position: relative;">
+                        <iframe id="militancy_map_iframe" width="100%" height="220" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="" style="border: 0;"></iframe>
+                    </div>
+                    <div style="margin-top: 10px; text-align: right;">
+                        <a id="militancy_gmaps_link" href="#" target="_blank" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 10px; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8; font-weight: 600; text-decoration: none;">
+                            🗺️ Abrir no Google Maps &rarr;
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Histórico / Observação do Usuário -->
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
+                    📝 Histórico / Relato do Colaborador
+                </div>
+                <div style="background: #1e293b; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 14px; color: #e2e8f0; font-size: 13px; line-height: 1.5; white-space: pre-wrap;" id="militancy_modal_description">
+                    Sem histórico informado.
+                </div>
+            </div>
+
+            <!-- Coluna 2: Galeria de Imagens Criptografadas -->
+            <div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🖼️ Imagens Vinculadas (<span id="militancy_photos_count">0</span>)</span>
+                    <span style="font-size: 10px; color: #4ade80; font-weight: 600;">🔐 AES-256-CBC</span>
+                </div>
+                
+                <div id="militancy_photos_container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 420px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Fotos renderizadas via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé de Ações -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+            <button type="button" class="btn btn-secondary" onclick="fecharViewMilitancyModal()" style="font-size: 12px; padding: 8px 16px;">Fechar</button>
+            <div style="display: flex; gap: 10px;" id="militancy_modal_actions">
+                <!-- Formulários dinâmicos de Homologação / Rejeição -->
+            </div>
+        </div>
     </div>
 </div>
