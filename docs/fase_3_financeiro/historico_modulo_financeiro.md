@@ -73,14 +73,18 @@ Este documento mantém o registro permanente de todas as implementações do **M
 
 
 
-
-
-
-
-
+---
 
 ## 📅 Sessão 9: Funcionalidade de Edição de Fornecedores Cadastrados
 * **Ações:**
   - **Novas Rotas HTTP**: Mapeada a rota `POST /admin/financeiro/fornecedores/editar` para o método `FinanceController::updateSupplier()`.
   - **Controlador Financeiro**: Criado o método `updateSupplier()` para realizar validação e persistência das edições de fornecedores com checagem de CPF/CNPJ duplicados e inserção de logs na trilha de auditoria.
   - **Interface Interativa**: Atualizada a view `app/Views/admin/financeiro/fornecedores.php` adicionando uma coluna *"Ações"* com o botão *"✏️ Editar"*. Ao ser clicado, os dados do fornecedor são carregados dinamicamente no formulário de cadastro, habilitando a alteração de todos os campos (incluindo o status Ativo/Inativo) e adicionando o botão *"❌ Cancelar"* para retornar ao modo de cadastro.
+
+---
+
+## 📅 Sessão 10: Resolução de Erros no Salvamento de Carga e Conciliação Bancária
+* **Ações:**
+  - **Schema MySQL:** Criado o script `update_bank_accounts_updated_at_schema.sql` e atualizado `schema.sql` adicionando a coluna `updated_at` (TIMESTAMP) na tabela `bank_accounts`.
+  - **Correção da Trilha de Auditoria:** Corrigida a query SQL no método `FinanceController::salvarConciliacao()`, substituindo as colunas em português (`usuario_id`, `acao`, `tabela`, `registro_id`, `detalhes`) pela estrutura padrão em inglês da tabela `logs_auditoria` (`user_id`, `action`, `table_name`, `record_id`, `new_values`, `ip_address`, `user_agent`).
+  - **Script de Migração PHP:** Criado `scratch/run_migration_updated_at.php` para garantir a adição da coluna `updated_at` no banco local sem perdas de dados.

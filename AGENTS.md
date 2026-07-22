@@ -34,9 +34,10 @@ Este arquivo define a identidade, competências, regras e restrições para o as
 * **Testes no Navegador:** Todo e qualquer teste no navegador, emulação ou interação automatizada (Browser Subagent) deve ser precedido de autorização explícita do usuário.
 * **Estilo de Confirmação:** Em futuros fluxos ou novas circunstâncias em que seja necessária uma confirmação do usuário (exceto na exclusão de usuários que usa o botão de 2 passos), adote a confirmação nativa do navegador (`confirm()`) igual ao padrão utilizado no projeto 2ERC.
 
-### 4. Registro Obrigatório do Histórico de Desenvolvimento por Fase
-* **Documentação das Conversas e Decisões:** Toda e qualquer conversa, decisão de design, especificação e alteração realizada deve ser devidamente registrada em arquivo de documentação dentro da pasta `docs/` dedicada a cada fase do projeto (ex: `docs/fase_4_rh_e_colaboradores/`).
-* **Histórico da Linha de Desenvolvimento:** A gravação contínua dessas sessões em arquivo garante a rastreabilidade total e a manutenção de um histórico completo e auditável da linha de desenvolvimento do SGE.
+### 5. Alterações de Banco de Dados (Local vs Produção)
+* **Banco Local:** Scripts e comandos SQL de ajuste no banco de dados local estão pré-autorizados e podem ser executados diretamente.
+* **Orientação para Produção:** Para qualquer alteração estrutural no banco, gerar o arquivo de script `.sql` correspondente e fornecer orientações claras de execução para atualização do banco em produção (DigitalOcean VPS).
+
 
 
 

@@ -1921,19 +1921,21 @@ class FinanceController extends Controller {
 
             // 3. Log de auditoria
             $stmtLog = $db->prepare(
-                "INSERT INTO `logs_auditoria` (usuario_id, acao, tabela, registro_id, detalhes) 
-                 VALUES (:uid, 'CARGA_CONCILIACAO_BANCARIA', 'bank_balance_adjustments', :rid, :detalhes)"
+                "INSERT INTO `logs_auditoria` (user_id, action, table_name, record_id, new_values, ip_address, user_agent) 
+                 VALUES (:user_id, 'CARGA_CONCILIACAO_BANCARIA', 'bank_balance_adjustments', :record_id, :new_values, :ip_address, :user_agent)"
             );
             $stmtLog->execute([
-                'uid'     => $user['id'],
-                'rid'     => $db->lastInsertId(),
-                'detalhes'=> json_encode([
+                'user_id'    => $user['id'],
+                'record_id'  => $db->lastInsertId(),
+                'new_values' => json_encode([
                     'conta_id'    => $bankAccountId,
                     'tipo'        => $adjustmentType,
                     'saldo_ant'   => $oldBalance,
                     'saldo_novo'  => $newBalance,
                     'extrato_pdf' => $file['name']
-                ])
+                ]),
+                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'CLI/Unknown'
             ]);
 
             $db->commit();
