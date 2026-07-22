@@ -917,8 +917,8 @@ class FinanceController extends Controller {
                 throw new Exception("ID inválido.");
             }
 
-            $storageDir = dirname(__DIR__, 2) . '/storage/uploads/';
-            $filePath = '';
+            $baseStorageDir = dirname(__DIR__, 2) . '/storage/uploads/';
+            $relPath = '';
             $iv = '';
             $mimeType = '';
             $originalName = '';
@@ -929,7 +929,7 @@ class FinanceController extends Controller {
                 $doc = $stmt->fetch();
                 if (!$doc) throw new Exception("Documento não encontrado.");
 
-                $filePath = $storageDir . $doc['encrypted_file_path'];
+                $relPath = $doc['encrypted_file_path'];
                 $iv = $doc['iv'];
                 $mimeType = $doc['mime_type'];
                 $originalName = $doc['original_name'];
@@ -940,9 +940,9 @@ class FinanceController extends Controller {
                 $doc = $stmt->fetch();
                 if (!$doc) throw new Exception("Recibo de viagem não encontrado.");
 
-                $filePath = $storageDir . $doc['encrypted_file_path'];
+                $relPath = $doc['encrypted_file_path'];
                 $iv = $doc['iv'];
-                $mimeType = 'image/jpeg'; // fotos de celular são jpeg/png por padrão
+                $mimeType = 'image/jpeg';
                 $originalName = basename($doc['encrypted_file_path']) . '.jpg';
 
             } elseif ($type === 'militancy') {
@@ -951,7 +951,7 @@ class FinanceController extends Controller {
                 $doc = $stmt->fetch();
                 if (!$doc) throw new Exception("Atividade de panfletagem não encontrada.");
 
-                $filePath = $storageDir . $doc['encrypted_photo_path'];
+                $relPath = $doc['encrypted_photo_path'];
                 $iv = $doc['iv'];
                 $mimeType = 'image/jpeg';
                 $originalName = basename($doc['encrypted_photo_path']) . '.jpg';
@@ -962,10 +962,30 @@ class FinanceController extends Controller {
                 $doc = $stmt->fetch();
                 if (!$doc) throw new Exception("Foto adicional de militância não encontrada.");
 
-                $filePath = $storageDir . $doc['encrypted_photo_path'];
+                $relPath = $doc['encrypted_photo_path'];
                 $iv = $doc['iv'];
                 $mimeType = $doc['mime_type'] ?? 'image/jpeg';
                 $originalName = $doc['original_name'] ?? (basename($doc['encrypted_photo_path']) . '.jpg');
+            }
+
+            // Localiza o arquivo físico tanto na pasta raiz /storage/uploads quanto em /storage/uploads/comprovantes
+            $filePath = '';
+            $candidates = [
+                $baseStorageDir . $relPath,
+                $baseStorageDir . 'comprovantes/' . $relPath,
+                $baseStorageDir . basename($relPath),
+                $baseStorageDir . 'comprovantes/' . basename($relPath)
+            ];
+
+            foreach ($candidates as $candidate) {
+                if (!empty($candidate) && file_exists($candidate)) {
+                    $filePath = $candidate;
+                    break;
+                }
+            }
+
+            if (empty($filePath)) {
+                $filePath = $baseStorageDir . $relPath; // Fallback para mensagem de erro clara do EncryptionService
             }
 
             // Descriptografa o conteúdo
