@@ -529,9 +529,6 @@ function formatarMoeda(input) {
         });
     }
 
-<!-- Biblioteca Tesseract.js para leitura OCR de comprovantes no navegador -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script>
     // Consulta pública de CNPJ em tempo real
     const cnpjInput = document.getElementById('supplier_cnpj');
     const cnpjInfoDiv = document.getElementById('cnpj_supplier_info');
@@ -965,7 +962,8 @@ function formatarMoeda(input) {
         }
 
         const rodarOCR = async () => {
-            if (!window.Tesseract) {
+            const ok = await garantirTesseractCarregado();
+            if (!ok || typeof Tesseract === 'undefined') {
                 exibirAvisoEPreenchimentoManual();
                 return;
             }
@@ -1031,15 +1029,19 @@ function formatarMoeda(input) {
             }
         };
 
-        if (typeof Tesseract === 'undefined') {
+        rodarOCR();
+    }
+
+    async function garantirTesseractCarregado() {
+        if (typeof Tesseract !== 'undefined') return true;
+        return new Promise((resolve) => {
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-            script.onload = rodarOCR;
-            script.onerror = () => exibirAvisoEPreenchimentoManual();
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
             document.head.appendChild(script);
-        } else {
-            rodarOCR();
-        }
+        });
+    }
     }
 
     if (btnScanOcr) {

@@ -360,11 +360,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
+    async function garantirTesseractCarregado() {
+        if (typeof Tesseract !== 'undefined') return true;
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.head.appendChild(script);
+        });
+    }
+
     // Processamento de OCR
     if (btnScanOcr) {
         btnScanOcr.addEventListener('click', async () => {
             if (!fotoOcrInput.files || fotoOcrInput.files.length === 0) {
                 alert('Por favor, escolha uma foto do comprovante fiscal primeiro.');
+                return;
+            }
+
+            const ok = await garantirTesseractCarregado();
+            if (!ok || typeof Tesseract === 'undefined') {
+                alert('Não foi possível carregar a biblioteca de OCR. Por favor, digite os dados manualmente.');
+                if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                dadosContainer.style.display = 'block';
                 return;
             }
 
