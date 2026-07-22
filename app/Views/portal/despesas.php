@@ -116,10 +116,12 @@
                             <strong style="color: #ef4444; font-size: 12px; display: block; margin-bottom: 2px;">⚠️ Motivo da Reprovação pelo Financeiro/Administração:</strong>
                             <?= htmlspecialchars($exp['notes'] ?? 'Nenhuma observação detalhada foi fornecida.') ?>
                         </div>
+                    <?php endif; ?>
 
+                    <?php if ($exp['status'] === 'REJEITADO' || $exp['status'] === 'PENDENTE'): ?>
                         <div style="margin-top: 10px; text-align: right;">
-                            <button type="button" onclick='abrirModalCorrigirGasto(<?= json_encode($exp, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)' style="background: #eab308; color: #0f172a; font-weight: 800; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                                ✏️ Corrigir e Reenviar Gasto
+                            <button type="button" onclick='abrirModalCorrigirGasto(<?= json_encode($exp, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)' style="background: #eab308; color: #0f172a; font-weight: 800; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                ✏️ <?= $exp['status'] === 'REJEITADO' ? 'Corrigir e Reenviar Gasto' : 'Editar Gasto' ?>
                             </button>
                         </div>
                     <?php endif; ?>

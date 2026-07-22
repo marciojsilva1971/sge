@@ -120,17 +120,37 @@
         </div>
 
         <!-- Links Principais no Topo -->
+        <?php
+        $navStats = ['viagem' => 0, 'militancia' => 0, 'despesas' => 0];
+        if (isset($user['id'])) {
+            $db = \App\Core\Database::getInstance();
+            $uId = (int)$user['id'];
+            $navStats['viagem'] = (int)$db->query("SELECT COUNT(*) FROM `travel_reports` WHERE user_id = {$uId} AND status IN ('ENVIADO', 'REJEITADO', 'EM_ANDAMENTO')")->fetchColumn();
+            $navStats['militancia'] = (int)$db->query("SELECT COUNT(*) FROM `militancy_activities` WHERE user_id = {$uId} AND status IN ('PENDENTE', 'REJEITADO')")->fetchColumn();
+            $navStats['despesas'] = (int)$db->query("SELECT COUNT(*) FROM `despesas` WHERE user_id = {$uId} AND status IN ('PENDENTE', 'REJEITADO')")->fetchColumn();
+        }
+        ?>
         <nav class="top-nav">
             <a href="<?= $this->baseUrl('portal') ?>" class="top-nav-item" id="nav-home">
                 <span class="top-nav-icon">🏠</span>
                 <span>Início</span>
             </a>
             <a href="<?= $this->baseUrl('portal/viagem') ?>" class="top-nav-item" id="nav-viagem">
-                <span class="top-nav-icon">🚗</span>
+                <span class="top-nav-icon" style="position: relative;">
+                    🚗
+                    <?php if (!empty($navStats['viagem'])): ?>
+                        <span style="position: absolute; top: -4px; right: -8px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 10px; line-height: 1; border: 1px solid #0f172a;"><?= $navStats['viagem'] ?></span>
+                    <?php endif; ?>
+                </span>
                 <span>Viagens</span>
             </a>
             <a href="<?= $this->baseUrl('portal/militancia') ?>" class="top-nav-item" id="nav-militancia">
-                <span class="top-nav-icon">📢</span>
+                <span class="top-nav-icon" style="position: relative;">
+                    📢
+                    <?php if (!empty($navStats['militancia'])): ?>
+                        <span style="position: absolute; top: -4px; right: -8px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 10px; line-height: 1; border: 1px solid #0f172a;"><?= $navStats['militancia'] ?></span>
+                    <?php endif; ?>
+                </span>
                 <span>Militância</span>
             </a>
             <a href="<?= $this->baseUrl('portal/outros') ?>" class="top-nav-item" id="nav-outros">
@@ -138,7 +158,12 @@
                 <span>Outros</span>
             </a>
             <a href="<?= $this->baseUrl('portal/despesas') ?>" class="top-nav-item" id="nav-despesas">
-                <span class="top-nav-icon">💸</span>
+                <span class="top-nav-icon" style="position: relative;">
+                    💸
+                    <?php if (!empty($navStats['despesas'])): ?>
+                        <span style="position: absolute; top: -4px; right: -8px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 10px; line-height: 1; border: 1px solid #0f172a;"><?= $navStats['despesas'] ?></span>
+                    <?php endif; ?>
+                </span>
                 <span>Gastos</span>
             </a>
             <a href="<?= $this->baseUrl('portal/perfil') ?>" class="top-nav-item" id="nav-perfil">

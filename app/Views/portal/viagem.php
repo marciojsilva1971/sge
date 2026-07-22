@@ -301,13 +301,19 @@ foreach ($travelReports as $report) {
                                 Período: <?= date('d/m/Y', strtotime($tr['start_date'])) ?> &rarr; <?= date('d/m/Y', strtotime($tr['end_date'])) ?>
                             </span>
                         </div>
-                        <div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
                             <?php if ($tr['status'] === 'APROVADO'): ?>
                                 <span class="badge badge-success">Aprovada</span>
                             <?php elseif ($tr['status'] === 'REJEITADO'): ?>
                                 <span class="badge badge-danger">Rejeitada</span>
+                                <button type="button" class="btn btn-warning btn-sm" style="font-size: 10px; padding: 2px 8px; font-weight: 700; background: #eab308; color: #0f172a;" onclick='abrirModalEditarViagem(<?= json_encode($tr, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+                                    ✏️ Editar
+                                </button>
                             <?php else: ?>
                                 <span class="badge badge-info">Auditoria</span>
+                                <button type="button" class="btn btn-secondary btn-sm" style="font-size: 10px; padding: 2px 8px; font-weight: 600; background: rgba(255,255,255,0.1); color: #fff;" onclick='abrirModalEditarViagem(<?= json_encode($tr, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+                                    ✏️ Editar
+                                </button>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -316,6 +322,74 @@ foreach ($travelReports as $report) {
         </div>
     <?php endif; ?>
 </div>
+
+<!-- MODAL DE EDIÇÃO DE RELATÓRIO DE VIAGEM EM VIAGEM.PHP -->
+<div id="modalEditarViagemPage" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">
+    <div style="background: #0f172a; border: 1px solid var(--accent-indigo); border-radius: 16px; max-width: 500px; width: 100%; padding: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+            <h3 style="font-size: 15px; font-weight: 700; color: #818cf8;">✏️ Editar Relatório de Viagem</h3>
+            <button type="button" onclick="fecharModalEditarViagemPage()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+        </div>
+
+        <form action="<?= $this->baseUrl('portal/viagem/editar') ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+            <input type="hidden" id="edit_page_travel_id" name="travel_id" value="">
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 12px; font-weight: 600;">Objetivo da Viagem *</label>
+                <input type="text" id="edit_page_travel_purpose" name="purpose" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Data Início *</label>
+                    <input type="date" id="edit_page_travel_start_date" name="start_date" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 12px; font-weight: 600;">Data Fim *</label>
+                    <input type="date" id="edit_page_travel_end_date" name="end_date" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 11px; font-weight: 600;">Placa Veículo *</label>
+                    <input type="text" id="edit_page_travel_vehicle_plate" name="vehicle_plate" required placeholder="AAA-0A00" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 12px; text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 11px; font-weight: 600;">KM Inicial *</label>
+                    <input type="number" id="edit_page_travel_initial_km" name="initial_km" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 12px;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: 11px; font-weight: 600;">KM Final</label>
+                    <input type="number" id="edit_page_travel_final_km" name="final_km" placeholder="KM Final" style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 12px;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 16px;">
+                <button type="button" class="btn btn-secondary flex-1" onclick="fecharModalEditarViagemPage()">Cancelar</button>
+                <button type="submit" class="btn btn-teal flex-1" style="background: #eab308; color: #0f172a; font-weight: 800;">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function abrirModalEditarViagem(tr) {
+        document.getElementById('edit_page_travel_id').value = tr.id;
+        document.getElementById('edit_page_travel_purpose').value = tr.purpose || '';
+        document.getElementById('edit_page_travel_start_date').value = tr.start_date || '';
+        document.getElementById('edit_page_travel_end_date').value = tr.end_date || '';
+        document.getElementById('edit_page_travel_vehicle_plate').value = tr.vehicle_plate || '';
+        document.getElementById('edit_page_travel_initial_km').value = tr.initial_km || '';
+        document.getElementById('edit_page_travel_final_km').value = tr.final_km || '';
+        document.getElementById('modalEditarViagemPage').style.display = 'flex';
+    }
+
+    function fecharModalEditarViagemPage() {
+        document.getElementById('modalEditarViagemPage').style.display = 'none';
+    }
+</script>
 
 <script>
 function formatarMoeda(input) {
