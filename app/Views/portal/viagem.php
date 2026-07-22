@@ -130,7 +130,7 @@ foreach ($travelReports as $report) {
                 <div style="display: flex; gap: 10px;">
                     <div class="form-group flex-1">
                         <label for="value" style="font-size: 12px; font-weight: 700; color: var(--accent-teal-hover);">Valor Total do Cupom (R$) *</label>
-                        <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 700; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);" onblur="formatarMoeda(this);" onpaste="setTimeout(() => formatarMoeda(this), 10);">
+                        <input type="text" id="value" name="value" placeholder="R$ 0,00" required style="font-size: 16px; font-weight: 700; color: var(--accent-teal-hover);" oninput="formatarMoeda(this);">
                     </div>
                     <div class="form-group flex-1">
                         <label for="receipt_date" style="font-size: 12px;">Data do Recibo</label>
@@ -294,21 +294,18 @@ foreach ($travelReports as $report) {
 </div>
 
 <script>
-    // Função global de Formatação de Moeda (BRL)
-    window.formatarMoeda = function(input) {
-        if (!input) return;
-        let value = input.value.replace(/\D/g, "");
-        if (value === "") {
-            input.value = "";
-            return;
-        }
-        let numberVal = (parseFloat(value) / 100).toFixed(2);
-        let formatted = new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(numberVal);
-        input.value = formatted;
-    };
+function formatarMoeda(input) {
+    if (!input) return;
+    let value = input.value.replace(/\D/g, '');
+    if (value === '') {
+        input.value = '';
+        return;
+    }
+    value = (value / 100).toFixed(2) + '';
+    value = value.replace(".", ",");
+    value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+    input.value = "R$ " + value;
+}
 
     // Máscara CNPJ do Posto (com verificação de existência no DOM)
     var supplierCnpjElem = document.getElementById('supplier_cnpj');
