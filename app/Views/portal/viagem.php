@@ -958,12 +958,6 @@ function formatarMoeda(input) {
         revelarEtapa2();
     }
 
-    if (fotoCnpjInput) {
-        fotoCnpjInput.addEventListener('change', function(e) {
-            executarDigitalizacaoOCR();
-        });
-    }
-
     if (btnScanOcr) {
         btnScanOcr.addEventListener('click', function() {
             executarDigitalizacaoOCR();
