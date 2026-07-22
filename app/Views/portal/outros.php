@@ -303,40 +303,64 @@ document.addEventListener('DOMContentLoaded', () => {
     function extrairCNPJDoTexto(text) {
         if (!text) return null;
 
+        console.log("=== TEXTO OCR EXTRAÍDO (OUTROS GASTOS) ===");
+        console.log(text);
+
         function normalizarTextoOCR(txt) {
             return txt
                 .replace(/[OoQ]/g, '0')
                 .replace(/[Il|!L]/g, '1')
                 .replace(/[Zz]/g, '2')
                 .replace(/[Ss$]/g, '5')
-                .replace(/[Bb]/g, '8');
+                .replace(/[Bb]/g, '8')
+                .replace(/[Gg]/g, '6');
         }
 
-        const matches = text.match(/(?:CNPJ|C\.?N\.?P\.?J\.?|MF)?[\s\:\.\-\/]*([0-9OolI|!LsSZzBb\.\-\/\s]{14,25})/gi) || [];
-        for (let raw of matches) {
-            let norm = normalizarTextoOCR(raw);
-            let clean = norm.replace(/\D/g, '');
-            for (let i = 0; i <= clean.length - 14; i++) {
-                let sub = clean.substring(i, i + 14);
-                if (validarCNPJ(sub)) return sub;
+        // METODO 1: Procura específica pela palavra-chave CNPJ / C.N.P.J / MF / CGC
+        const cnpjKeywordRegex = /(?:CNPJ|C\.?N\.?P\.?J\.?|MF|CGC)[\s\:\.\-\/]*([0-9OolI|!LsSZzBbGg\.\-\/\s]{14,35})/gi;
+        let match;
+        while ((match = cnpjKeywordRegex.exec(text)) !== null) {
+            if (match[1]) {
+                let norm = normalizarTextoOCR(match[1]);
+                let digitsOnly = norm.replace(/\D/g, '');
+                for (let i = 0; i <= digitsOnly.length - 14; i++) {
+                    let sub = digitsOnly.substring(i, i + 14);
+                    if (validarCNPJ(sub)) {
+                        console.log("✓ CNPJ identificado via Método 1 (Palavra-Chave + Validador):", sub);
+                        return sub;
+                    }
+                }
+                if (digitsOnly.length >= 14) {
+                    let fallbackSub = digitsOnly.substring(0, 14);
+                    console.log("✓ CNPJ identificado via Método 1 (Candidato direto pós-CNPJ):", fallbackSub);
+                    return fallbackSub;
+                }
             }
         }
 
+        // METODO 2: Padrão visual clássico de CNPJ (XX.XXX.XXX/XXXX-XX) no texto inteiro
+        const padraoVisualRegex = /\d{2}[\.\s]*\d{3}[\.\s]*\d{3}[\/\s]*\d{4}[\-\s]*\d{2}/g;
+        const matchesVisuais = text.match(padraoVisualRegex) || [];
+        for (let raw of matchesVisuais) {
+            let digits = raw.replace(/\D/g, '');
+            if (digits.length === 14) {
+                console.log("✓ CNPJ identificado via Método 2 (Padrão Visual):", digits);
+                return digits;
+            }
+        }
+
+        // METODO 3: Varredura de 14 dígitos válidos no texto completo normalizado
         const textoNorm = normalizarTextoOCR(text);
-        const apenasNumeros = textoNorm.replace(/\D/g, ' ');
-        const tokens = apenasNumeros.split(/\s+/);
-        for (let token of tokens) {
-            if (token.length === 14 && validarCNPJ(token)) {
-                return token;
-            }
-        }
-
         const todosDigitos = textoNorm.replace(/\D/g, '');
         for (let i = 0; i <= todosDigitos.length - 14; i++) {
             let sub = todosDigitos.substring(i, i + 14);
-            if (validarCNPJ(sub)) return sub;
+            if (validarCNPJ(sub)) {
+                console.log("✓ CNPJ identificado via Método 3 (Varredura 14 dígitos):", sub);
+                return sub;
+            }
         }
 
+        console.log("❌ Nenhum CNPJ localizado no texto extraído.");
         return null;
     }
 
@@ -355,11 +379,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const worker = await Tesseract.createWorker('por');
+                await worker.setParameters({
+                    tessedit_pageseg_mode: '6', // PSM 6: Bloco único de texto (ideal para recibos/cupons)
+                });
+
                 const ret = await worker.recognize(file);
                 await worker.terminate();
 
-                const text = ret.data.text;
-                const detectedCnpj = extrairCNPJDoTexto(text);
+                console.log("Texto extraído via OCR (PSM 6):", ret.data.text);
+                let detectedCnpj = extrairCNPJDoTexto(ret.data.text);
+
+                if (!detectedCnpj) {
+                    // Fallback PSM 3 (auto)
+                    const workerAuto = await Tesseract.createWorker('por');
+                    const retAuto = await workerAuto.recognize(file);
+                    await workerAuto.terminate();
+
+                    console.log("Texto extraído via OCR (PSM Auto):", retAuto.data.text);
+                    detectedCnpj = extrairCNPJDoTexto(retAuto.data.text);
+                }
 
                 if (detectedCnpj) {
                     ocrStatusBadge.innerHTML = '<span style="color: #38bdf8; font-size: 12px; font-weight: 700;">🔍 Consultando Receita Federal...</span>';
@@ -376,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 100);
                 }
             } catch (err) {
-                console.error(err);
+                console.error("Erro OCR:", err);
                 if (cnpjInput) cnpjInput.value = '';
                 if (nameInput) nameInput.value = '';
                 if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
