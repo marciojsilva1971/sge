@@ -598,10 +598,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (cnpjInput) {
-        cnpjInput.addEventListener('change', () => {
-            const val = cnpjInput.value.replace(/\D/g, '');
-            if (val.length === 14) {
-                consultarCnpjApi(val, false);
+        cnpjInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 14) value = value.slice(0, 14);
+
+            if (value.length > 12) {
+                value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+            }
+            e.target.value = value;
+
+            if (value.replace(/\D/g, "").length === 14) {
+                consultarCnpjApi(value, false);
             }
         });
     }
