@@ -1042,7 +1042,6 @@ function formatarMoeda(input) {
             document.head.appendChild(script);
         });
     }
-    }
 
     if (btnScanOcr) {
         btnScanOcr.addEventListener('click', function() {
