@@ -95,3 +95,13 @@ Este documento mantém o registro permanente de todas as implementações do **M
   - **Geração de Certidão PDF/Impressão:** Criada a visão `app/Views/admin/rh/regularidade_pdf.php` em estilo institucional e otimizado para folha A4 com `@media print`, exibindo o status do CPF, elegibilidade no TSE, justificativa legal (Res. TSE 23.607/2019 Art. 35) e carimbo de autenticidade (hash SHA-256).
   - **Trilha de Auditoria Visível:** A certidão agora inclui uma seção secundária contendo a tabela de todo o histórico de consultas de compliance efetuadas para aquele colaborador, documentando as mudanças de status cadastral temporalmente para prestar contas à Justiça Eleitoral.
   - **Interface Administrativa (RH):** Incluído o botão azul **"📄 Certidão de Regularidade"** na listagem de colaboradores do painel de RH para download/emissão direta sob demanda.
+
+---
+
+## 📅 Sessão 11: Finalização de Relatórios Financeiros e Conformidade (PDF dos Gestores & AJAX)
+* **Ações:**
+  - **Busca Dinâmica em Tempo Real (AJAX):** Implementada a busca assíncrona nas telas de Gestão de Colaboradores (RH) e Gerenciamento de Usuários. Ao digitar nos campos de busca (debounce de 300ms) ou alterar os filtros (select), o sistema atualiza a tabela dinamicamente via AJAX, preservando parâmetros de consulta na URL com `history.pushState()`.
+  - **Simplificação de Layout no RH:** Removida a coluna Idade da listagem de colaboradores e adicionada a coluna Função na Campanha ao lado da coluna Perfil SGE. O título da página de RH foi alterado para "Gestão de Colaboradores".
+  - **Exibição Limpa no Perfil do Colaborador:** Atualizada a página "Meu Perfil de Colaborador" no portal público para exibir a Função na Campanha (buscando dinamicamente do contrato mais recente) formatada de forma simplificada (sem enquadramento legal entre parênteses).
+  - **Máscaras de Entrada na Listagem e Modais:** Aplicadas máscaras dinâmicas de CPF/CNPJ e Celular (com prevenção de quebra de linha com `white-space: nowrap`) na listagem e nos modais de edição de telefone, convite e filtros.
+  - **Dossiê Técnico de Conformidade em PDF:** Desenvolvido o script python `generate_apresentacao_pdf.py` utilizando `fpdf2` e fontes Arial para compilar a documentação técnica consolidada do SGE (`apresentacao_sistema_sge.pdf`) com visualização de fluxos e alertas de compliance legal para envio aos gestores.
