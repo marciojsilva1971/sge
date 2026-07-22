@@ -85,10 +85,13 @@
                                                 <?php endforeach; ?>
                                             </select>
                                             
+                                            <?php 
+                                            $expSpceId = !empty($exp['spce_category_id']) ? intval($exp['spce_category_id']) : null;
+                                            ?>
                                             <select name="spce_category_id" required style="font-size: 11px; padding: 6px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #475569; width: 100%; box-sizing: border-box;">
                                                 <option value="">-- Selecione a Categoria SPCE --</option>
                                                 <?php foreach ($spceCategories as $cat): ?>
-                                                    <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
+                                                    <option value="<?= $cat['id'] ?>" <?= (!empty($expSpceId) && $cat['id'] == $expSpceId) ? 'selected' : '' ?>><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         <?php endif; ?>
@@ -150,6 +153,9 @@
                             <input type="hidden" name="type" value="travel">
                             <input type="hidden" name="id" value="<?= $tr['id'] ?>">
 
+                            <?php 
+                            $receiptSpceId = !empty($tr['receipts'][0]['spce_category_id']) ? intval($tr['receipts'][0]['spce_category_id']) : null;
+                            ?>
                             <div style="display: flex; gap: 6px;">
                                 <select name="bank_account_id" required style="font-size: 11px; padding: 6px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #475569; flex: 1;">
                                     <option value="">-- Conta Bancária Origem * --</option>
@@ -160,8 +166,15 @@
 
                                 <select name="spce_category_id" required style="font-size: 11px; padding: 6px; border-radius: 6px; background: #0f172a; color: #fff; border: 1px solid #475569; flex: 1;">
                                     <option value="">-- Categoria SPCE * --</option>
-                                    <?php foreach ($spceCategories as $cat): ?>
-                                        <option value="<?= $cat['id'] ?>" <?= strpos($cat['code'], '44') !== false ? 'selected' : '' ?>><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
+                                    <?php foreach ($spceCategories as $cat): 
+                                        $isSelected = false;
+                                        if (!empty($receiptSpceId)) {
+                                            $isSelected = ($cat['id'] == $receiptSpceId);
+                                        } else {
+                                            $isSelected = (strpos($cat['code'], '44') !== false || strpos(mb_strtolower($cat['description']), 'combust') !== false);
+                                        }
+                                    ?>
+                                        <option value="<?= $cat['id'] ?>" <?= $isSelected ? 'selected' : '' ?>><?= htmlspecialchars($cat['code']) ?> - <?= htmlspecialchars($cat['description']) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
