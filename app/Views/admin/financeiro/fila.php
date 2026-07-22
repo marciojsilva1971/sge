@@ -62,13 +62,9 @@
                             <td style="font-weight: 600; color: var(--warning-color);">R$ <?= number_format($exp['value'], 2, ',', '.') ?></td>
                             <td><?= htmlspecialchars($exp['creator_name']) ?></td>
                             <td>
-                                <?php if (!empty($exp['doc_id'])): ?>
-                                    <a href="<?= $this->baseUrl('admin/financeiro/comprovante?id=' . $exp['doc_id'] . '&type=expense') ?>" target="_blank" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px;">
-                                        📄 Ver
-                                    </a>
-                                <?php else: ?>
-                                    <span style="color: var(--text-secondary);">Sem anexo</span>
-                                <?php endif; ?>
+                                <button type="button" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 11px; background: #0284c7; color: #ffffff; border: none; font-weight: 700; cursor: pointer;" onclick='verDetalhesDespesaAdmin(<?= json_encode($exp, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'>
+                                    📄 Ver
+                                </button>
                             </td>
                             <td>
                                 <div style="display: flex; gap: 8px; width: 100%;">
@@ -589,7 +585,194 @@
     function fecharViewMilitancyModal() {
         document.getElementById('viewMilitancyModal').style.display = 'none';
     }
+
+    function verDetalhesDespesaAdmin(exp) {
+        if (typeof exp === 'string') {
+            try { exp = JSON.parse(exp); } catch(e) {}
+        }
+        document.getElementById('expense_modal_subtitle').innerText = `Despesa Geral #${exp.id} • ${exp.date_incurred ? new Date(exp.date_incurred + 'T00:00:00').toLocaleDateString('pt-BR') : ''}`;
+        document.getElementById('expense_modal_title').innerText = `Lançado por: ${exp.creator_name || 'Colaborador'}`;
+        
+        document.getElementById('expense_modal_creator').innerText = exp.creator_name || 'Colaborador';
+        document.getElementById('expense_modal_supplier').innerText = exp.supplier_name || 'Fornecedor Não Identificado';
+        
+        const cleanCnpj = (exp.supplier_cnpj_cpf || '').replace(/\D/g, '');
+        let fmtCnpj = exp.supplier_cnpj_cpf || 'Não Informado';
+        if (cleanCnpj.length === 14) {
+            fmtCnpj = cleanCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+        } else if (cleanCnpj.length === 11) {
+            fmtCnpj = cleanCnpj.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+        }
+        document.getElementById('expense_modal_cnpj').innerText = `CNPJ/CPF: ${fmtCnpj}`;
+
+        document.getElementById('expense_modal_date').innerText = exp.date_incurred ? new Date(exp.date_incurred + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+
+        const valFloat = parseFloat(exp.value || 0);
+        document.getElementById('expense_modal_value').innerText = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valFloat);
+
+        if (exp.spce_code) {
+            document.getElementById('expense_modal_spce').innerHTML = `<strong>Categoria SPCE:</strong> ${exp.spce_code} - ${exp.spce_desc}`;
+        } else {
+            document.getElementById('expense_modal_spce').innerHTML = `<span style="color: #f59e0b; font-weight: 600;">⚠️ Gasto de Campo (Sem Vínculo SPCE)</span>`;
+        }
+
+        if (exp.expense_type_name) {
+            document.getElementById('expense_modal_type').innerText = `Tipo: ${exp.expense_type_name}`;
+        } else {
+            document.getElementById('expense_modal_type').innerText = '';
+        }
+
+        document.getElementById('expense_modal_description').innerText = exp.description || 'Sem descrição informada.';
+
+        // Galeria de comprovantes/imagens
+        const photosContainer = document.getElementById('expense_photos_container');
+        photosContainer.innerHTML = '';
+        
+        let docs = exp.documents || [];
+        if (docs.length === 0 && exp.doc_id) {
+            docs = [{
+                id: exp.doc_id,
+                type: 'expense',
+                url: '<?= $this->baseUrl("admin/financeiro/comprovante?id=") ?>' + exp.doc_id + '&type=expense',
+                label: 'Comprovante Fiscal #1',
+                original_name: 'comprovante.jpg'
+            }];
+        }
+
+        document.getElementById('expense_photos_count').innerText = docs.length;
+
+        if (docs.length === 0) {
+            photosContainer.innerHTML = '<p style="color: #94a3b8; font-size: 12px; grid-column: span 2; text-align: center; padding: 20px;">Nenhum comprovante anexado a esta despesa.</p>';
+        } else {
+            docs.forEach((doc, idx) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'background: #1e293b; border: 1px solid #334155; border-radius: 8px; overflow: hidden; position: relative; cursor: pointer; display: flex; flex-direction: column;';
+                
+                const isPdf = doc.original_name && doc.original_name.toLowerCase().endsWith('.pdf');
+                
+                if (isPdf) {
+                    card.innerHTML = `
+                        <div style="height: 140px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0b1120; color: #ef4444;" onclick="window.open('${doc.url}', '_blank')">
+                            <span style="font-size: 36px;">📄</span>
+                            <span style="font-size: 11px; color: #cbd5e1; margin-top: 4px;">Arquivo PDF</span>
+                        </div>
+                        <div style="padding: 6px 8px; background: #0f172a; border-top: 1px solid #334155; font-size: 11px; color: #38bdf8; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${doc.label || 'Comprovante #' + (idx + 1)} 🔍
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div style="height: 140px; width: 100%; overflow: hidden; background: #0b1120;">
+                            <img src="${doc.url}" alt="${doc.label}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s ease-in-out;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="window.open('${doc.url}', '_blank')">
+                        </div>
+                        <div style="padding: 6px 8px; background: #0f172a; border-top: 1px solid #334155; font-size: 11px; color: #38bdf8; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${doc.label || 'Comprovante #' + (idx + 1)} 🔍
+                        </div>
+                    `;
+                }
+                photosContainer.appendChild(card);
+            });
+        }
+
+        // Rodapé de Ações
+        const actionsContainer = document.getElementById('expense_modal_actions');
+        const expStr = JSON.stringify(exp).replace(/'/g, "&apos;");
+        actionsContainer.innerHTML = `
+            <button type="button" class="btn btn-warning btn-sm" style="background: #eab308; color: #0f172a; font-weight: 700; padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer;" onclick='fecharViewExpenseModal(); editarDespesaAdmin(${expStr})'>
+                ✏️ Editar Gasto
+            </button>
+            <button class="btn btn-secondary btn-sm" style="background-color: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--error-color); padding: 8px 14px; border-radius: 6px; cursor: pointer;" onclick="fecharViewExpenseModal(); rejeitarRegistro('expense', ${exp.id})">
+                ❌ Rejeitar
+            </button>
+        `;
+
+        document.getElementById('viewExpenseModal').style.display = 'flex';
+    }
+
+    function fecharViewExpenseModal() {
+        document.getElementById('viewExpenseModal').style.display = 'none';
+    }
 </script>
+
+<!-- MODAL DE VISUALIZAÇÃO COMPLETA DA DESPESA GERAL -->
+<div id="viewExpenseModal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.88); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px);">
+    <div style="background: #0f172a; border: 1px solid #0284c7; border-radius: 16px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <div>
+                <span style="font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;" id="expense_modal_subtitle">Despesa Geral</span>
+                <h3 style="font-size: 18px; font-weight: 700; color: #f8fafc; margin-top: 2px;" id="expense_modal_title">Detalhes da Despesa</h3>
+            </div>
+            <button type="button" onclick="fecharViewExpenseModal()" style="background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; padding: 0 8px;">✕</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- Coluna 1: Dados do Lançamento, Fornecedor e Histórico -->
+            <div>
+                <!-- Card Dados Fornecedor -->
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    🏢 Fornecedor & Lançamento
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">
+                        Lançado por: <strong style="color: #f8fafc;" id="expense_modal_creator">---</strong>
+                    </div>
+                    <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-bottom: 4px;" id="expense_modal_supplier">
+                        ---
+                    </div>
+                    <div style="font-size: 11px; color: #38bdf8; font-weight: 600; font-family: monospace; margin-bottom: 8px;" id="expense_modal_cnpj">
+                        CNPJ/CPF: ---
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px;">
+                        <span style="font-size: 11px; color: #94a3b8;">Data do Gasto: <strong style="color: #f8fafc;" id="expense_modal_date">---</strong></span>
+                        <span style="font-size: 16px; font-weight: 800; color: #4ade80;" id="expense_modal_value">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- Card Classificação SPCE -->
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    ⚖️ Classificação Fiscal & Categoria SPCE
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 12px; color: #e2e8f0;" id="expense_modal_spce">
+                        ---
+                    </div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;" id="expense_modal_type">
+                        ---
+                    </div>
+                </div>
+
+                <!-- Histórico / Observação do Usuário -->
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px;">
+                    📝 Histórico / Descrição da Despesa
+                </div>
+                <div style="background: #1e293b; border-left: 4px solid #38bdf8; border-radius: 6px; padding: 14px; color: #e2e8f0; font-size: 13px; line-height: 1.5; white-space: pre-wrap;" id="expense_modal_description">
+                    Sem descrição informada.
+                </div>
+            </div>
+
+            <!-- Coluna 2: Galeria de Imagens/Comprovantes Criptografados -->
+            <div>
+                <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🖼️ Imagens Vinculadas (<span id="expense_photos_count">0</span>)</span>
+                    <span style="font-size: 10px; color: #4ade80; font-weight: 600;">🔐 AES-256-CBC</span>
+                </div>
+                
+                <div id="expense_photos_container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 420px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Fotos renderizadas via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Rodapé de Ações -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+            <button type="button" class="btn btn-secondary" onclick="fecharViewExpenseModal()" style="font-size: 12px; padding: 8px 16px;">Fechar</button>
+            <div style="display: flex; gap: 10px;" id="expense_modal_actions">
+                <!-- Formulários dinâmicos de Aprovação / Edição / Rejeição -->
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- MODAL DE EDIÇÃO DE RECIBO DE COMBUSTÍVEL PELO ADMINISTRADOR -->
 <div id="adminEditTravelReceiptModal" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 9999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);">

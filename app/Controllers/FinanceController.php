@@ -532,7 +532,40 @@ class FinanceController extends Controller {
              WHERE d.status = 'PENDENTE'
              ORDER BY d.date_incurred ASC, d.id ASC"
         );
-        $pendingExpenses = $stmtExpenses->fetchAll();
+        $pendingExpensesRaw = $stmtExpenses->fetchAll();
+        $pendingExpenses = [];
+
+        foreach ($pendingExpensesRaw as $exp) {
+            $stmtDocs = $db->prepare(
+                "SELECT id, original_name, mime_type FROM `comprovantes_cripto` WHERE expense_id = :id ORDER BY id ASC"
+            );
+            $stmtDocs->execute(['id' => $exp['id']]);
+            $docs = $stmtDocs->fetchAll();
+
+            $allDocs = [];
+            foreach ($docs as $idx => $d) {
+                $allDocs[] = [
+                    'id' => $d['id'],
+                    'type' => 'expense',
+                    'url' => $this->baseUrl('admin/financeiro/comprovante?id=' . $d['id'] . '&type=expense'),
+                    'label' => 'Comprovante Fiscal #' . ($idx + 1),
+                    'original_name' => $d['original_name'] ?? 'comprovante.jpg',
+                    'mime_type' => $d['mime_type'] ?? 'image/jpeg'
+                ];
+            }
+            if (empty($allDocs) && !empty($exp['doc_id'])) {
+                $allDocs[] = [
+                    'id' => $exp['doc_id'],
+                    'type' => 'expense',
+                    'url' => $this->baseUrl('admin/financeiro/comprovante?id=' . $exp['doc_id'] . '&type=expense'),
+                    'label' => 'Comprovante Fiscal #1',
+                    'original_name' => 'comprovante.jpg',
+                    'mime_type' => 'image/jpeg'
+                ];
+            }
+            $exp['documents'] = $allDocs;
+            $pendingExpenses[] = $exp;
+        }
 
         // 2. Relatórios de viagens pendentes de aprovação (status = 'ENVIADO')
         $stmtTravels = $db->query(
