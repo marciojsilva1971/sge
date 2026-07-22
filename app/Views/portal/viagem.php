@@ -570,8 +570,23 @@ function formatarMoeda(input) {
                     }
                 } else {
                     if (isOcr) {
-                        // Se busca via OCR falhar/não encontrar na Receita, oculta bloco 1 e abre campos editáveis vazios
-                        exibirAvisoEPreenchimentoManual("⚠️ CNPJ não localizado na Receita Federal. Os campos foram mantidos em branco para preenchimento manual.");
+                        // Preserva o CNPJ preenchido para o usuario visualizar e ajustar se necessário
+                        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                        if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                        if (dadosContainer) {
+                            dadosContainer.style.display = 'block';
+                            dadosContainer.scrollIntoView({ behavior: 'smooth' });
+                        }
+                        if (supplierNameInput) {
+                            supplierNameInput.value = '';
+                            supplierNameInput.focus();
+                        }
+                        if (cnpjInfoDiv) {
+                            cnpjInfoDiv.innerHTML = `<span style="color: #f59e0b; font-weight: 500;">⚠️ CNPJ capturado. Por favor, informe a Razão Social ao lado.</span>`;
+                        }
+                        setTimeout(() => {
+                            alert("⚠️ CNPJ (" + cnpjInput.value + ") lido do comprovante, mas não localizado na base da Receita Federal.\n\nVocê pode ajustar o CNPJ se houver dígito impreciso ou digitar a Razão Social da empresa manualmente no campo ao lado.");
+                        }, 100);
                     } else {
                         // Digitação manual de CNPJ não encontrado na Receita Federal
                         if (supplierNameInput) supplierNameInput.value = '';
@@ -965,20 +980,48 @@ function formatarMoeda(input) {
                 await worker.terminate();
 
                 console.log("Texto extraído via OCR (PSM 6):", ret.data.text);
-                let detectedCnpj = extrairCNPJDoTexto(ret.data.text);
+                let detectedResult = extrairCNPJDoTexto(ret.data.text);
 
-                if (!detectedCnpj) {
+                if (!detectedResult) {
                     // Fallback PSM 3 (auto)
                     const workerAuto = await Tesseract.createWorker('por');
                     const retAuto = await workerAuto.recognize(file);
                     await workerAuto.terminate();
 
                     console.log("Texto extraído via OCR (PSM Auto):", retAuto.data.text);
-                    detectedCnpj = extrairCNPJDoTexto(retAuto.data.text);
+                    detectedResult = extrairCNPJDoTexto(retAuto.data.text);
                 }
 
-                if (detectedCnpj) {
-                    consultarCnpjServico(detectedCnpj, true);
+                if (detectedResult && detectedResult.cnpj) {
+                    const detectedCnpj = detectedResult.cnpj;
+                    const isValidoDV = detectedResult.valido;
+
+                    // Preenche o campo de CNPJ com a captura do OCR
+                    if (cnpjInput) {
+                        let clean = detectedCnpj.replace(/\D/g, "");
+                        if (clean.length === 14) {
+                            cnpjInput.value = clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+                        } else {
+                            cnpjInput.value = detectedCnpj;
+                        }
+                    }
+
+                    if (isValidoDV) {
+                        consultarCnpjServico(detectedCnpj, true);
+                    } else {
+                        // Se o OCR capturou o CNPJ mas o DV ficou impreciso no OCR, MANTÉM o CNPJ preenchido para o usuário conferir/ajustar
+                        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                        if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                        if (dadosContainer) {
+                            dadosContainer.style.display = 'block';
+                            dadosContainer.scrollIntoView({ behavior: 'smooth' });
+                        }
+                        if (cnpjInfoDiv) cnpjInfoDiv.innerHTML = '<span style="color: #f59e0b; font-weight: 500;">⚠️ Confira o número do CNPJ acima.</span>';
+                        if (cnpjInput) cnpjInput.focus();
+                        setTimeout(() => {
+                            alert("⚠️ O sistema identificou o CNPJ (" + cnpjInput.value + ") no comprovante, mas alguns dígitos podem precisar de confirmação.\n\nPor favor, confira o número e altere se necessário.");
+                        }, 100);
+                    }
                 } else {
                     exibirAvisoEPreenchimentoManual();
                 }

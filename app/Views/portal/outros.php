@@ -327,13 +327,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     let sub = digitsOnly.substring(i, i + 14);
                     if (validarCNPJ(sub)) {
                         console.log("✓ CNPJ identificado via Método 1 (Palavra-Chave + Validador):", sub);
-                        return sub;
+                        return { cnpj: sub, valido: true };
                     }
                 }
                 if (digitsOnly.length >= 14) {
-                    let fallbackSub = digitsOnly.substring(0, 14);
-                    console.log("✓ CNPJ identificado via Método 1 (Candidato direto pós-CNPJ):", fallbackSub);
-                    return fallbackSub;
+                    let candidate = digitsOnly.substring(0, 14);
+                    return { cnpj: candidate, valido: validarCNPJ(candidate) };
                 }
             }
         }
@@ -344,8 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let raw of matchesVisuais) {
             let digits = raw.replace(/\D/g, '');
             if (digits.length === 14) {
-                console.log("✓ CNPJ identificado via Método 2 (Padrão Visual):", digits);
-                return digits;
+                return { cnpj: digits, valido: validarCNPJ(digits) };
             }
         }
 
@@ -355,12 +353,10 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i <= todosDigitos.length - 14; i++) {
             let sub = todosDigitos.substring(i, i + 14);
             if (validarCNPJ(sub)) {
-                console.log("✓ CNPJ identificado via Método 3 (Varredura 14 dígitos):", sub);
-                return sub;
+                return { cnpj: sub, valido: true };
             }
         }
 
-        console.log("❌ Nenhum CNPJ localizado no texto extraído.");
         return null;
     }
 
@@ -380,31 +376,51 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const worker = await Tesseract.createWorker('por');
                 await worker.setParameters({
-                    tessedit_pageseg_mode: '6', // PSM 6: Bloco único de texto (ideal para recibos/cupons)
+                    tessedit_pageseg_mode: '6',
                 });
 
                 const ret = await worker.recognize(file);
                 await worker.terminate();
 
                 console.log("Texto extraído via OCR (PSM 6):", ret.data.text);
-                let detectedCnpj = extrairCNPJDoTexto(ret.data.text);
+                let detectedResult = extrairCNPJDoTexto(ret.data.text);
 
-                if (!detectedCnpj) {
-                    // Fallback PSM 3 (auto)
+                if (!detectedResult) {
                     const workerAuto = await Tesseract.createWorker('por');
                     const retAuto = await workerAuto.recognize(file);
                     await workerAuto.terminate();
 
                     console.log("Texto extraído via OCR (PSM Auto):", retAuto.data.text);
-                    detectedCnpj = extrairCNPJDoTexto(retAuto.data.text);
+                    detectedResult = extrairCNPJDoTexto(retAuto.data.text);
                 }
 
-                if (detectedCnpj) {
-                    ocrStatusBadge.innerHTML = '<span style="color: #38bdf8; font-size: 12px; font-weight: 700;">🔍 Consultando Receita Federal...</span>';
-                    consultarCnpjApi(detectedCnpj, true);
+                if (detectedResult && detectedResult.cnpj) {
+                    const detectedCnpj = detectedResult.cnpj;
+                    const isValidoDV = detectedResult.valido;
+
+                    if (cnpjInput) {
+                        let clean = detectedCnpj.replace(/\D/g, "");
+                        if (clean.length === 14) {
+                            cnpjInput.value = clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+                        } else {
+                            cnpjInput.value = detectedCnpj;
+                        }
+                    }
+
+                    if (isValidoDV) {
+                        ocrStatusBadge.innerHTML = '<span style="color: #38bdf8; font-size: 12px; font-weight: 700;">🔍 Consultando Receita Federal...</span>';
+                        consultarCnpjApi(detectedCnpj, true);
+                    } else {
+                        if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
+                        if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
+                        dadosContainer.style.display = 'block';
+                        if (infoDiv) infoDiv.innerHTML = '<span style="color: #f59e0b;">⚠️ Confira o número do CNPJ acima.</span>';
+                        if (cnpjInput) cnpjInput.focus();
+                        setTimeout(() => {
+                            alert("⚠️ O sistema identificou o CNPJ (" + cnpjInput.value + ") no comprovante, mas alguns dígitos podem precisar de confirmação.\n\nPor favor, confira o número e altere se necessário.");
+                        }, 100);
+                    }
                 } else {
-                    if (cnpjInput) cnpjInput.value = '';
-                    if (nameInput) nameInput.value = '';
                     if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
                     if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
                     dadosContainer.style.display = 'block';
@@ -415,8 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (err) {
                 console.error("Erro OCR:", err);
-                if (cnpjInput) cnpjInput.value = '';
-                if (nameInput) nameInput.value = '';
                 if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
                 if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
                 dadosContainer.style.display = 'block';
@@ -442,8 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success && (data.company || data.razao_social)) {
                 const corporateName = data.razao_social || (data.company ? (data.company.corporate_name || data.company.trade_name) : '');
                 if (cnpjInput) {
-                    cnpjInput.value = clean;
-                    formatarCnpjCpf(cnpjInput);
+                    cnpjInput.value = clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
                 }
                 if (nameInput) nameInput.value = corporateName;
                 if (infoDiv) infoDiv.innerHTML = '<span style="color: #4ade80;">✓ Empresa: ' + corporateName + '</span>';
@@ -453,20 +466,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
                     dadosContainer.style.display = 'block';
                     setTimeout(() => {
-                        alert("✅ CNPJ e Razão Social lidos com sucesso!\n\n" + corporateName + " (" + clean + ")");
+                        alert("✅ CNPJ e Razão Social lidos com sucesso!\n\n" + corporateName + "\nCNPJ: " + cnpjInput.value);
                     }, 100);
                 }
             } else {
                 if (isOcr) {
-                    if (cnpjInput) cnpjInput.value = '';
-                    if (nameInput) nameInput.value = '';
-                    if (infoDiv) infoDiv.innerHTML = '<span style="color: #ef4444;">⚠️ CNPJ não localizado na Receita Federal.</span>';
                     if (blocoCapturaCnpj) blocoCapturaCnpj.style.display = 'none';
                     if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'block';
                     dadosContainer.style.display = 'block';
-                    if (cnpjInput) cnpjInput.focus();
+                    if (nameInput) {
+                        nameInput.value = '';
+                        nameInput.focus();
+                    }
+                    if (infoDiv) infoDiv.innerHTML = '<span style="color: #f59e0b;">⚠️ CNPJ capturado. Informe a Razão Social ao lado.</span>';
                     setTimeout(() => {
-                        alert("⚠️ CNPJ não localizado na base da Receita Federal.\n\nOs campos foram liberados para preenchimento manual abaixo.");
+                        alert("⚠️ CNPJ (" + cnpjInput.value + ") lido do comprovante, mas não localizado na base pública da Receita Federal.\n\nVocê pode ajustar o CNPJ se houver dígito impreciso ou digitar a Razão Social da empresa manualmente no campo ao lado.");
                     }, 100);
                 } else {
                     if (nameInput) nameInput.value = '';
