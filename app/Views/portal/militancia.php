@@ -168,7 +168,7 @@
             <button type="button" onclick="fecharModalEditarMilitanciaPage()" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
         </div>
 
-        <form action="<?= $this->baseUrl('portal/militancia/editar') ?>" method="POST">
+        <form action="<?= $this->baseUrl('portal/militancia/editar') ?>" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
             <input type="hidden" id="edit_page_militancy_id" name="militancy_id" value="">
 
@@ -180,6 +180,17 @@
             <div class="form-group" style="margin-bottom: 12px;">
                 <label style="font-size: 12px; font-weight: 600;">Data da Atividade *</label>
                 <input type="date" id="edit_page_militancy_date" name="activity_date" required style="width: 100%; padding: 8px; border-radius: 6px; background: #1e293b; border: 1px solid #475569; color: #fff; font-size: 13px;">
+            </div>
+
+            <!-- Upload de Fotos/Arquivos Adicionais com Criptografia -->
+            <div class="form-group" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.6); border: 1px dashed #38bdf8; padding: 12px; border-radius: 10px;">
+                <label style="font-size: 12px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                    📸 Anexar Nova(s) Foto(s) / Comprovantes
+                </label>
+                <p style="font-size: 11px; color: #94a3b8; margin: 2px 0 6px 0;">
+                    Você pode selecionar um ou mais arquivos. As fotos serão criptografadas em AES-256 e salvas na galeria da atividade.
+                </p>
+                <input type="file" name="foto_militancia[]" accept="image/*, application/pdf" multiple style="width: 100%; padding: 6px; font-size: 12px; color: #fff; background: #1e293b; border: 1px solid #475569; border-radius: 6px;">
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 16px;">

@@ -193,9 +193,10 @@
 
             <div class="form-group" style="margin-bottom: 16px; background: rgba(56, 189, 248, 0.08); padding: 10px; border-radius: 8px; border: 1px dashed #38bdf8;">
                 <label style="font-size: 12px; font-weight: 700; color: #38bdf8; display: block; margin-bottom: 4px;">
-                    📸 Anexar Novo Comprovante / Cupom (Opcional)
+                    📸 Anexar Novo(s) Comprovante(s) / Cupom (Opcional)
                 </label>
-                <input type="file" name="novo_comprovante" accept="image/*, application/pdf" style="font-size: 11px; color: #cbd5e1;">
+                <input type="file" name="novo_comprovante[]" accept="image/*, application/pdf" multiple style="font-size: 11px; color: #cbd5e1; width: 100%;">
+                <span style="font-size: 10px; color: #94a3b8; display: block; margin-top: 4px;">Você pode selecionar múltiplos arquivos (fotos/PDFs). Criptografia AES-256 ativa.</span>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">

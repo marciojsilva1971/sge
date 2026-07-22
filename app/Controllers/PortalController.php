@@ -649,10 +649,34 @@ class PortalController extends Controller {
                 'id' => $expense_id
             ]);
 
-            // Se foi anexado um novo comprovante/foto
-            if (isset($_FILES['novo_comprovante']) && $_FILES['novo_comprovante']['error'] === UPLOAD_ERR_OK && !empty($_FILES['novo_comprovante']['tmp_name'])) {
-                $storageDir = dirname(__DIR__, 2) . '/storage/uploads';
-                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($_FILES['novo_comprovante'], $storageDir);
+            // Processa novos comprovantes/fotos anexados (simples ou múltiplos)
+            $allNewFiles = [];
+            $checkKeys = ['novo_comprovante', 'comprovante'];
+            foreach ($checkKeys as $k) {
+                if (isset($_FILES[$k])) {
+                    if (is_array($_FILES[$k]['name'])) {
+                        foreach ($_FILES[$k]['name'] as $idx => $fname) {
+                            if (!empty($fname) && isset($_FILES[$k]['error'][$idx]) && $_FILES[$k]['error'][$idx] === UPLOAD_ERR_OK && !empty($_FILES[$k]['tmp_name'][$idx])) {
+                                $allNewFiles[] = [
+                                    'name' => $fname,
+                                    'type' => $_FILES[$k]['type'][$idx],
+                                    'tmp_name' => $_FILES[$k]['tmp_name'][$idx],
+                                    'error' => $_FILES[$k]['error'][$idx],
+                                    'size' => $_FILES[$k]['size'][$idx]
+                                ];
+                            }
+                        }
+                    } elseif ($_FILES[$k]['error'] === UPLOAD_ERR_OK && !empty($_FILES[$k]['tmp_name'])) {
+                        $allNewFiles[] = $_FILES[$k];
+                    }
+                }
+            }
+
+            $storageDir = dirname(__DIR__, 2) . '/storage/uploads/comprovantes';
+            if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+
+            foreach ($allNewFiles as $fileToUpload) {
+                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($fileToUpload, $storageDir);
 
                 $stmtCrypto = $db->prepare(
                     "INSERT INTO `comprovantes_cripto` (expense_id, encrypted_file_path, original_name, iv, mime_type) 
@@ -1312,7 +1336,43 @@ class PortalController extends Controller {
             $stmtUpd = $db->prepare($sql);
             $stmtUpd->execute($params);
 
-            // Processa foto base64 se enviada
+            // Auto-cria a tabela de fotos adicionais de militância se não existir
+            $db->exec("CREATE TABLE IF NOT EXISTS `militancy_photos` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `militancy_id` INT NOT NULL,
+                `encrypted_photo_path` VARCHAR(255) NOT NULL,
+                `original_name` VARCHAR(255) NOT NULL,
+                `iv` VARCHAR(64) NOT NULL,
+                `mime_type` VARCHAR(100) NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (`militancy_id`) REFERENCES `militancy_activities` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            $allFiles = [];
+            $storageDir = dirname(dirname(__DIR__)) . '/storage/uploads/comprovantes';
+            if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+
+            // 1. Processa arquivos por $_FILES
+            foreach ($_FILES as $key => $fileInfo) {
+                if (empty($fileInfo['name'])) continue;
+                if (is_array($fileInfo['name'])) {
+                    foreach ($fileInfo['name'] as $idx => $fname) {
+                        if (!empty($fname) && isset($fileInfo['error'][$idx]) && $fileInfo['error'][$idx] === UPLOAD_ERR_OK && !empty($fileInfo['tmp_name'][$idx])) {
+                            $allFiles[] = [
+                                'name' => $fname,
+                                'type' => $fileInfo['type'][$idx],
+                                'tmp_name' => $fileInfo['tmp_name'][$idx],
+                                'error' => $fileInfo['error'][$idx],
+                                'size' => $fileInfo['size'][$idx]
+                            ];
+                        }
+                    }
+                } elseif ($fileInfo['error'] === UPLOAD_ERR_OK && !empty($fileInfo['tmp_name'])) {
+                    $allFiles[] = $fileInfo;
+                }
+            }
+
+            // 2. Processa foto base64 se enviada
             if (!empty($_POST['foto_base64'])) {
                 $base64Str = $_POST['foto_base64'];
                 if (preg_match('/^data:image\/(\w+);base64,/', $base64Str, $type)) {
@@ -1321,39 +1381,56 @@ class PortalController extends Controller {
                     if ($imgData !== false) {
                         $tmpFile = tempnam(sys_get_temp_dir(), 'mil_img_edit_');
                         file_put_contents($tmpFile, $imgData);
-                        $fileArray = [
+                        array_unshift($allFiles, [
                             'name' => 'foto_militancia_edit_' . time() . '.jpg',
                             'type' => 'image/jpeg',
                             'tmp_name' => $tmpFile,
                             'error' => UPLOAD_ERR_OK,
-                            'size' => filesize($tmpFile)
-                        ];
-
-                        $storageDir = dirname(dirname(__DIR__)) . '/storage/uploads/comprovantes';
-                        if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
-                        $cryptoData = EncryptionService::encryptAndSaveUploadedFile($fileArray, $storageDir);
-                        @unlink($tmpFile);
-
-                        $stmtFoto = $db->prepare(
-                            "UPDATE `militancy_activities` SET encrypted_photo_path = :path, iv = :iv WHERE id = :id"
-                        );
-                        $stmtFoto->execute([
-                            'path' => $cryptoData['encrypted_file_path'],
-                            'iv' => $cryptoData['iv'],
-                            'id' => $id
+                            'size' => filesize($tmpFile),
+                            'is_tmp' => true
                         ]);
                     }
                 }
             }
 
+            // 3. Criptografa e grava fotos
+            foreach ($allFiles as $idx => $f) {
+                $cryptoData = EncryptionService::encryptAndSaveUploadedFile($f, $storageDir);
+                if (!empty($f['is_tmp'])) @unlink($f['tmp_name']);
+
+                if (empty($act['encrypted_photo_path']) && $idx === 0) {
+                    $stmtFotoMain = $db->prepare(
+                        "UPDATE `militancy_activities` SET encrypted_photo_path = :path, iv = :iv WHERE id = :id"
+                    );
+                    $stmtFotoMain->execute([
+                        'path' => $cryptoData['encrypted_file_path'],
+                        'iv' => $cryptoData['iv'],
+                        'id' => $id
+                    ]);
+                } else {
+                    $stmtExtra = $db->prepare(
+                        "INSERT INTO `militancy_photos` (militancy_id, encrypted_photo_path, original_name, iv, mime_type) 
+                         VALUES (:militancy_id, :path, :name, :iv, :mime)"
+                    );
+                    $stmtExtra->execute([
+                        'militancy_id' => $id,
+                        'path' => $cryptoData['encrypted_file_path'],
+                        'name' => $f['name'] ?? 'foto_anexa.jpg',
+                        'iv' => $cryptoData['iv'],
+                        'mime' => $f['type'] ?? 'image/jpeg'
+                    ]);
+                }
+            }
+
             $db->commit();
-            Session::setFlash('success', 'Atividade de militância atualizada e enviada para homologação!');
+            $msgFiles = count($allFiles) > 0 ? " (" . count($allFiles) . " nova(s) foto(s) anexada(s))" : "";
+            Session::setFlash('success', 'Atividade de militância atualizada e enviada para homologação com sucesso!' . $msgFiles);
         } catch (Exception $e) {
             if ($db->inTransaction()) $db->rollBack();
             Session::setFlash('error', 'Erro ao atualizar atividade: ' . $e->getMessage());
         }
 
-        $this->redirect('/portal');
+        $this->redirect('/portal/militancia');
     }
 
     /**
