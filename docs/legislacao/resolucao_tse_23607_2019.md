@@ -30,6 +30,16 @@ A **Resolução TSE nº 23.607/2019** (e suas atualizações para cada pleito) �
 * **Notas Fiscais Eletrônicas (NF-e):** A comprovação de qualquer aquisição de bens ou contratação de serviços deve ser feita por Nota Fiscal Eletrônica contendo o CNPJ da campanha, a descrição detalhada do item/serviço e dados do fornecedor.
 * **Cessão de Bens:** A cessão gratuita de veículos ou imóveis deve ser comprovada por contrato de cessão e termo de doação estimável em dinheiro, avaliado com base nos preços praticados no mercado.
 
+### 💵 Fundo de Caixa e Pequenos Gastos (Artigos 38, 39 e 40)
+* **Regra Geral de Pagamento (Art. 38):** As despesas financeiras devem ser pagas por cheque nominal, transferência bancária (identificando CPF/CNPJ do beneficiário), cartão de débito da conta ou PIX (desde que a chave do recebedor seja CPF ou CNPJ).
+* **Constituição do Fundo de Caixa (Art. 39):** É permitida a constituição de reserva em dinheiro (Fundo de Caixa) para pequenos gastos, sob as condições:
+  1. Limite máximo de **2% do total de gastos contratados** da campanha, vedada a recomposição do teto global.
+  2. Trânsito bancário prévio obrigatório (o dinheiro deve passar pela conta antes do saque).
+  3. Saque efetuado com cartão de débito ou cheque nominativo em nome do candidato/administrador.
+* **Definição de Pequeno Vulto (Art. 39, Parágrafo Único):** São considerados gastos de pequeno vulto as despesas individuais de até **meio salário mínimo**, sendo expressamente vedado o fracionamento de despesa.
+* **Restrição de vice e suplentes (Art. 40):** A candidata ou candidato a vice ou a suplente não pode constituir Fundo de Caixa próprio.
+* **Margem de Segurança no SGE:** Visando blindar a campanha, o SGE exibe um aviso crítico para pagamentos em espécie a partir de **R$ 300,00**, evitando proximidade com o teto legal de meio salário mínimo e impedindo o fracionamento de notas.
+
 ---
 
 ## ⚠️ Sanções e Devoluções de Valores (Artigo 79)
